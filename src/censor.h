@@ -1,5 +1,5 @@
-#ifndef _CENSOR_H_
-#define _CENSOR_H_
+#ifndef CENSOR_H
+#define CENSOR_H
 
 /* censor.h
 ** Per-Erik Martin (pem@nexus.se) 1999-05-08
@@ -13,17 +13,17 @@ extern struct censor * censor_init(void);
 extern size_t censor_count(struct censor *p);
 
 /* Returns a pointer to the censored 'c' if found, NULL otherwise. */
-extern char *censor_lookup(char *c, struct censor *p);
+extern char *censor_lookup(const char *c, struct censor *p);
 
 /* Adds the censored 'c'. Returns 1 if it replaced an old entry,
 ** or 0 if it was a new entry.
 */
-extern int censor_add(char *c, struct censor *p);
+extern int censor_add(const char *c, struct censor *p);
 
 /* Removes censored 'c' from list. Returns 1 if it was there,
 ** or 0 if it wasn't found.
 */
-extern int censor_rem(char *c, struct censor *p);
+extern int censor_rem(const char *c, struct censor *p);
 
 /* Initiates an iteration through the list.
 ** A typical iteration (through the list 'cl') looks like this:
@@ -51,4 +51,4 @@ extern void censor_clear(struct censor *p);
 */
 extern void censor_free(struct censor *p);
 
-#endif /* _censor_h_ */
+#endif /* censor_h */

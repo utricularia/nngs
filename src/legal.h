@@ -18,9 +18,9 @@
     GNU General Public License for more details.
 */
 
-#ifndef _LEGAL_H_
-#define _LEGAL_H_
+#ifndef LEGAL_H
+#define LEGAL_H
 
 extern char legalNotice[];
 
-#endif /* _LEGAL_H */
+#endif /* LEGAL_H */

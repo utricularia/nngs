@@ -13,8 +13,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _BOYERMOORE_H_
-#define _BOYERMOORE_H_
+#ifndef BOYERMOORE_H
+#define BOYERMOORE_H
 
 struct boyermoore {
 	int p;
@@ -25,4 +25,4 @@ struct boyermoore {
 int bmInit(char *pat, struct boyermoore *pBM);
 char *bmSrch(char *str, struct boyermoore *pBM);
 
-#endif /* ifndef boyermoore_h */
+#endif /* BOYERMOORE_H */

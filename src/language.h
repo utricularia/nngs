@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _LANGUAGE_H_
-#define _LANGUAGE_H_
+#ifndef LANGUAGE_H
+#define LANGUAGE_H
 
 #define LANGUAGE_ENGLISH 0
 #define LANGUAGE_CHINESE 1
@@ -43,4 +43,4 @@ int language_prefix2num(const char * prefix);
 void help_init(void);
 int search_index(char * buff, size_t buffsiz, const char *needle, int num, int lang);
 
-#endif /* _LANGUAGE_H_ */
+#endif /* LANGUAGE_H */

@@ -24,14 +24,8 @@
 */
 
 
-#ifndef _PENDING_H_
-#define _PENDING_H_
-
-#if 0
-#include "alias.h"
-#include "censor.h"
-#include "plan.h"
-#endif
+#ifndef PENDING_H
+#define PENDING_H
 
 #define PEND_MATCH 0
 #define PEND_ADJOURN 1
@@ -66,4 +60,4 @@ int pending_count(int from, int to, int type);
 struct pending * pending_find(int from, int to, int type);
 struct pending * pending_next(struct pending *ptr, int fr, int to, int type);
 
-#endif /* _PENDING_H_ */
+#endif /* PENDING_H */

@@ -33,6 +33,10 @@
 #include <string.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 
 	/* NOTE:
@@ -45,6 +49,11 @@
 #undef WANT_TO_DEFINE
 #include "utils.h"
 #include "language.h"
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 struct language {
   int lang;	/* Language number as used in language variable */
@@ -59,13 +68,13 @@ struct language {
 ,{LANGUAGE_FRENCH, "french", "fr", NULL}
 };
 
-static char badmessage[30];
+static char badmessage[40];
 static void help_add(char *name, int lang);
 static void help_init1(int num);
 
 const char * find_format(int lang, int num)
 {
-char *format=NULL;
+const char *format=NULL;
 size_t idx;
 
 if(formats_english[0] == NULL) language_init();
@@ -86,7 +95,7 @@ if(formats_english[0] == NULL) language_init();
     format= num < COUNTOF(formats_default) ?formats_default[num]: NULL;
 
   /* if it's still not found, that message was never defined */
-  if(!format) sprintf(format=badmessage,"Lang_%d,Format_%d", lang,num);
+  if(!format) sprintf(format=&badmessage[0],"Lang_%d,Format_%d", lang,num);
 
   return format;
 }
@@ -143,8 +152,8 @@ static int help_cmp(const void *l, const void *r);
 
 static int help_cmp(const void *l, const void *r)
 {
-  struct help_avail * lh= (struct help_avail *) l;
-  struct help_avail * rh= (struct help_avail *) r;
+  const struct help_avail * lh= (const struct help_avail *) l;
+  const struct help_avail * rh= (const struct help_avail *) r;
 
   return strcmp(lh->name,rh->name);
 }

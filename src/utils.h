@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef UTILS_H
+#define UTILS_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -73,13 +73,13 @@
 
 
 extern int iswhitespace(int);
-extern char *getword(const char *);
+extern char *getword(char *);
 /* Returns a pointer to the first whitespace in the argument */
-extern char *eatword(const char *);
+extern char *eatword(char *);
 /* Returns a pointer to the first non-whitespace char in the argument */
-extern char *eatwhite(const char *);
+extern char *eatwhite(char *);
 /* Returns the next word in a given string >eatwhite(eatword(foo))< */
-extern char *nextword(const char *);
+extern char *nextword(char *);
 
 extern int mail_string_to_address(const char *, const char *, const char *);
 extern int mail_string_to_user(int, char *);
@@ -132,12 +132,13 @@ extern int file_has_pname(const char *, const char*);
 extern const char *file_wplayer(const char *);
 extern const char *file_bplayer(const char *);
 
+extern int xyfilename(char *dst, int num, ...);
 extern FILE * xfopen(const char *,const char *);
 extern FILE * xyfopen(int num, const char *, ...);
 extern FILE * pxyfopen(int p, int num, const char *, ...);
 extern int xyrename(int num1, int num2, ...);
 extern int xylines_file(int num, ...);
-extern int xylink(int num,...);
+extern int xylink(int num, ...);
 extern int xyunlink(int num, ...);
 extern int xystat(struct stat * sb, int num, ...);
 extern int xytouch(int num, ...);
@@ -147,6 +148,7 @@ extern int pcn_out(int, int, int, ...);
 extern int pcn_out_prompt(int p, int code, int num, ...);
 
 extern char *dotQuad(unsigned int);
+int asc2ipaddr(char *str, unsigned *add);
 
 extern int available_space(void);
 extern int file_exists(char *);
@@ -177,4 +179,4 @@ struct searchresult {
 extern const struct searchresult *search(char *);
 extern int blank(char *);
 
-#endif /* _UTILS_H_ */
+#endif /* UTILS_H */

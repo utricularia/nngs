@@ -13,8 +13,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _LADDER_H_
-#define _LADDER_H_
+#ifndef LADDER_H
+#define LADDER_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -76,4 +76,4 @@ int PlayerLoad(FILE *pf, int id);
 }
 #endif /* C++ */
 
-#endif /* ifndef _LADDER_H_ */
+#endif /* LADDER_H */

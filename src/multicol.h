@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _MULTICOL_H_
-#define _MULTICOL_H_
+#ifndef MULTICOL_H
+#define MULTICOL_H
 
 struct multicol
 {
@@ -33,9 +33,9 @@ struct multicol
 } ;
 
 extern struct multicol *multicol_start(int);
-extern int multicol_store(struct multicol *, char *);
-extern int multicol_store_sorted(struct multicol *, char *);
+extern int multicol_store(struct multicol *, const char *);
+extern int multicol_store_sorted(struct multicol *, const char *);
 extern int multicol_pprint(struct multicol *, int, int, int);
 extern int multicol_end(struct multicol *);
 
-#endif /* _MULTICOL_H_ */
+#endif /* MULTICOL_H */

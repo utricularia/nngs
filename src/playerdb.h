@@ -23,14 +23,8 @@
 */
 
 
-#ifndef _PLAYERDB_H_
-#define _PLAYERDB_H_
-
-#if 0
-#include "alias.h"
-#include "censor.h"
-#include "plan.h"
-#endif
+#ifndef PLAYERDB_H
+#define PLAYERDB_H
 
 #define PARRAY_SIZE 260
 #define MAX_PENDING 5
@@ -45,6 +39,7 @@
 #define MAX_CHANNEL_MEMBERS PARRAY_SIZE
 #define PENDING_SIZE (MAX_PENDING*PARRAY_SIZE)
 
+#define DEBUG_PLAYER_KICK 1
 #define DEBUG_PLAYER_SLOT 0
 #define DEBUG_GAME_SLOT 0
 
@@ -80,18 +75,43 @@
 #define MAX_RANKED 12
 
 #include "pending.h"
-
+/*
+ * Note: the player array is used as a cache for the player data file.
+ * An entry can refer to a currently unconnected player. This happens
+ * when logging on, or when stats are reqested for someone who is absent.
+ * In the original version of NNGS, offline players were put into
+ * a temporal slot, which was read+used+discarded. These entries were
+ * returned by the various player_xxx() function with negative indexes,
+ * which needed a lot of special handling.
+ * In this version, player data is kept in the array until the
+ * space is reclaimed. Most of the writes to the player datafile
+ * have been replaced by a call to player_dirty(), which just
+ * sets the dirty-bit. The write is done later. Probably :-]
+ *
+ * Whenever a new slot is needed, it is basically allocated from the
+ * top. The original server allocated the lowest *unconnected* slot.
+ *
+ * To mimic this behavior, some shuffling is done to move the unconnected
+ * slots up. This is less costly then disk-i/o, anyway.
+ *
+ * Most of the 'slotstate' has been decomposed into separate (bit)fields.
+ * This is easier to read, and easier to maintain, IMHO, then relying on
+ * an aggregate (pstatus), which is there for other reasons.
+ *
+ * The fixcount-stuff is useless, currently. It could come into use
+ * if we became multithreading. It does help to detect logical flaws.
+ */
 struct player_ {
   int socket;
   int pstatus;		/* The status of this slot eg PSTATUS_PROMPT */
   int protostate;	/* The state as reported in the protocol-lines */
   struct {
-	unsigned inuse:1;	/* Slot is in use */
-	unsigned valid:1;	/* data is valid (initialized or read) */
-	unsigned connected:1;	/* player is connected */
-	unsigned online:1;	/* Player is logged on and can receive */
-        unsigned registered:1;	/* Player is registered, data should be saved */
-	unsigned dirty:1;	/* Data has changed */
+	unsigned  is_inuse:1;	/* Slot is in use */
+	unsigned  is_valid:1;	/* data is valid (initialized or read) */
+	unsigned  is_connected:1;	/* player is connected */
+	unsigned  is_online:1;	/* Player is logged on and can receive */
+	unsigned  is_registered:1;	/* registered Player, data should be saved */
+	unsigned  is_dirty:1;	/* Data has changed */
 	unsigned fixcount:2;	/* Reference count; for testing */
 	int timestamp;		/* For LRU allocation, should be time_t */
 	} slotstat;
@@ -112,15 +132,13 @@ struct player_ {
   int game;
   int gametype;
   int opponent; /* Only valid if game is >= 0 */
-  int side;     /* Only valid if game is >= 0 */
+  int side;	/* Only valid if game is >= 0 */
   int last_tell;
   int last_pzz;
   int last_tell_from;
   int last_channel;
   int last_opponent;
-  int idle; /* Syncanph, AvK */
   int language; /* Syncanph, AvK */
-  int bonus; /* Syncanph, AvK */
   int logon_time;
   int last_command_time;
   int outgoing;
@@ -155,10 +173,6 @@ struct player_ {
   int automail;
   int adminLevel;
   int teach;    /* A teaching account */
-#if 0
-  int num_plan;
-  int num_censor;
-#endif
   int nochannels;
   int gonum_white;
   int gonum_black;
@@ -176,18 +190,13 @@ struct player_ {
   int num_logons;
   int match_type;
   int silent_login;
-  unsigned int thisHost; /* IP address in network byte order */
-  unsigned int lastHost; /* IP address in network byte order */
+  unsigned int thisHost; /* IP address in host byte order */
+  unsigned int lastHost; /* IP address in host byte order */
   int observe_list[MAX_OBSERVE];
   char busy[100]; /* more than enough */
   struct alias * alias_list;
-#if 1
   struct censor * censor_list;
   struct plan * plan_lines;
-#else
-  char *censorList[MAX_CENSOR];
-  char *planLines[MAX_PLAN];
-#endif
 } ;
 
 extern struct player_ parray[PARRAY_SIZE];
@@ -205,9 +214,10 @@ extern void player_dirty(int);
 
 extern int player_new(void);
 extern int player_delete(int);
-extern int player_clear(int);
 extern int player_remove(int);
-extern int player_disconnect(int p);
+
+extern void player_clear(int);
+extern void player_disconnect(int p);
 
 extern int player_markdeleted(int);
 extern int player_read(int);
@@ -216,6 +226,7 @@ extern void player_save(int);
 extern int player_find_fd(int);
 extern int player_find_login(const char *);
 extern int player_find_part_login(const char *);
+extern int player_find_sloppy(const char *);
 
 extern int player_censored(int, int);
 extern int check_censored(int, const char *);
@@ -227,7 +238,6 @@ extern int player_notify(int, char *, char *);
 extern int player_count(void);
 extern int player_idle(int);
 extern int player_ontime(int);
-
 
 extern void player_write_loginout(int, int);
 extern int player_lastconnect(int);
@@ -257,8 +267,6 @@ extern int player_add_message(int, int, char *);
 extern int player_show_messages(int);
 extern int player_clear_messages(int);
 
-/* extern int player_search(int, char *); */
-
 extern int sort_alpha[];
 extern int sort_ladder9[];
 extern int sort_ladder19[];
@@ -267,4 +275,4 @@ extern int player_kill(char *);
 extern int player_rename(char *, char *);
 extern int player_raise(char *);
 
-#endif /* _PLAYERDB_H_ */
+#endif /* PLAYERDB_H */

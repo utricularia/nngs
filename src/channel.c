@@ -39,6 +39,11 @@
 #include "playerdb.h"
 #include "utils.h"
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 struct channel carray[MAX_CHANNELS];
 
 void channel_init()
@@ -208,7 +213,7 @@ int add_to_yell_stack(int ch, char *text)
      shuffle rest down. */
 
   if (carray[ch].Num_Yell == YELL_STACK_SIZE) {
-    free((char *) carray[ch].Yell_Stack[0]);
+    free(carray[ch].Yell_Stack[0]);
     for (i = 0; i < YELL_STACK_SIZE-1; i++) {
       carray[ch].Yell_Stack[i] = carray[ch].Yell_Stack[i + 1];
     }

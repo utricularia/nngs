@@ -1,6 +1,6 @@
 
-#ifndef _EMOTE_H_
-#define _EMOTE_H_
+#ifndef EMOTE_H
+#define EMOTE_H
 
 /*
    EmoteInit does nothing.
@@ -22,4 +22,4 @@ const char *EmoteMkStr(char *key, char *username, char *args, int isclient);
 
 int EmoteLook(const char *key);
 
-#endif /* ifndef _EMOTE_H_ */
+#endif /* EMOTE_H */

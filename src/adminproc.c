@@ -19,6 +19,8 @@
 #include "playerdb.h"
 #include "utils.h"
 #include "ladder.h"
+#include "files.h"
+#include "ip_ban.h"
 
 #ifdef USING_DMALLOC
 #include <dmalloc.h>
@@ -231,16 +233,16 @@ int strcmpwild(char *haystack, char *needle) {
   return 0;
 }
 
-int com_checkIP(int p, struct parameter* param)
+int com_chk_ip(int p, struct parameter* param)
 {
   char *ipstr = param[0].val.word;
   int p1;
 
   pcn_out(p, CODE_INFO, FORMAT_MATCHES_THE_FOLLOWING_PLAYER_S_n);
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.valid) continue;
+    if (!parray[p1].slotstat.is_valid) continue;
     if (strcmpwild(dotQuad(parray[p1].thisHost), ipstr)) continue;
-    pcn_out(p, CODE_INFO, FORMAT_s, parray[p1].pname);
+    pcn_out(p, CODE_INFO, FORMAT__s, parray[p1].pname);
     }
   return COM_OK;
 }
@@ -254,7 +256,7 @@ int com_ausers(int p, struct parameter* param)
   pcn_out(p, CODE_INFO,FORMAT_n);
 
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.online) continue;
+    if (!parray[p1].slotstat.is_online) continue;
     pcn_out(p, CODE_INFO, FORMAT_s_s_s_d_s_dn,
                 parray[p1].pname,
                 dotQuad(parray[p1].thisHost),
@@ -285,33 +287,32 @@ int com_asetdebug(int p, struct parameter* param)
   return COM_OK;
 }
 
-int com_checkSOCKET(int p, struct parameter* param)
+int com_chk_socket(int p, struct parameter* param)
 {
   int fd = param[0].val.integer;
-  int p1, flag;
+  int p1, cnt;
 
-  flag = 0;
+  cnt = 0;
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (parray[p1].socket == fd) {
-      flag = 1;
-      pcn_out(p, CODE_INFO, FORMAT_SOCKET_d_IS_USED_BY_s,
-		fd, parray[p1].pname);
-    }
+    if (!parray[p1].socket == fd) continue;
+    cnt++;
+    pcn_out(p, CODE_INFO, FORMAT_SOCKET_d_IS_USED_BY_s,
+      fd, parray[p1].pname);
   }
-  if (!flag)
-    pcn_out(p, CODE_INFO, FORMAT_SOCKET_d_IS_UNUSED_);
+  if (!cnt)
+    pcn_out(p, CODE_INFO, FORMAT_SOCKET_d_IS_UNUSED_, fd);
   return COM_OK;
 }
 
 
-int com_checkPLAYER(int p, struct parameter* param)
+int com_chk_player(int p, struct parameter* param)
 {
   char *pname = param[0].val.word;
   int p1;
 
   p1 = player_fetch(pname);
   if (p1< 0) return COM_OK;
-  if (!parray[p1].slotstat.online) {
+  if (!parray[p1].slotstat.is_online) {
     pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_LOGGED_IN_n, pname);
     stolower(pname);
     pcn_out(p, CODE_INFO, FORMAT_NAME_sn, parray[p1].pname);
@@ -333,7 +334,7 @@ int com_checkPLAYER(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_FULLNAME_sn, IFNULL0(parray[p1].fullname, "(none)") );
   pcn_out(p, CODE_INFO, FORMAT_EMAILADDRESS_sn, IFNULL0(parray[p1].email, "(none)") );
   pcn_out(p, CODE_INFO, FORMAT_SOCKET_dn, parray[p1].socket);
-  pcn_out(p, CODE_INFO, FORMAT_REGISTERED_dn, (int) parray[p1].slotstat.registered);
+  pcn_out(p, CODE_INFO, FORMAT_REGISTERED_dn, (int) parray[p1].slotstat.is_registered);
   pcn_out(p, CODE_INFO, FORMAT_LAST_TELL_dn, parray[p1].last_tell);
   pcn_out(p, CODE_INFO, FORMAT_LAST_CHANNEL_dn, parray[p1].last_channel);
   pcn_out(p, CODE_INFO, FORMAT_LOGON_TIME_dn, parray[p1].logon_time);
@@ -366,8 +367,8 @@ int com_remplayer(int p, struct parameter* param)
     player_forget(p1);
     return COM_OK;
   }
-  if (parray[p1].slotstat.registered) {
-    if (parray[p1].slotstat.online) {
+  if (parray[p1].slotstat.is_registered) {
+    if (parray[p1].slotstat.is_online) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
       player_forget(p1);
       return COM_OK;
@@ -400,14 +401,14 @@ int com_raisedead(int p, struct parameter* param)
 
   p1 = player_fetch(oldlower);
   if (p1 >=0) {
-    if (parray[p1].slotstat.registered) {
+    if (parray[p1].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THE_NAME_s_IS_ALREADY_REGISTERED_n, oldplayer);
       pcn_out(p, CODE_ERROR, FORMAT_OBTAIN_A_NEW_HANDLE_FOR_THE_DEAD_PERSON_n);
       pcn_out(p, CODE_ERROR, FORMAT_THEN_USE_RAISEDEAD_OLDNAME_NEWNAME_);
       player_forget(p1);
       return COM_OK;
     }
-    if (parray[p1].slotstat.online) {
+    if (parray[p1].slotstat.is_online) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
       pcn_out(p, CODE_ERROR, FORMAT_CAN_T_RAISE_UNTIL_THEY_LEAVE_);
       player_forget(p1);
@@ -424,7 +425,7 @@ int com_raisedead(int p, struct parameter* param)
     return COM_OK;
   } else {
     p2 = player_fetch(newlower);
-    if (p2>=0 && parray[p2].slotstat.registered) {
+    if (p2>=0 && parray[p2].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THE_NAME_s_IS_ALREADY_REGISTERED_, newplayer);
       pcn_out(p, CODE_ERROR, FORMAT_OBTAIN_ANOTHER_NEW_HANDLE_FOR_THE_DEAD_PERSON_);
       player_forget(p1);
@@ -455,15 +456,17 @@ void ShutDown()
   int shuttime = globClock;
 
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.connected) continue;
+    if (!parray[p1].slotstat.is_connected) continue;
     pcn_out(p1, CODE_DOWN, FORMAT_SERVER_SHUTDOWN_STARTED_BY_s_n, downer);
   }
   TerminateCleanup();
+#if 0
   fprintf(stderr, "Shutdown ordered at %s by %s.\n", strltime((time_t *) &shuttime), downer);
+#endif
   Logit("Shutdown ordered at %s by %s.", strltime((time_t *) &shuttime), downer);
   net_closeAll();
   system("touch .shutdown");
-  exit(0);
+  main_exit(0);
 }
 
 void ShutHeartBeat()
@@ -497,7 +500,7 @@ void ShutHeartBeat()
 	    timeLeft / 60,
 	    timeLeft - ((timeLeft / 60) * 60));
     for (p1 = 0; p1 < parray_top; p1++) {
-      if (!parray[p1].slotstat.connected) continue;
+      if (!parray[p1].slotstat.is_connected) continue;
       pcn_out_prompt(p1, CODE_DOWN,
 		     FORMAT_SERVER_GOING_DOWN_IN_d_MINUTES_AND_d_SECONDS_n,
 		     timeLeft / 60,
@@ -519,7 +522,7 @@ int com_shutdown(int p, struct parameter* param)
   shutdownStartTime = globClock;   
   if (shutdownTime) {         /* Cancel any pending shutdowns */
     for (p1 = 0; p1 < parray_top; p1++) {
-      if (!parray[p1].slotstat.connected) continue;
+      if (!parray[p1].slotstat.is_connected) continue;
       pcn_out(p1, CODE_INFO, FORMAT_SERVER_SHUTDOWN_CANCELED_BY_s_n, downer);
     }
     shutdownTime = 0;
@@ -563,7 +566,7 @@ int com_shutdown(int p, struct parameter* param)
   if (shutdownTime <= 0)
     ShutDown();
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.connected) continue;
+    if (!parray[p1].slotstat.is_connected) continue;
     pcn_out(p1, CODE_DOWN, FORMAT_SERVER_SHUTDOWN_STARTED_BY_s_n, downer);
     pcn_out_prompt(p1,CODE_DOWN,
      FORMAT_SERVER_GOING_DOWN_IN_d_MINUTES_AND_d_SECONDS_n,
@@ -586,7 +589,7 @@ int server_shutdown(int secs, char *why)
   shutdownTime = secs;
   shutdownStartTime = globClock;
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.connected) continue;
+    if (!parray[p1].slotstat.is_connected) continue;
     pcn_out(p1, CODE_DOWN, FORMAT_AUTOMATIC_SERVER_SHUTDOWN_n);
     pcn_out(p1, CODE_DOWN, FORMAT_sn, why);
     pcn_out_prompt(p1,CODE_DOWN,
@@ -614,7 +617,7 @@ int com_pose(int p, struct parameter* param)
   Logit("POSE: %s as %s: > %s <", parray[p].pname, parray[p1].pname, param[1].val.string); 
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1= carray[CHANNEL_ASHOUT].members[j];
-    if (!parray[p1].slotstat.connected) continue;
+    if (!parray[p1].slotstat.is_connected) continue;
     if(p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_POSE_s_AS_s_s_n,
@@ -636,7 +639,7 @@ int Show_Admin_Command(int p, const char *comm, const char *command)
   Logit("ADMIN: %s > %s <", parray[p].pname, orig_command);
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1 = carray[CHANNEL_ASHOUT].members[j];
-    if(!parray[p1].slotstat.online) continue;
+    if(!parray[p1].slotstat.is_online) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_ADMIN_s_s_n,
       parray[p].pname, orig_command);
@@ -654,8 +657,8 @@ int com_arank(int p, struct parameter* param)
   if (p1 <0) return COM_OK;
   do_copy(parray[p1].ranked, param[1].val.string, sizeof parray[0].ranked);
   do_copy(parray[p1].srank, param[1].val.string, sizeof parray[0].srank);
-  player_dirty(p1);
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
+  player_dirty(p1);
   player_forget(p1);
   return COM_OK;
 }
@@ -669,7 +672,7 @@ int com_noshout(int p, struct parameter* param)
   else  carray[CHANNEL_SHOUT].locked = 1;
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1=carray[CHANNEL_ASHOUT].members[j];
-    if(!parray[p1].slotstat.online) continue;
+    if(!parray[p1].slotstat.is_online) continue;
     if(p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_JUST_TURNED_s_SHOUTS_n, 
@@ -686,7 +689,7 @@ int com_announce(int p, struct parameter* param)
   UNUSED(param);
 
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.online) continue;
+    if (!parray[p1].slotstat.is_online) continue;
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_sn, 
                 parray[p].pname, param[0].val.string);
   }
@@ -701,7 +704,7 @@ int com_muzzle(int p, struct parameter* param)
   if (param[0].type == TYPE_NULL) {
     pcn_out(p, CODE_INFO, FORMAT_MUZZLED_PLAYERS_n);
     for (p1 = 0; p1 < parray_top; p1++) {
-      if (!parray[p1].slotstat.online) continue;
+      if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].muzzled)
 	pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
     }
@@ -729,7 +732,7 @@ int com_bmuzzle(int p, struct parameter* param)
   if (param[0].type == TYPE_NULL) {
     pcn_out(p, CODE_INFO, FORMAT_BMUZZLED_PLAYERS_n);
     for (p1 = 0; p1 < parray_top; p1++) {
-      if (!parray[p1].slotstat.online) continue;
+      if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].bmuzzled)
         pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
     }
@@ -757,7 +760,7 @@ int com_gmuzzle(int p, struct parameter* param)
   if (param[0].type == TYPE_NULL) {
     pcn_out(p, CODE_INFO, FORMAT_GMUZZLED_PLAYERS_n);
     for (p1 = 0; p1 < parray_top; p1++) {
-      if (!parray[p1].slotstat.online) continue;
+      if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].gmuzzled)
 	pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
     }
@@ -802,7 +805,7 @@ int com_asetpasswd(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_PASSWORD_OF_s_CHANGED_TO_qsq_n, parray[p1].pname, param[1].val.word);
   }
   player_dirty(p1);
-  if (parray[p1].slotstat.online) {
+  if (parray[p1].slotstat.is_online) {
     if (param[1].val.word[0] == '*') {
       pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_LOCKED_YOUR_ACCOUNT_n, parray[p].pname);
     } else {
@@ -828,7 +831,7 @@ int com_asetemail(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_EMAIL_ADDRESS_OF_s_CHANGED_TO_qsq_, parray[p1].pname, param[1].val.word);
   }
   player_dirty(p1);
-  if (parray[p1].slotstat.online) {
+  if (parray[p1].slotstat.is_online) {
     if (param[1].type == TYPE_NULL) {
       pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_REMOVED_YOUR_EMAIL_ADDRESS_n, parray[p].pname);
     } else {
@@ -855,7 +858,7 @@ int com_asetrealname(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_REAL_NAME_OF_s_CHANGED_TO_qsq_, parray[p1].pname, param[1].val.word);
   }
   player_dirty(p1);
-  if (parray[p1].slotstat.online) {
+  if (parray[p1].slotstat.is_online) {
     if (param[1].type == TYPE_NULL) {
       pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_REMOVED_YOUR_REAL_NAME_n, parray[p].pname);
     } else {
@@ -901,7 +904,7 @@ int com_asethandle(int p, struct parameter* param)
   strcpy(newlower, newplayer);
   stolower(newlower);
   p1 = player_fetch(oldlower);
-  if (p1 < 0 || !parray[p1].slotstat.registered) {
+  if (p1 < 0 || !parray[p1].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_PLAYER_BY_THE_NAME_s_IS_REGISTERED_, oldplayer);
     player_forget(p1);
     return COM_OK;
@@ -911,19 +914,19 @@ int com_asethandle(int p, struct parameter* param)
     player_forget(p1);
     return COM_OK;
   }
-  if (p1 >= 0 && parray[p1].slotstat.online) {
+  if (p1 >= 0 && parray[p1].slotstat.is_online) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_);
     player_forget(p1);
     return COM_OK;
   }
   p2=player_fetch(newlower);
-  if (p2 >= 0 && parray[p2].slotstat.online) {
+  if (p2 >= 0 && parray[p2].slotstat.is_online) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NEW_NAME_IS_LOGGED_IN_);
     player_forget(p1);
     player_forget(p2);
     return COM_OK;
   }
-  if (p2 >= 0 && parray[p2].slotstat.registered) {
+  if (p2 >= 0 && parray[p2].slotstat.is_registered) {
     /* if (strcmp(oldlower, newlower)) { */
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_HANDLE_IS_ALREADY_TAKEN_);
     player_forget(p1);
@@ -962,7 +965,7 @@ int com_asetadmin(int p, struct parameter* param)
     player_forget(p1);
     return COM_OK;
   }
-  if (p1==p /* (parray[p1].login) == (parray[p].login) */ ) {
+  if (p1==p || !strcmp(parray[p1].login , parray[p].login) ) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_CHANGE_YOUR_OWN_ADMINLEVEL_);
     player_forget(p1);
     return COM_OK;
@@ -1005,7 +1008,7 @@ int com_asetwater(int p, struct parameter* param)
   player_dirty(p1);
   pcn_out(p, CODE_INFO, FORMAT_WATER_LEVEL_OF_s_SET_TO_d_,
             parray[p1].pname, parray[p1].water);
-  if (parray[p1].slotstat.online) {
+  if (parray[p1].slotstat.is_online) {
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_SET_YOUR_WATER_LEVEL_TO_d_n,
               parray[p].pname, parray[p1].water);
   }
@@ -1027,8 +1030,8 @@ int com_nuke(int p, struct parameter* param)
   Logit("NUKE: %s by %s", parray[pk].pname, parray[p].pname);
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1=carray[CHANNEL_ASHOUT].members[j];
-    if(!parray[p1].slotstat.online) continue;
-    if(p1 == p) continue;
+    if (!parray[p1].slotstat.is_online) continue;
+    if (p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_JUST_NUKED_s_n,
       parray[p].pname,
@@ -1036,8 +1039,6 @@ int com_nuke(int p, struct parameter* param)
   }
   fd = parray[pk].socket;
   process_disconnection(fd);
-  net_close(fd);
-  player_forget(pk);
   return COM_OK;
 }
 
@@ -1135,4 +1136,120 @@ int com_rating_recalc(int p, struct parameter* param)
   return COM_OK;
 }
 #endif /*LADDER_SIFT*/
+
+int com_aban(int p, struct parameter* param)
+{
+  int cnt=0,rc=0, p1;
+  const char * cmd;
+  const char *name= NULL;
+  unsigned bot,top;
+
+  cmd = (param[0].type==TYPE_WORD) ? param[0].val.word : "." ;
+
+  if (strspn(cmd,"+-?") 
+      && (param[1].type!=TYPE_WORD || asc2ipaddr(param[1].val.word, &bot))
+     ) {
+    pcn_out(p, CODE_ERROR, FORMAT_NEED_IP_ADDRESSn);
+    return COM_OK;
+  }
+  else if (strspn(cmd,"*/") 
+      && (param[1].type!=TYPE_WORD || !(name=param[1].val.word) )
+     ) {
+    pcn_out(p, CODE_ERROR, FORMAT_NEED_NAMEn);
+    return COM_OK;
+  }
+  if (param[2].type!=TYPE_WORD) {
+    top = bot;
+  }
+  else if(strspn(cmd,"+-?") && asc2ipaddr(param[2].val.word, &top) ) {
+    pcn_out(p, CODE_ERROR, FORMAT_NEED_IP_ADDRESSn);
+    return COM_OK;
+  }
+
+  switch (*cmd) {
+  case '+':
+    cnt = rc = range_add(bot, top);
+    break;
+    pcn_out(p, CODE_INFO, FORMAT_IP_BAN_CHANGED_dn, cnt);
+  case '-':
+    cnt = rc = range_remove(bot, top);
+    pcn_out(p, CODE_INFO, FORMAT_IP_BAN_CHANGED_dn, cnt);
+    break;
+  case '/':
+  case '*':
+    for (p1 = 0; p1 < parray_top; p1++) {
+      const char *banned,*connected;
+      if (!parray[p1].slotstat.is_valid) continue;
+      if (strcmp(parray[p1].pname, name)) continue;
+      rc = range_check(parray[p1].thisHost,parray[p1].thisHost);
+      banned = (rc) ? "in" : "un";
+      connected = (parray[p1].slotstat.is_connected) ? "is" : "not";
+      pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_AT_s_sBANNED_RANGE_sONLINEn
+        , parray[p1].pname, dotQuad(parray[p1].thisHost), banned, connected);
+      rc = (*cmd == '*')
+        ? range_add(parray[p1].thisHost,parray[p1].thisHost)
+        : range_remove(parray[p1].thisHost,parray[p1].thisHost);
+      if (!rc) continue;
+      cnt += rc;
+    }
+    rc = 0;
+    break;
+  case '?':
+    rc = range_check(bot,top);
+    pcn_out(p, CODE_INFO, FORMAT_IP_ADDRESS_s_s_BAN_IS_dn
+      , dotQuad(bot), dotQuad(top), rc);
+    for (p1 = 0; p1 < parray_top; p1++) {
+      const char *banned,*connected;
+      if (!parray[p1].slotstat.is_valid) continue;
+      if (parray[p1].thisHost < bot) continue;
+      if (parray[p1].thisHost > top) continue;
+      rc = range_check(parray[p1].thisHost,parray[p1].thisHost);
+      banned = (rc) ? "in" : "un";
+      connected = (parray[p1].slotstat.is_connected) ? "is" : "not";
+      pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_AT_s_sBANNED_RANGE_sONLINEn
+        , parray[p1].pname, dotQuad(parray[p1].thisHost), banned, connected);
+      cnt++;
+    }
+    cnt = rc = 0;
+    break;
+  case '.':
+    pcn_out(p, CODE_INFO, FORMAT_IP_RANGES_n);
+    bot = 1; top = 0;
+    for(cnt=rc=0 ;range_iter(&bot, &top); ) {
+      cpprintf(p, CODE_INFO, "%s - %s\n", dotQuad(bot), dotQuad(top));
+    }
+    break;
+  case '!':
+    for(cnt=p1=0 ;p1 < COUNTOF(parray); p1++) {
+      if (!parray[p1].slotstat.is_connected) continue;
+      bot = parray[p1].thisHost;
+      rc = range_check(bot,bot);
+      if (!rc) continue;
+      rc = parray[p1].socket;
+      cpprintf(p, CODE_INFO, "Disconnecting %s fd=%d %s\n"
+        , parray[p1].login, rc, dotQuad(bot));
+      Logit("Aban ! %s fd=%d %s"
+        , parray[p1].login, rc, dotQuad(bot));
+      if (p1 == p) continue;
+      process_disconnection(rc);
+      cnt++;
+    }
+    rc = 0;
+    break;
+  default:
+    pcn_out(p, CODE_ERROR, FORMAT_NEED_ADCP_IP_ADDRESSn);
+    return COM_OK;
+    break;
+  }
+  if (rc) Logit("Banip %s %s %s (%d)", cmd, dotQuad(bot), dotQuad(top), cnt);
+  if (cnt) {
+    FILE *fp;
+    fp = xyfopen(FILENAME_LIST_BAN, "w" );
+    if (!fp) return COM_OK;
+    range_dump(fp);
+    fclose (fp);
+  }
+ 
+  return COM_OK;
+}
 

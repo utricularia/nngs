@@ -20,8 +20,8 @@
 */
 
 
-#ifndef _NETWORK_H_
-#define _NETWORK_H_ 
+#ifndef NETWORK_H
+#define NETWORK_H
 
 /**********************************************************************
  * Constants
@@ -109,4 +109,4 @@ extern void  net_echoOn(int);
 extern void  net_echoOff(int);
 int net_isalive(int);
 
-#endif                          /* _NETWORK_H */
+#endif	/* NETWORK_H */

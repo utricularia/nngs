@@ -4,11 +4,16 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "alias.h"
 #include "utils.h"
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 #define INITSIZE 8
 
@@ -53,7 +58,7 @@ alias_init(void)
  ** alphabetically.
  */
   static int
-alias_index(size_t *ip, char *cmd, struct alias * a)
+alias_index(size_t *ip, const char *cmd, struct alias * a)
 {
   size_t left, right;
 
@@ -82,7 +87,7 @@ alias_index(size_t *ip, char *cmd, struct alias * a)
 }
 
 
-char * alias_lookup(char *cmd, struct alias * a)
+char * alias_lookup(const char *cmd, struct alias * a)
 {
   size_t i;
 
@@ -129,7 +134,7 @@ int alias_add(const char *cmd, const char *alias, struct alias * a)
 }
 
   int
-alias_rem(char *cmd, struct alias * a)
+alias_rem(const char *cmd, struct alias * a)
 {
   size_t i;
 

@@ -128,7 +128,8 @@ AC_DEFINE_UNQUOTED(MESSAGE_DIR,"$prefix/share/${PACKAGE}/messages", [message dir
 AC_DEFINE_UNQUOTED(PLAYER_DIR,"$prefix/share/${PACKAGE}/players", [player dirs])
 AC_DEFINE_UNQUOTED(STATS_DIR,"$prefix/share/${PACKAGE}/stats", [message dir])
 
-AC_DEFINE_UNQUOTED(GAMES_DIR,"$prefix/share/${PACKAGE}/games", [games dir])
+AC_DEFINE_UNQUOTED(GAME_DIR,"$prefix/share/${PACKAGE}/games", [games dir])
+AC_DEFINE_UNQUOTED(CGAME_DIR,"$prefix/share/${PACKAGE}/cgames", [cgames dir])
 AC_DEFINE_UNQUOTED(LIST_DIR,"$prefix/share/${PACKAGE}/lists", [list definition dir])
 AC_DEFINE_UNQUOTED(NEWS_DIR,"$prefix/share/${PACKAGE}/news", [news files dir])
 AC_DEFINE_UNQUOTED(PROBLEM_DIR,"$prefix/share/${PACKAGE}/problems", [go progblem dir])

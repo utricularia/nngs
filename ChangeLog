@@ -3,8 +3,101 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.15
+1.1.15  2004-11-03 AvK
 
+- Corrected clock-keeping (black's 1st move used white's clock ...)
+  (this was caused by 'courtesy' for handicap, which is negotiated before
+   black's first move)
+- #ifdeffed out by WANT_HANDICAP_COURTESY (defaults to 0)
+- renamed struct player.[bw]xxxx variables; put all repeating
+  group-variables for [bw] into (sub) structs for [bw].
+  (this makes the patch rather large :-)
+- combined .inbyo and .numovertime members:
+  a player is "in byo yomi" iff his numovertime > 0.
+- fixed if(timeleft==0) where if(time_type==0) was meant.
+- uncommented a call to game_update_times(): observers now get the
+  correct time
+- fixed filename-generation, including links.
+- In previous versions, some of the pathname-construction seem to have
+  been damaged ...
+  The current implementation stores two links to the sgffile:
+  (for players "Jimmy White" && "Karen Black")
+  .../b/jimmy-karen-20040919
+  .../k/jimmy-karen-20040919
+  The same for the stored/unfinished jimmy-karen versions
+  stored/sgf/"mail me" work now!
+  'stored' , 'load' , 'sgf' , 'results' commands work now (for both players)
+   xyfopen(FILENAME_CGAMES_bs_s_s, "w", wname, bname, fdate);
+   xyfopen(FILENAME_CGAMES_ws_s_s, "w", wname, bname, fdate);
+  now refer to the filename for black/white's perspective, respectively.
+- replaced some more sprintf(fname, "%s/player_data/%c/%s.%s"
+  by xyfilename()
+- changed semantics of pmailfile(). It now just takes subject and pathname.
+  No more filename construction inside.
+- changed [bw]player(). these are used to extract playernames from
+  pathname. rather clumsy.
+- changed some of the historyfile modes back to "a" :-[
+- fixed parray[] freeslot allocation problems. boot_out() now
+  works as expected.
+  - created player_find_sloppy(), player_write()
+    , player_swap(), player_swapslots() functions
+  - added comment to playerdb.h to document cacheing.
+  - player_zero() now only has one argument.
+  - removed excess player_forget() in com_nuke()
+- Login/logout is now recorded properly.
+- added #if ALL_USERS_ARE_REGISTERED to remove lines that served
+  my "lazy testing" attitude :-] .
+  per default, the server now stores games FOR REGISTERED PLAYERS ONLY.
+- Fixed the "black 1st move stealing time from white" -bug.
+- fixed ignored EPIPE in select/read. Defunct connections now are
+  properly shut down.
+- added aban command for banning ipranges: connections from
+  banned ip-addresses are closed immedately after accept(). See ahelp aban
+  - new files: src/ip_ban.[ch]
+  - (admin) command
+  - support functions
+  - ahelp - file
+  - .../lists/ban[.default] : persistent storage for the ban list.
+- revised host/network byte order. Variables are always in host order
+  , until they are handed to/from the network layer.
+- changed some of the network functions to return void
+- changed the default for MODE_FOR_DIR back to 0.
+  Now, the server is not supposed to create any directories.
+- Replaced all exit() calls by main_exit()
+- The gettimeofday() function won't accept the 2nd argument anymore.
+  changed it to NULL.
+
+[stylistic/cleanup]
+- renamed the player_array-bitfields to {is_valid,is_dirty,is_connected,...}
+- grouped the variables for b/w into a repeating-group struct.
+- removed leading underscores from #defines (are reserved for library-use)
+- fixed most of the 'const' warnings. Builds cleaner now!
+- changed some indexes to unsigned to avoid
+  'compare signed to unsigned'- warnings
+- Changed some more "if (*string != '\0') {}" into "if (*string) {}"
+- added string.h // strings.h, changed their order,
+- added hard-coded prototypes for snprintf/ftruncate/popen/pclose/strcasecmp.
+  This seems to be a header/ac/am problem, but I don't want
+  to understand ac/am ...
+- removed some commented-out code.
+- removed/changed some hostnames/emailadresses from cosmic.org
+  to localhost. Just to avoid flooding the wrong victims...
+- removed unused argument from create_new_gomatch & game_write_complete()
+  Seems to have been FICS heritage...
+- changed some more XXXSIZE constants by sizeof, where appropriate.
+- changed some functions to return void; where appropiate.
+- added the users&admins to the README
+- put net_close() into process_disconnection() They were always used together.
+- added % and \\ to list of characters we don't want in filenames
+- renamed com_check{PLAYER,IP,SOCKET}() to com_chk_player() et.al.
+- changed dotQuad() to be a _just_a_bit_more_ re-entrant ;-}
+- removed redundant c++ stuff from emote.h
+- rewrote some double indexing [[]], (which hurts my eyes)
+- replaced some calloc()s by malloc()s
+- added some goto's for readability 8-}
+- removed cruft from playerdb.h
+- whitespace :-]
+- misc changes (renamed some variables :-)
 
 1.1.14  2002-07-24
 - NOTE: using gcc-3.1.1 gives many new 'implicit declaration' warnings
@@ -15,7 +108,7 @@
 ...note: there are no redb_store calls, so I opened all files '0'
 - main patches leading to nngs1.1.14: (all by AvK)
 - (renamed)
-  - #defines: 
+  - #defines:
     TYPE_GO -->> GAMETYPE_GO, etc
     MAX_PLAYER -->> PARRAY_SIZE, removed duplicate definition...
     net_maxConn -->> CONNECTION_COUNT
@@ -39,7 +132,7 @@
     - .registered field moved to slotstat.
     - changed get_empty_slot
     - changed all references to parray to use the new fields
-    - changed most tests on parray.status to instead use 
+    - changed most tests on parray.status to instead use
       - parray.slotstat.inuse (slot occupied)
       - parray.slotstat.active (player is connected)
       - parray.slotstat.online (player is connected and logged on)
@@ -62,7 +155,7 @@
   - fixed ": unknown command" BUG
   - fixed fd-leaks in game_read() and game_save()
   - removed sentinel from command_list and friends. fixed off-by-one error.
-  - introduced global timevariable lastClock (mainly maintained 
+  - introduced global timevariable lastClock (mainly maintained
     by select-loop) and removed most of the systemcalls to time()
   - introduced an index-array to speed up socketfd-->>parray slot lookups.
     player_find_fd() uses this index
@@ -79,7 +172,7 @@
     and results in a \n being prepended to the sendcode.
   - introduced MIMIC_NNGS_1205 for cosmetic regression testing
   - modified and reinstalled SIGPIPE-handler. Maybe because of
-    the supernatural speed, automated testing occcasionally still 
+    the supernatural speed, automated testing occcasionally still
     yields an uncaught SIGPIPE. Could be two fd's closing within the
     same select()-tick.
   - replaced [r]index() (which is a BSD-ism) by str[r]chr() (which should
@@ -95,7 +188,7 @@
   - some indentation
   - changed some (xx==0) to (!xx)
   - changed some '\0' into 0
-  - changed all sizeof(TYPE) to sizeof variable
+  - changed all sizeof(TYPE) to sizeof variable.
     (technically, this should be "sizeof lvalue", I think)
   - changed some sizeof(variable) to sizeof variable
     (there is no precedence lossage possible, here)
@@ -105,22 +198,22 @@
   - got rid of most of the "const" warnings.
     added "const" to some function arguments.
   - SGF:
-    - changed sgf to write CP[CoPyright...] instead of CoPyright[...] 
+    - changed sgf to write CP[CoPyright...] instead of CoPyright[...]
     - added FF[4], AP[name: version] properties.
   - added socket-fd to login/logout Logit()s
   - changed some local functions to static
-  - replaced some subscript-range tests to use COUNTOF() instead of 
+  - replaced some subscript-range tests to use COUNTOF() instead of
     a constant
   - introduced IFNULL(a,b) macro for conveniance
-  - com_uptime() fixed. count_players() + count_games() 
+  - com_uptime() fixed. count_players() + count_games()
     all-time-high depended on left-to-right evaluation of function-args.
   - removed excess parenthesis, eg in return(xx);
   - replaced some explicit prompting by calls to pcn_out_prompt()
   - updated BUGS+README
 - (future)
-  - Added stuf to TODO :-(
+  - Added stuff to TODO :-(
   - I want unregistered players to be just another level (the lowest)
-    of ADMIN_LEVEL. 
+    of ADMIN_LEVEL.
     In the new system ADMIN_UNREG=1. ADMIN_REGISTERED=2.
     ADMIN_USER=0 is kept to promote previous enumeration to the new one.
     In the future, the meaning of slotstat.registered will be restricted to
@@ -200,7 +293,7 @@ Some minor changes, mainly to src/mink.[ch]
   search_index(), first attempt to do multi-column formatting...
 - removed some #ifdeffed out code. More to go.
 - Reshuffled some FILENAME_xxx #defines, to make help/ahelp
-  work. Some of the code relies on 
+  work. Some of the code relies on:
   #define FILENAME_HELP_l_index (FILENAME_HELP_l+5)
   etcetera. It's a bit ugly, but it works...
 - added #ifdefs to language.[ch] to avoid preprocessor-redef warnings.
@@ -268,7 +361,7 @@ Some minor changes, mainly to src/mink.[ch]
 [AvK]
 - fix the char[xxx] -variables-problems.
   (I don't know where the empty values for parray[].name,password,et al
-  came from. Given the Logit() is the source, they must be a known problem.
+  came from. Given the Logit() in the source, they must be a known problem.
   could you take look at the older srcs, for a rough indication when they
   started ?
 - split the long arglist for variables into manageable chunks of 8.
@@ -307,7 +400,7 @@ Some minor changes, mainly to src/mink.[ch]
 - NOTE: If you find it's close to beta-stable, you're lucky :)
 - translation hacked in in part courtesy of LGS server code
 - this version is the first in a series intended to get many NNGS
-  based servers to use a common source code again to speed up 
+  based servers to use a common source code again to speed up
   development and allow all to profit from it
 [AvK]
 - Language
@@ -423,7 +516,7 @@ NOTE:
 1) xxxproc.c: changed pprintf(p,"%sXXXX", SendCode(p, NAME), ...)
 	into cpprintf(p, CODE_NAME, "XXXX", ...)
 	similar for pprint_prompt() -> cpprint_prompt()
-	( I needed to splt some pprintf()s into two, because they 
+	( I needed to split some pprintf()s into two, because they
 	started with "\n", or they contained 2 SendCode()s )
 
 2) utils.c /utils.h:
@@ -432,7 +525,7 @@ NOTE:
 	NOTE: I don't know if my use of varargs passing is correct
 	there. Please check.
 
-3) utils.c: changed some 
+3) utils.c: changed some
 	char buff[LINE_MAX ];
 	fgets(buff,LINE_MAX, fd);
 	into

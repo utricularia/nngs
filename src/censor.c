@@ -3,12 +3,31 @@
 **
 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#include <string.h>
+#endif
+
 #include <assert.h>
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+ 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+ 
 #include "utils.h"
 #include "censor.h"
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 #define INITSIZE 8
 
@@ -50,7 +69,7 @@ censor_init(void)
 ** alphabetically.
 */
 static int
-censor_index(size_t *ip, char *c, struct censor * a)
+censor_index(size_t *ip, const char *c, struct censor * a)
 {
   size_t left, right;
 
@@ -79,7 +98,7 @@ censor_index(size_t *ip, char *c, struct censor * a)
 }
 
 char *
-censor_lookup(char *c, struct censor * a)
+censor_lookup(const char *c, struct censor * a)
 {
   size_t i;
 
@@ -89,7 +108,7 @@ censor_lookup(char *c, struct censor * a)
 }
 
 int
-censor_add(char *c, struct censor * a)
+censor_add(const char *c, struct censor * a)
 {
   size_t i;
 
@@ -122,7 +141,7 @@ censor_add(char *c, struct censor * a)
 }
 
 int
-censor_rem(char *c, struct censor * a)
+censor_rem(const char *c, struct censor * a)
 {
   size_t i;
 

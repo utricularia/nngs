@@ -32,6 +32,10 @@
 #include <string.h>
 #endif
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif
@@ -56,11 +60,10 @@ static int set_boolean_var(int *var, const char *val)
     return (*var = !*var);
 
   if (sscanf(val, "%d", &v) != 1) {
-    stolower(val);
-    if (!strcmp(val, "off")) v = 0;
-    else if (!strcmp(val, "false")) v = 0;
-    else if (!strcmp(val, "on")) v = 1;
-    else if (!strcmp(val, "true")) v = 1;
+    if (!strcasecmp(val, "off")) v = 0;
+    else if (!strcasecmp(val, "false")) v = 0;
+    else if (!strcasecmp(val, "on")) v = 1;
+    else if (!strcasecmp(val, "true")) v = 1;
   }
   if ((v == 0) || (v == 1))
     return (*var = v);

@@ -166,31 +166,31 @@ static void game_zero(struct game *g, int size)
 {
   memset(g, 0, sizeof *g);
   g->gotype = GAMETYPE_GO;
-  g->white = -1;
-  g->black = -1;
-  g->old_white = -1;
-  g->old_black = -1;
+  g->white.pnum = -1;
+  g->black.pnum = -1;
+  g->white.old_num = -1;
+  g->black.old_num = -1;
   g->gstatus = (size > 0) ? GSTATUS_NEW : GSTATUS_EMPTY;
   g->rated = 1;
   /* g->nocaps = 0; */
   g->Private = 0;
   g->komi = 0.5;
   g->result = END_NOTENDED;
-  g->time_type = TIMETYPE_UNTIMED;
+  g->ts.time_type = TIMETYPE_UNTIMED;
   g->num_pass = 0;
-  g->wTime = 300;
-  g->wInByo = 0;
   g->gtitle = NULL;
   g->gevent = NULL;
   g->GoGame = NULL;
   g->Teach = 0;
   g->Teach2 = 0;
-  g->Byo = 300;
-  g->ByoS = 25;
-  g->wByoStones = -1;
-  g->bTime = 300;
-  g->bInByo = 0;
-  g->bByoStones = -1;
+  g->ts.byotime = 300;
+  g->ts.byostones = 25;
+  g->white.timeleft = 300;
+  g->white.byostones = -1;
+  g->white.numbyo = 0;
+  g->black.timeleft = 300;
+  g->black.byostones = -1;
+  g->black.numbyo = 0;
   g->Ladder9 = 0;
   g->Ladder19 = 0;
   g->Tourn = 0;
@@ -309,20 +309,20 @@ void send_go_board_to(int g, int p)
   /*game_update_time(g);*/
   getcaps(garray[g].GoGame, &wc, &bc);
   if(parray[p].i_verbose) {
-    if(garray[g].bByoStones > 0) sprintf(bbuf, " B %d", garray[g].bByoStones);
-    if(garray[g].wByoStones > 0) sprintf(wbuf, " B %d", garray[g].wByoStones);
+    if(garray[g].black.byostones > 0) sprintf(bbuf, " B %d", garray[g].black.byostones);
+    if(garray[g].white.byostones > 0) sprintf(wbuf, " B %d", garray[g].white.byostones);
     printboard(garray[g].GoGame, statstring);
     count = movenum(garray[g].GoGame);
     if(count > 0) listmove(garray[g].GoGame, count, buf);
     pcn_out(p, CODE_CR1|CODE_OBSERVE, FORMAT_GAME_d_I_s_ss_VS_s_ss_n,
                 /*SendCode(p, CODE_BEEP),*/
 		g + 1,
-		parray[garray[g].white].pname,
-		parray[garray[g].white].srank,
-                parray[garray[g].white].rated ? "*" : " ",
-		parray[garray[g].black].pname,
-		parray[garray[g].black].srank,
-                parray[garray[g].black].rated ? "*" : " ");
+		parray[garray[g].white.pnum].pname,
+		parray[garray[g].white.pnum].srank,
+                parray[garray[g].white.pnum].rated ? "*" : " ",
+		parray[garray[g].black.pnum].pname,
+		parray[garray[g].black.pnum].srank,
+                parray[garray[g].black.pnum].rated ? "*" : " ");
     for(yy=0; yy<(garray[g].GoGame->height) + 2; yy++){
       if(yy == 0) 
         pcn_out(p, CODE_OBSERVE, FORMAT_s_H_CAP_d_KOMI_fn, 
@@ -335,9 +335,9 @@ void send_go_board_to(int g, int p)
       else if(yy==2)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_CAPTURED_BY_O_dn, statstring[yy], bc);
       else if((yy==4) && (garray[g].GoGame->height > 3))
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn, statstring[yy], hms(garray[g].wTime, 1, 1, 0), (garray[g].wByoStones > 0) ? wbuf : "");
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn, statstring[yy], hms(garray[g].white.timeleft, 1, 1, 0), (garray[g].white.byostones > 0) ? wbuf : "");
       else if((yy==5) && (garray[g].GoGame->height > 4))
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn, statstring[yy], hms(garray[g].bTime, 1, 1, 0), (garray[g].bByoStones > 0) ? bbuf : "");
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn, statstring[yy], hms(garray[g].black.timeleft, 1, 1, 0), (garray[g].black.byostones > 0) ? bbuf : "");
       else if((yy==7) && (garray[g].GoGame->height > 6))
 	if(count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_n, statstring[yy]);
@@ -373,19 +373,19 @@ void send_go_boards(int g, int players_only)
   listmove(garray[g].GoGame, movenum(garray[g].GoGame), buf); 
   getcaps(garray[g].GoGame, &wc, &bc);
 
-  bp = garray[g].black;
-  wp = garray[g].white;
+  bp = garray[g].black.pnum;
+  wp = garray[g].white.pnum;
   sprintf(outStr, "Game %d %s: %s (%d %d %d) vs %s (%d %d %d)\n",
         g + 1,
         "I",
         parray[wp].pname,
         bc,
-        garray[g].wTime,
-        garray[g].wByoStones,
+        garray[g].white.timeleft,
+        garray[g].white.byostones,
         parray[bp].pname,
         wc,
-        garray[g].bTime,
-        garray[g].bByoStones);
+        garray[g].black.timeleft,
+        garray[g].black.byostones);
 
   if((parray[wp].i_verbose) && (garray[g].Teach == 0)) 
     send_go_board_to(g, wp);
@@ -417,7 +417,7 @@ void send_go_boards(int g, int players_only)
   if(players_only) return;
 
   for (p = 0; p < parray_top; p++) {
-    if (!parray[p].slotstat.online) continue;
+    if (!parray[p].slotstat.is_online) continue;
     if (!player_is_observe(p, g)) continue;
     if (parray[p].game == g) continue;
     if(parray[p].i_verbose) send_go_board_to(g, p);
@@ -482,8 +482,8 @@ int FindOldGameFor(int p)
   if (p < 0)
     return -1;
   for (i = numOldGames - 1; i >= 0; i--) {
-    if (garray[oldGameArray[i]].old_white == p) return oldGameArray[i];
-    if (garray[oldGameArray[i]].old_black == p) return oldGameArray[i];
+    if (garray[oldGameArray[i]].white.old_num == p) return oldGameArray[i];
+    if (garray[oldGameArray[i]].black.old_num == p) return oldGameArray[i];
   }
   return -1;
 }
@@ -496,9 +496,9 @@ int RemoveOldGamesForPlayer(int p)
   g = FindOldGameFor(p);
   if (g < 0)
     return 0;
-  if (garray[g].old_white == p) garray[g].old_white = -1;
-  if (garray[g].old_black == p) garray[g].old_black = -1;
-  if (garray[g].old_white == -1 && garray[g].old_black == -1) {
+  if (garray[g].white.old_num == p) garray[g].white.old_num = -1;
+  if (garray[g].black.old_num == p) garray[g].black.old_num = -1;
+  if (garray[g].white.old_num == -1 && garray[g].black.old_num == -1) {
     RemoveOldGame(g);
   }
   return 0;
@@ -518,10 +518,10 @@ int ReallyRemoveOldGamesForPlayer(int p)
 
 int NewOldGame(int g)
 {
-  RemoveOldGamesForPlayer(garray[g].white);
-  RemoveOldGamesForPlayer(garray[g].black);
-  garray[g].old_white = garray[g].white;
-  garray[g].old_black = garray[g].black;
+  RemoveOldGamesForPlayer(garray[g].white.pnum);
+  RemoveOldGamesForPlayer(garray[g].black.pnum);
+  garray[g].white.old_num = garray[g].white.pnum;
+  garray[g].black.old_num = garray[g].black.pnum;
   garray[g].gstatus = GSTATUS_STORED;
   AddOldGame(g);
   return 0;
@@ -576,17 +576,17 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   if (!strcmp(attr, "timestart:")) {
     g->timeOfStart = atoi(value);
   } else if (!strcmp(attr, "timetype:")) {
-    g->time_type = atoi(value);
+    g->ts.time_type = atoi(value);
   } else if (!strcmp(attr, "rules:")) {
     g->rules = atoi(value);
   } else if (!strcmp(attr, "b_penalty:")) {
-    g->B_penalty = atoi(value);
+    g->black.penalty = atoi(value);
   } else if (!strcmp(attr, "b_over:")) {
-    g->num_Bovertime = atoi(value);
+    g->black.numbyo = atoi(value);
   } else if (!strcmp(attr, "w_penalty:")) {
-    g->W_penalty = atoi(value);
+    g->white.penalty = atoi(value);
   } else if (!strcmp(attr, "w_over:")) {
-    g->num_Wovertime = atoi(value);
+    g->white.numbyo = atoi(value);
   } else if (!strcmp(attr, "title:")) {
     g->gtitle = mystrdup(value);
   } else if (!strcmp(attr, "event:")) {
@@ -611,25 +611,25 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "tourn:")) {
     g->Tourn = atoi(value);
     if(g->Tourn == 1) {
-      parray[g->white].match_type = GAMETYPE_TNETGO;
-      parray[g->black].match_type = GAMETYPE_TNETGO;
+      parray[g->white.pnum].match_type = GAMETYPE_TNETGO;
+      parray[g->black.pnum].match_type = GAMETYPE_TNETGO;
     }
   } else if (!strcmp(attr, "w_time:")) {
-    g->wTime = atoi(value);
+    g->white.timeleft = atoi(value);
   } else if (!strcmp(attr, "b_time:")) {
-    g->bTime = atoi(value);
+    g->black.timeleft = atoi(value);
   } else if (!strcmp(attr, "byo:")) {
-    g->Byo = atoi(value);
+    g->ts.byotime = atoi(value);
   } else if (!strcmp(attr, "byos:")) {
-    g->ByoS = atoi(value);
+    g->ts.byostones = atoi(value);
   } else if (!strcmp(attr, "w_byo:")) {
-    g->wInByo = atoi(value);
+    g->white.numbyo = atoi(value);
   } else if (!strcmp(attr, "b_byo:")) {
-    g->bInByo = atoi(value);
+    g->black.numbyo = atoi(value);
   } else if (!strcmp(attr, "w_byostones:")) {
-    g->wByoStones = atoi(value);
+    g->white.byostones = atoi(value);
   } else if (!strcmp(attr, "b_byostones:")) {
-    g->bByoStones = atoi(value);
+    g->black.byostones = atoi(value);
   } else if (!strcmp(attr, "clockstopped:")) {
     g->clockStopped = atoi(value);
   } else if (!strcmp(attr, "rated:")) {
@@ -641,7 +641,7 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "type:")) {
     g->type = atoi(value);
   } else if (!strcmp(attr, "time_type:")) {
-    g->time_type = atoi(value);
+    g->ts.time_type = atoi(value);
   } else if (!strcmp(attr, "gotype:")) {
     g->gotype = atoi(value);
   } else if (!strcmp(attr, "numpass:")) {
@@ -689,13 +689,13 @@ int game_read(struct game *g, int wp, int bp)
   char *attr, *value;
   char line[MAX_GLINE_SIZE];
 
-  g->white = wp;
-  g->black = bp;
-  g->old_white = -1;
-  g->old_black = -1;
+  g->white.pnum = wp;
+  g->black.pnum = bp;
+  g->white.old_num = -1;
+  g->black.old_num = -1;
   /* g->gameNum = g; */
 
-  fp = xyfopen(FILENAME_GAMES_cs_s, "r", parray[wp].login, parray[bp].login);
+  fp = xyfopen(FILENAME_GAMES_ws_s, "r", parray[wp].login, parray[bp].login);
   if (!fp) {
     return -1;
   }
@@ -748,9 +748,9 @@ int game_read(struct game *g, int wp, int bp)
 int game_delete(int wp, int bp)
 {
 
-  xyunlink(FILENAME_GAMES_cs_s, parray[wp].login, parray[bp].login);
+  xyunlink(FILENAME_GAMES_bs_s, parray[wp].login, parray[bp].login);
   if(wp != bp) 
-  xyunlink(FILENAME_GAMES_cs_s, parray[bp].login, parray[wp].login);
+  xyunlink(FILENAME_GAMES_ws_s, parray[wp].login, parray[bp].login);
   return 0;
 }
 
@@ -763,12 +763,12 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   char *tmp;
 
   if (!fp) return -1;
-  wp = garray[g].white;
-  bp = garray[g].black;
+  wp = garray[g].white.pnum;
+  bp = garray[g].black.pnum;
 #ifdef PAIR
   if(paired(g)) {
-    owp = garray[garray[g].pairwith].white;
-    obp = garray[garray[g].pairwith].black;
+    owp = garray[garray[g].pairwith].white.pnum;
+    obp = garray[garray[g].pairwith].black.pnum;
   }
 #endif
   now = globClock;
@@ -802,19 +802,19 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   }
   fprintf(fp, "EV[%s]\n", IFNULL(garray[g].gevent, "none") );
   fprintf(fp, "RE[%s+%s]\n",
-     (garray[g].winner == garray[g].white ? "W" : "B"), resu);
+     (garray[g].winner == garray[g].white.pnum ? "W" : "B"), resu);
   fprintf(fp, "PW[%s]WR[%s%s]\n", 
                parray[wp].pname, 
-               parray[wp].slotstat.registered ? parray[wp].srank : "UR",
+               parray[wp].slotstat.is_registered ? parray[wp].srank : "UR",
                parray[wp].rated ? "*" : " ");
   fprintf(fp, "PB[%s]BR[%s%s]\n", 
                parray[bp].pname, 
-               parray[bp].slotstat.registered ? parray[bp].srank : "UR",
+               parray[bp].slotstat.is_registered ? parray[bp].srank : "UR",
                parray[bp].rated ? "*" : " ");
   fprintf(fp, "PC[%s: %s]\n", server_name, server_address);
   fprintf(fp, "DT[%s]\n", strDTtime(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g].GoGame->width,
-     (garray[g].Byo), garray[g].komi);
+     (garray[g].ts.byotime), garray[g].komi);
   if(Debug) Logit("garray[g].nmvinfos = %d", garray[g].nmvinfos);
   savegame(fp, garray[g].GoGame, garray[g].mvinfos, garray[g].nmvinfos);
 
@@ -845,12 +845,12 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   fprintf(fp, ")\n\n---\n");
   fclose(fp);
   if(!garray[g].Teach)
-    if(parray[garray[g].white].automail) {
+    if(parray[garray[g].white.pnum].automail) {
       sprintf(command, "%s -s \"%s\" %s < %s&", MAILPROGRAM,
           tmp + 1, parray[wp].email, filename() );
      system(command);
     }
-  if(parray[garray[g].black].automail) {
+  if(parray[garray[g].black.pnum].automail) {
     sprintf(command, "%s -s \"%s\" %s < %s&", MAILPROGRAM,
         tmp + 1, parray[bp].email, filename() );
     system(command);
@@ -864,35 +864,36 @@ int game_save(int g)
   FILE *fp;
   int wp, bp;
   
-  wp = garray[g].white;
-  bp = garray[g].black;
+  wp = garray[g].white.pnum;
+  bp = garray[g].black.pnum;
   
   if(movenum(garray[g].GoGame) < 3) return 1;
-  fp = xyfopen(FILENAME_GAMES_cs_s, "w",parray[wp].login,parray[bp].login);
+  fp = xyfopen(FILENAME_GAMES_ws_s, "w",parray[wp].login,parray[bp].login);
   if (!fp) {
     return -1;
   }
-  xylink(FILENAME_GAMES_cs_s, parray[bp].login,parray[wp].login);
+  /* Create link for easier stored game finding */
+  if (wp!=bp)
+    xylink(FILENAME_GAMES_bs_s, parray[wp].login,parray[bp].login);
+
   fprintf(fp, "Rules: %d\n", garray[g].rules);
-  fprintf(fp, "B_Penalty: %d\n", garray[g].B_penalty);
-  fprintf(fp, "B_Over: %d\n", garray[g].num_Bovertime);
-  fprintf(fp, "W_Penalty: %d\n", garray[g].W_penalty);
-  fprintf(fp, "W_Over: %d\n", garray[g].num_Wovertime);
+  fprintf(fp, "B_Penalty: %d\n", garray[g].black.penalty);
+  fprintf(fp, "W_Penalty: %d\n", garray[g].white.penalty);
   fprintf(fp, "Size: %d\n", (int) garray[g].GoGame->width);
   fprintf(fp, "TimeStart: %d\n", (int) garray[g].timeOfStart);
-  fprintf(fp, "W_Time: %d\n", garray[g].wTime);
-  fprintf(fp, "B_Time: %d\n", garray[g].bTime);
-  fprintf(fp, "Byo: %d\n", garray[g].Byo);
-  fprintf(fp, "ByoS: %d\n", garray[g].ByoS);
-  fprintf(fp, "W_Byo: %d\n", garray[g].wInByo);
-  fprintf(fp, "B_Byo: %d\n", garray[g].bInByo);
-  fprintf(fp, "W_ByoStones: %d\n", garray[g].wByoStones);
-  fprintf(fp, "B_ByoStones: %d\n", garray[g].bByoStones);
+  fprintf(fp, "W_Time: %d\n", garray[g].white.timeleft);
+  fprintf(fp, "B_Time: %d\n", garray[g].black.timeleft);
+  fprintf(fp, "Byo: %d\n", garray[g].ts.byotime);
+  fprintf(fp, "ByoS: %d\n", garray[g].ts.byostones);
+  fprintf(fp, "W_Byo: %d\n", garray[g].white.numbyo);
+  fprintf(fp, "B_Byo: %d\n", garray[g].black.numbyo);
+  fprintf(fp, "W_ByoStones: %d\n", garray[g].white.byostones);
+  fprintf(fp, "B_ByoStones: %d\n", garray[g].black.byostones);
   fprintf(fp, "ClockStopped: %d\n", garray[g].clockStopped);
   fprintf(fp, "Rated: %d\n", garray[g].rated);
   fprintf(fp, "Private: %d\n", garray[g].Private);
   fprintf(fp, "Type: %d\n", garray[g].type);
-  fprintf(fp, "TimeType: %d\n", garray[g].time_type);
+  fprintf(fp, "TimeType: %d\n", garray[g].ts.time_type);
   fprintf(fp, "GoType: %d\n", garray[g].gotype);
   fprintf(fp, "NumPass: %d\n", garray[g].num_pass);
   fprintf(fp, "Komi: %.1f\n", garray[g].komi);
@@ -913,21 +914,20 @@ int game_save(int g)
   savegame(fp, garray[g].GoGame,NULL,0);
   savekib(fp, &garray[g]);
   fclose(fp);
-  /* Create link for easier stored game finding AvK: handled after xyfopen*/
   return 0;
 }
 
-int write_g_out(int g, FILE *fp, int maxlines, int isDraw, char *fdate)
+int write_g_out(int g, FILE *fp, int maxlines, char *fdate)
 {
   int wp, bp;
   char wrnk[6], brnk[6];
   char resu[10];
 
   if(!fp) return 0;
-  wp = garray[g].white;
-  bp = garray[g].black;
+  wp = garray[g].white.pnum;
+  bp = garray[g].black.pnum;
 
-  if ((!parray[wp].slotstat.registered) || (!parray[bp].slotstat.registered)) {
+  if ((!parray[wp].slotstat.is_registered) || (!parray[bp].slotstat.is_registered)) {
     fclose(fp);
     return 0;
     }
@@ -939,16 +939,16 @@ int write_g_out(int g, FILE *fp, int maxlines, int isDraw, char *fdate)
   else if(garray[g].gresult == -1.0) sprintf(resu, "Time");
   else sprintf(resu, "%.1f", garray[g].gresult);
   fprintf(fp, "%-10s [%s](%s) : %-10s [%s](%s) H %d K %.1f %dx%d %s+%s %s\n",
-    (garray[g].winner == garray[g].white ? parray[wp].pname : parray[bp].pname),
-    (garray[g].winner == garray[g].white ? wrnk : brnk),
-    (garray[g].winner == garray[g].white ? "W" : "B"),
-    (garray[g].winner == garray[g].white ? parray[bp].pname : parray[wp].pname),
-    (garray[g].winner == garray[g].white ? brnk : wrnk),
-    (garray[g].winner == garray[g].white ? "B" : "W"),
+    (garray[g].winner == garray[g].white.pnum ? parray[wp].pname : parray[bp].pname),
+    (garray[g].winner == garray[g].white.pnum ? wrnk : brnk),
+    (garray[g].winner == garray[g].white.pnum ? "W" : "B"),
+    (garray[g].winner == garray[g].white.pnum ? parray[bp].pname : parray[wp].pname),
+    (garray[g].winner == garray[g].white.pnum ? brnk : wrnk),
+    (garray[g].winner == garray[g].white.pnum ? "B" : "W"),
      garray[g].GoGame->handicap,
      garray[g].komi,
      garray[g].GoGame->width, garray[g].GoGame->width,
-    (garray[g].winner == garray[g].white ? "W" : "B"),
+    (garray[g].winner == garray[g].white.pnum ? "W" : "B"),
      resu, fdate);
   fclose(fp);
     /* AvK: sorry, this is ugly ... */
@@ -956,12 +956,10 @@ int write_g_out(int g, FILE *fp, int maxlines, int isDraw, char *fdate)
   return 1;
 }
 
-int pgames(int p, char *fname)
+int pgames(int p, FILE *fp)
 {
-  FILE *fp;
   char line[1000];
   
-  fp = xfopen(fname, "r");
   if (!fp) {
     return COM_OK;
   }
@@ -974,7 +972,7 @@ int pgames(int p, char *fname)
   return COM_OK;
 }
 
-void game_write_complete(int g, int isDraw, twodstring statstring)
+void game_write_complete(int g, twodstring statstring)
 {
   char fdate[40];
   int wp, bp;
@@ -982,45 +980,43 @@ void game_write_complete(int g, int isDraw, twodstring statstring)
   char wname[sizeof parray[0].pname], bname[sizeof parray[0].pname];
   FILE *fp;
 
-  wp = garray[g].white;
-  bp = garray[g].black;
+  wp = garray[g].white.pnum;
+  bp = garray[g].black.pnum;
   strcpy(wname, parray[wp].pname);
   strcpy(bname, parray[bp].pname);
 
   stolower(wname);
   stolower(bname);
   sprintf(fdate, strtime_file((time_t *) &now));
-  fp=xyfopen(FILENAME_PLAYER_GAMES_s, "w", wname);
-  write_g_out(g, fp, 23, isDraw, fdate);
+  fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
+  write_g_out(g, fp, 23, fdate);
   if(wp != bp) {
-    fp=xyfopen(FILENAME_PLAYER_GAMES_s, "w", bname);
-    write_g_out(g, fp, 23, isDraw, fdate);
+    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
+    write_g_out(g, fp, 23, fdate);
   }
   if ((garray[g].rated)
-     && (parray[wp].slotstat.registered)
-     && (parray[bp].slotstat.registered)
+     && (parray[wp].slotstat.is_registered)
+     && (parray[bp].slotstat.is_registered)
      && (garray[g].Teach != 1)
 #ifdef PAIR
      && (!paired(g))
 #endif
      && (movenum(garray[g].GoGame) >= 20)
      && (garray[g].GoGame->width == 19)) {
-    fp=xyfopen(FILENAME_PLAYER_GAMES_s, "w", wname);
-    write_g_out(g, fp, 23, isDraw, fdate);
-    fp=xyfopen(FILENAME_PLAYER_GAMES_s, "w", bname);
-    write_g_out(g, fp, 23, isDraw, fdate);
+    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
+    write_g_out(g, fp, 23, fdate);
+    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
+    write_g_out(g, fp, 23, fdate);
   }
-  fp=xyfopen(FILENAME_GAMES_s, "w", fdate );
-  write_g_out(g, fp, 250, isDraw, fdate);
-  if(garray[g].winner == garray[g].white)
-    fp=xyfopen(FILENAME_CGAMES_cs_s_s, "w", wname, bname, fdate);
-  else
-    fp=xyfopen(FILENAME_CGAMES_cs_s_s, "w", bname, wname, fdate);
+  fp=xyfopen(FILENAME_RESULTS, "a" );
+  write_g_out(g, fp, 250, fdate);
 
+  fp=xyfopen(FILENAME_CGAMES_ws_s_s, "w", wname, bname, fdate);
   game_save_complete(g, fp, statstring);
+  xylink(FILENAME_CGAMES_bs_s_s, wname, bname, fdate);
 
-  if ((!parray[wp].slotstat.registered)
-     || (!parray[bp].slotstat.registered)
+  if ((!parray[wp].slotstat.is_registered)
+     || (!parray[bp].slotstat.is_registered)
      || (!garray[g].rated)
      || (garray[g].Teach == 1)
 #ifdef PAIR
@@ -1034,11 +1030,11 @@ void game_write_complete(int g, int isDraw, twodstring statstring)
     return;
   }
   fprintf(fp, "%s -- %s -- %d %.1f %s %s\n", 
-               parray[garray[g].white].pname,
-               parray[garray[g].black].pname,
+               parray[garray[g].white.pnum].pname,
+               parray[garray[g].black.pnum].pname,
                garray[g].GoGame->handicap,
                garray[g].komi,
-               (garray[g].winner == garray[g].white ? "W" : "B"),
+               (garray[g].winner == garray[g].white.pnum ? "W" : "B"),
                ResultsDate(fdate));
   fclose(fp);
 #ifdef NNGSRATED
@@ -1056,11 +1052,11 @@ void game_write_complete(int g, int isDraw, twodstring statstring)
     }
     else
     {
-      if (rdbm_fetch(rdb, parray[garray[g].white].pname, &rp))
+      if (rdbm_fetch(rdb, parray[garray[g].white.pnum].pname, &rp))
 	strcpy(wrank, rp.rank);
       else
 	strcpy(wrank, "-");
-      if (rdbm_fetch(rdb, parray[garray[g].black].pname, &rp))
+      if (rdbm_fetch(rdb, parray[garray[g].black.pnum].pname, &rp))
 	strcpy(brank, rp.rank);
       else
 	strcpy(brank, "-");
@@ -1070,13 +1066,13 @@ void game_write_complete(int g, int isDraw, twodstring statstring)
     fp = xyfopen(FILENAME_NRESULTS, "a");
     if (!fp) { return; }
     fprintf(fp, "\"%s\" %s \"%s\" %s %u %.1f %c %02u-%02u-%02u\n",
-	    parray[garray[g].white].pname,
+	    parray[garray[g].white.pnum].pname,
 	    wrank,
-	    parray[garray[g].black].pname,
+	    parray[garray[g].black.pnum].pname,
 	    brank,
 	    garray[g].GoGame->handicap,
 	    garray[g].komi,
-	    (garray[g].winner == garray[g]. white ? 'W' : 'B'),
+	    (garray[g].winner == garray[g]. white.pnum ? 'W' : 'B'),
 	    tp->tm_year + 1900, tp->tm_mon + 1, tp->tm_mday);
     fclose(fp);
   }

@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _NNGSMAIN_H_
-#define _NNGSMAIN_H_
+#ifndef NNGSMAIN_H
+#define NNGSMAIN_H
 
 /* Heartbeat functions occur approx in this time, including checking for
  * new connections and decrementing timeleft counters. */
@@ -31,8 +31,8 @@
 
 /* Number of seconds that an idle connection can stand at login or password
  * prompt. */
-#define MAX_LOGIN_IDLE 120
-#define MAX_IDLE 5400
+#define MAX_LOGIN_IDLE (2*60)
+#define MAX_IDLE (90*60)
 #define NUM_LADDERS 2
 #define LADDERSIZE 500 
 
@@ -73,4 +73,6 @@ extern int completed_games;
 extern int num_logins, num_logouts, new_players;
 extern char orig_command[1024];
 
-#endif /* _NNGSMAIN_H_ */
+void main_exit (int code);
+
+#endif /* NNGSMAIN_H */

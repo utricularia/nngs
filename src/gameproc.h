@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _GAMEPROC_H_
-#define _GAMEPROC_H_
+#ifndef GAMEPROC_H
+#define GAMEPROC_H
 
 #include "command.h"
 
@@ -81,4 +81,4 @@ extern int com_pteach(int, struct parameter *);
 
 extern int com_moretime(int, struct parameter *);
 
-#endif /* _GAMEPROC_H */
+#endif /* GAMEPROC_H */

@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -35,6 +36,10 @@
 
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
 #endif
 
 #ifdef HAVE_NETINET_IN_H
@@ -80,6 +85,11 @@
 #include "command.h"
 #include "utils.h"
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #define UNUSED(_p) (void)(_p)
 /* [PEM]: We have to try this... */
 #define WRITE_AT_ONCE 0
@@ -105,11 +115,6 @@
 #define TIME1(S, L)
 #endif
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 /**********************************************************************
  * Data types
  **********************************************************************/
@@ -121,12 +126,12 @@ enum netstate {
 
 struct netstruct {
   enum netstate  state;
-  unsigned int fromHost; /* IP-adress in network byte order */
+  unsigned int fromHost; /* IP-adress in host byte order */
   int telnetState;
   
   /* Input buffering */
-  int  inEnd; /* The amount of data in the inBuf. */
-  int  cmdEnd;  /* The end of the first command in the buffer. */
+  unsigned  inEnd; /* The amount of data in the inBuf. */
+  unsigned  cmdEnd;  /* The end of the first command in the buffer. */
   char  *inParseDest, *inParseSrc;
   int  inFull, inThrottled;
   unsigned char  inBuf[MAX_STRING_LENGTH];
@@ -358,6 +363,7 @@ void  net_select(int timeout)
       case EINVAL:
 	Logit("select returned EINVAL status ---");
 	abort();
+      case EPIPE:
       default:
 	Logit("Select: error(%d):%s ---", errno, strerror(errno) );
 	continue;
@@ -376,7 +382,6 @@ void  net_select(int timeout)
       TIME0;
       if (process_heartbeat(&fd) == COM_LOGOUT)  {
 	process_disconnection(fd);
-	net_close(fd);
 	FD_CLR(fd, &nread);
 	FD_CLR(fd, &nwrite);
       }
@@ -387,14 +392,12 @@ void  net_select(int timeout)
 	buglog(("%3d: Command \"%s\" left in buf", i, netarray[fd].inBuf));	
 	if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
 	  process_disconnection(fd);
-	  net_close(fd);
 	  FD_CLR(fd, &nread);
 	  FD_CLR(fd, &nwrite);
 	} else  {
 	  if (clearCmd(fd) == -1)  {
 	    buglog(("%3d: Closing", fd));
 	    process_disconnection(fd);
-	    net_close(fd);
 	    FD_CLR(fd, &nread);
 	    FD_CLR(fd, &nwrite);
 	  } else  {
@@ -424,27 +427,23 @@ void  net_select(int timeout)
 	    /* New incoming data. */
 	    buglog(("%d: Ready for read", fd));
 	    if (netarray[fd].state == netState_connected)  {
-	      /* assert(netarray[fd].state == netState_connected); Avk: Huh ? */
 	      assert(!netarray[fd].inFull);
 	      if (serviceRead(fd) == -1)  {
 		buglog(("%d: Closed", fd));
 	        netarray[fd].state = netState_disconnected;
 		process_disconnection(fd);
-		net_close(fd);
 		FD_CLR(fd, &nread);
 		FD_CLR(fd, &nwrite);
 	      } else  {
 		if (netarray[fd].cmdEnd)  {
 		  if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
 		    process_disconnection(fd);
-		    net_close(fd);
 		    FD_CLR(fd, &nread);
 		    FD_CLR(fd, &nwrite);
 		  } else  {
 		    if (clearCmd(fd) == -1)  {
 		      buglog(("%3d: Closing", fd));
 		      process_disconnection(fd);
-		      net_close(fd);
 		      FD_CLR(fd, &nread);
 		      FD_CLR(fd, &nwrite);
 		    } else  {
@@ -476,7 +475,11 @@ void  net_select(int timeout)
 	/* No new connection, nothing to read, try to flush output. */
 	if ((netarray[fd].state == netState_connected) &&
 	    (netarray[fd].outEnd > 0))
-	  serviceWrite(fd);
+	  if (serviceWrite(fd) < 0) {
+	    process_disconnection(fd);
+	    FD_CLR(fd, &nread);
+	    FD_CLR(fd, &nwrite);
+	  }
       }
     }
   }
@@ -499,7 +502,7 @@ static int  newConnection(int listenFd)  {
   set_nonblocking(newFd);
 
   initConn(newFd);
-  netarray[newFd].fromHost = htonl(addr.sin_addr.s_addr);
+  netarray[newFd].fromHost = ntohl(addr.sin_addr.s_addr);
 
   /* Logit("New connection on fd %d ---", newFd); */
   return newFd;
@@ -549,9 +552,9 @@ static int  serviceWrite(int fd)  {
   if (writeAmt < 0) {
     switch (errno) {
     case EAGAIN:
-    case EPIPE:
       writeAmt = 0;
       break;
+    case EPIPE:
     default:
       return -1;
     }
@@ -591,7 +594,6 @@ static int  serviceWrite(int fd)  {
 
 static int  clearCmd(int fd)  {
   struct netstruct  *conn = &netarray[fd];
-  int  i;
 
   if (conn->state != netState_connected)
     return 0;
@@ -604,6 +606,7 @@ static int  clearCmd(int fd)  {
     conn->inEnd = 0;
     conn->cmdEnd = 0;
   } else  {
+    int  i;
     for (i = conn->cmdEnd;  i < conn->inEnd;  ++i)  {
       conn->inBuf[i - conn->cmdEnd] = conn->inBuf[i];
     }
@@ -634,13 +637,13 @@ static int  clearCmd(int fd)  {
 
 static int  checkForCmd(int fd)  {
   struct netstruct  *conn = &netarray[fd];
-  int  i;
+  unsigned idx;
   unsigned char  c;
   unsigned char  *dest, *src;
 
   dest = conn->inParseDest;
   src = conn->inParseSrc;
-  for (i = src - conn->inBuf;  i < conn->inEnd;  ++i, ++src)  {
+  for (idx = src - conn->inBuf;  idx < conn->inEnd;  ++idx, ++src)  {
     c = (unsigned char)*src;
     switch (conn->telnetState) {
     case 0:                     /* Haven't skipped over any control chars or
@@ -649,14 +652,14 @@ static int  checkForCmd(int fd)  {
         conn->telnetState = 1;
       } else if ((c == '\n') || (c == '\r') || ( c == '\004')) {
 	*dest = '\0';
-	++i;
-	while ((i < conn->inEnd) &&
-	       ((conn->inBuf[i] == '\n') || (conn->inBuf[i] == '\r')))
-	  ++i;
-	conn->cmdEnd = i;
+	++idx;
+	while ((idx < conn->inEnd) &&
+	       ((conn->inBuf[idx] == '\n') || (conn->inBuf[idx] == '\r')))
+	  ++idx;
+	conn->cmdEnd = idx;
 	conn->telnetState = 0;
-	conn->inParseSrc = conn->inBuf + i;
-	conn->inParseDest = conn->inBuf + i;
+	conn->inParseSrc = conn->inBuf + idx;
+	conn->inParseDest = conn->inBuf + idx;
 	return 0;
       } else if (!isprint(c) && c <= 127) {/* no idea what this means */
         conn->telnetState = 0;

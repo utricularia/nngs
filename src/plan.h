@@ -1,5 +1,5 @@
-#ifndef _PLAN_H_
-#define _PLAN_H_
+#ifndef PLAN_H
+#define PLAN_H
 
 /* plan.h
 ** Per-Erik Martin (pem@nexus.se) 1999-05-08
@@ -64,4 +64,4 @@ extern void plan_clear(struct plan *p);
 */
 extern void plan_free(struct plan *p);
 
-#endif /* _PLAN_H_ */
+#endif /* PLAN_H */

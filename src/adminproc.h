@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _ADMINPROC_H
-#define _ADMINPROC_H
+#ifndef ADMINPROC_H
+#define ADMINPROC_H
 
 #include "command.h"
 
@@ -46,9 +46,9 @@ extern int com_asethandle(int, struct parameter*);
 extern int com_asetadmin(int, struct parameter*);
 extern int com_asetwater(int, struct parameter*);
 extern int server_shutdown(int, char *);
-extern int com_checkIP(int, struct parameter*);
-extern int com_checkPLAYER(int, struct parameter*);
-extern int com_checkSOCKET(int, struct parameter*);
+extern int com_chk_ip(int, struct parameter*);
+extern int com_chk_player(int, struct parameter*);
+extern int com_chk_socket(int, struct parameter*);
 extern int com_remplayer(int, struct parameter*);
 extern int com_raisedead(int, struct parameter*);
 extern int strcmpwild(char *, char *);
@@ -66,4 +66,5 @@ extern int com_adrop(int, struct parameter*);
 extern int com_noshout(int, struct parameter*);
 extern int com_rating_recalc(int, struct parameter*);
 extern int Show_Admin_Command(int p, const char *comm, const char *command);
-#endif /* _ADMINPROC_H */
+extern int com_aban(int p, struct parameter* param);
+#endif /* ADMINPROC_H */

@@ -30,10 +30,9 @@
 #include <string.h>
 #endif
 
-#ifndef DEBUG_PLAYER_SLOT
-#define DEBUG_PLAYER_SLOT 0
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
 #endif
-
 
 #include "nngsconfig.h"
 #include "nngsmain.h"
@@ -69,10 +68,13 @@ static int parray_index_fd[CONNECTION_COUNT];
 int sort_alpha[COUNTOF(parray)];
 int sort_ladder9[COUNTOF(parray)];
 int sort_ladder19[COUNTOF(parray)];
+static void player_swap(int p0, int p1, int *sort_array);
 
 static int player_get_empty_slot(void);
-static int player_free(int p);
-static int player_zero(int p, int starting);
+static void player_free(int p);
+static void player_zero(int p);
+static void player_write(int p);
+static void player_swapslots(int p0, int p1);
 
 char * player_dumpslot(int p)
 {
@@ -88,11 +90,11 @@ char * player_dumpslot(int p)
   diff = (int) parray[p].slotstat.timestamp - globClock;
 
   idx= sprintf(buff,"%3d/%2d: ", p, parray[p].socket);
-  buff[idx++] = (parray[p].slotstat.inuse) ? 'u' : '-' ;
-  buff[idx++] = (parray[p].slotstat.valid) ? 'v' : '-' ;
-  buff[idx++] = (parray[p].slotstat.dirty) ? 'd' : '-' ;
-  buff[idx++] = (parray[p].slotstat.connected) ? 'c' : '-' ;
-  buff[idx++] = (parray[p].slotstat.online) ? 'o' : '-' ;
+  buff[idx++] = (parray[p].slotstat.is_inuse) ? 'u' : '-' ;
+  buff[idx++] = (parray[p].slotstat.is_valid) ? 'v' : '-' ;
+  buff[idx++] = (parray[p].slotstat.is_dirty) ? 'd' : '-' ;
+  buff[idx++] = (parray[p].slotstat.is_connected) ? 'c' : '-' ;
+  buff[idx++] = (parray[p].slotstat.is_online) ? 'o' : '-' ;
   idx+= sprintf(buff+idx," %u", (unsigned) parray[p].slotstat.fixcount);
   idx+= sprintf(buff+idx," [%+d]", diff);
 
@@ -104,7 +106,7 @@ char * player_dumpslot(int p)
 void player_fix(int p)
 {
   if(p < 0) return;
-  parray[p].slotstat.inuse = 1;
+  parray[p].slotstat.is_inuse = 1;
   parray[p].slotstat.timestamp = globClock;
   parray[p].slotstat.fixcount += 1;
   if(!parray[p].slotstat.fixcount) {
@@ -120,21 +122,22 @@ void player_forget(int p)
   else {
     Logit("Slot %s: Fixcount zero", player_dumpslot(p));
   }
-  if(!parray[p].slotstat.fixcount && !parray[p].slotstat.registered)
+  if(!parray[p].slotstat.fixcount && !parray[p].slotstat.is_registered)
     player_clear(p);
 }
 
 void player_dirty(int p)
 {
   if(p < 0) return;
-  if(parray[p].slotstat.valid && parray[p].slotstat.inuse) {
-    parray[p].slotstat.dirty = 1;
+  if (parray[p].slotstat.is_valid) {
+    parray[p].slotstat.is_dirty = 1;
     parray[p].slotstat.timestamp = globClock;
     }
   else {
     Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
-    parray[p].slotstat.valid = 0;
-    parray[p].slotstat.inuse = 0;
+    parray[p].slotstat.is_dirty = 0; /* Avoid warning more than once */
+    parray[p].slotstat.is_valid = 0;
+    parray[p].slotstat.is_inuse = 0;
   }
 }
 
@@ -144,71 +147,88 @@ static int player_get_empty_slot(void)
   int best_v = -1; /* Valid slot available */
   int best_i = -1; /* invalid slot available */
   int best_d = -1; /* Dirty slot available */
-  int idx;
+  int idx= 0;
 
+  if (!parray_top) parray[idx].slotstat.timestamp = startuptime;
 #define LRU_COMPARE(old,new) (old <0 \
 	|| parray[old].slotstat.timestamp > parray[new].slotstat.timestamp)
 
   for (idx = 0; idx < parray_top; idx++) {
-    if(parray[idx].slotstat.fixcount) continue;
-    if(!parray[idx].slotstat.inuse) {
-      if(best_e < 0) best_e=idx; }
-    else if(parray[idx].slotstat.dirty) {
-      if(LRU_COMPARE(best_d,idx)) best_d=idx; }
-    else if(parray[idx].slotstat.valid) {
-      if(LRU_COMPARE(best_v,idx)) best_v=idx; }
+    if (parray[idx].slotstat.fixcount) continue;
+    if (parray[idx].slotstat.is_connected) continue;
+    if (!parray[idx].slotstat.is_inuse) {
+      if (best_e < 0) best_e=idx; }
+    else if (parray[idx].slotstat.is_dirty) {
+      if (LRU_COMPARE(best_d,idx)) best_d=idx; }
+    else if (parray[idx].slotstat.is_valid) {
+      if (LRU_COMPARE(best_v,idx)) best_v=idx; }
     else {
-      if(LRU_COMPARE(best_i,idx)) best_i=idx; }
+      if (LRU_COMPARE(best_i,idx)) best_i=idx; }
   }
 #undef LRU_COMPARE
 
-  idx=best_e;
-  if(idx < 0) idx = best_i;
-  if(idx < 0) idx = best_v;
-  if(idx < 0) idx = best_d;
-  if(idx < 0) idx = parray_top;
+  idx=best_e;			/* this one is empty */
+  if (idx < 0) idx = best_i;	/* this one is invalid */
+  if (idx < 0) idx = best_v;	/* this one is valid */
+  if (idx < 0) idx = best_d;	/* this one is dirty */
+  if (idx < 0) idx = parray_top;	/* allocate from top */
 #if DEBUG_PLAYER_SLOT
-  Logit("Empty_slot: e=%d,i=%d,v=%d,d=%d,t=%d -->> %d"
+  Logit("Empty_slot: {e=%d i=%d v=%d d=%d t=%d} -->> %d"
   , best_e,best_i,best_v,best_d,parray_top,idx);
 #endif
 
-  if(idx == best_d) {
+  if (idx == best_d) {
 #if DEBUG_PLAYER_SLOT
-    Logit("Slot %s: Forced out", player_dumpslot(idx));
+    Logit("Slot %s: Flushed", player_dumpslot(idx));
 #endif
     player_save(best_d);
   }
 
-  if(idx < parray_top && parray[idx].slotstat.valid && parray_top < COUNTOF(parray)) {
+  if (idx < parray_top && parray[idx].slotstat.is_valid && parray_top < COUNTOF(parray)) {
 #if DEBUG_PLAYER_SLOT
     Logit("Slot %s: moved to %d", player_dumpslot(idx), parray_top);
 #endif
-    parray[parray_top] = parray[idx] ;
+    player_swapslots(idx, parray_top);
     parray_top++;
+    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globClock;
   }
-  if(idx == parray_top && parray_top < COUNTOF(parray)) {
+  if (idx == parray_top && parray_top < COUNTOF(parray)) {
     parray_top++;
+    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globClock;
 #if DEBUG_PLAYER_SLOT
     Logit("Slot %s: top <- %d", player_dumpslot(idx), parray_top);
 #endif
   }
-  parray[idx].pstatus = PSTATUS_EMPTY;
-  parray[idx].slotstat.inuse = 1;
-  parray[idx].slotstat.valid = 0;
-  parray[idx].slotstat.dirty = 0;
-  parray[idx].slotstat.online = 0;
-  parray[idx].slotstat.connected = 0;
+  player_clear(idx);
+  parray[idx].slotstat.is_inuse = 0;
+  parray[idx].slotstat.is_valid = 0;
   parray[idx].slotstat.timestamp = globClock;
   return idx;
 }
 
+static void player_swapslots(int p0, int p1)
+{
+int fd0,fd1;
+char temp[sizeof parray[0]];
+
+  fd0 = parray[p0].socket;
+  fd1 = parray[p1].socket;
+  if (fd0 >= 0) parray_index_fd[fd0] = p1;
+  if (fd1 >= 0) parray_index_fd[fd1] = p0;
+
+  memcpy(temp,&parray[p0], sizeof parray[p0]);
+  memcpy(&parray[p0], &parray[p1], sizeof parray[p0]);
+  memcpy(&parray[p1], temp , sizeof parray[p0]);
+  player_swap(p0, p1, sort_alpha);
+  player_swap(p0, p1, sort_ladder9);
+  player_swap(p0, p1, sort_ladder19);
+}
 void player_array_init(void)
 {
   int i;
 
-  for (i = 0; i < COUNTOF(parray); i++) {  /* Added {}, bug number 476890 */
-    player_zero(i, 1);                    /* Found by pem, squished by geek */
-    parray[i].pstatus = PSTATUS_EMPTY;
+  for (i = 0; i < COUNTOF(parray); i++) {
+    player_zero(i);
   }
 
   for (i = 0; i < COUNTOF(parray_index_fd); i++) {
@@ -231,11 +251,11 @@ int player_cmp(int p1, int p2, int sorttype)
   const struct player *LP1, *LP2;
   int a, b;
 
-  if (!parray[p1].slotstat.online) {
-    if (!parray[p2].slotstat.online) return 0;
+  if (!parray[p1].slotstat.is_online) {
+    if (!parray[p2].slotstat.is_online) return 0;
     else return -1;
   }
-  if (!parray[p2].slotstat.online) return 1;
+  if (!parray[p2].slotstat.is_online) return 1;
 
   switch (sorttype) {
   case SORT_LADDER9:
@@ -310,18 +330,18 @@ int player_new(void)
   int slot ;
 
   slot = player_get_empty_slot();
-  player_zero(slot, 0);
+  if (slot < 0) return slot;
   parray[slot].pstatus = PSTATUS_NEW;
-  parray[slot].slotstat.inuse = 1;
+  parray[slot].slotstat.is_inuse = 1;
   parray[slot].slotstat.fixcount = 1;
   return slot;
 }
 
 
-static int player_zero(int p, int starting)
+static void player_zero(int p)
 {
-  int i;
 
+  memset(&parray[p], 0, sizeof parray[p]);
   parray[p].pstatus = PSTATUS_EMPTY;
   parray[p].pname[0] = '\0';
   parray[p].login[0] = '\0';
@@ -331,7 +351,7 @@ static int player_zero(int p, int starting)
   parray[p].passwd[0] = '\0';
   parray[p].RegDate[0] = '\0';
   parray[p].socket = -1;
-  parray[p].slotstat.registered = 0;
+  parray[p].slotstat.is_registered = 0;
   parray[p].water = 3;
   parray[p].busy[0]='\0';
   parray[p].d_height = 24;
@@ -369,8 +389,6 @@ static int player_zero(int p, int starting)
   parray[p].outgoing = 0;
   parray[p].incoming = 0;
   parray[p].adminLevel = ADMIN_GUEST;
-  /* parray[p].num_plan = 0; */
-  /* parray[p].num_censor = 0; */
   parray[p].num_logons = 0;
   parray[p].nochannels = 0;
   parray[p].num_observe = 0;
@@ -391,8 +409,6 @@ static int player_zero(int p, int starting)
   parray[p].orating = 0;
   parray[p].silent_login = 0;
   parray[p].language = 0;
-  parray[p].alias_list = alias_init();
-  assert(parray[p].alias_list != NULL);
   parray[p].opponent = -1;
   parray[p].last_opponent = -1;
   do_copy(parray[p].ranked, "NR", sizeof parray[p].ranked);
@@ -404,95 +420,73 @@ static int player_zero(int p, int starting)
   parray[p].gonum_white = 0;
   parray[p].gonum_black = 0;
 
-#if 1
+  parray[p].alias_list = alias_init();
+  assert(parray[p].alias_list != NULL);
+
   parray[p].plan_lines = plan_init();
-#else
-  for(i = 0; i < MAX_PLAN; i++) {
-    parray[p].planLines[i] = mystrdup("-");
-  }
-#endif
-
-#if 1
   parray[p].censor_list = censor_init();
-#else
-  for(i = 0; i < MAX_CENSOR; i++) {
-    parray[p].censorList[i] = mystrdup("-");
-  }
-#endif
 
-  if(!starting) {
-    for (i = 0; i < MAX_NCHANNELS; i++) channel_remove(i, p);
-  }
-  return 0;
+  return ;
 } 
 
 
-static int player_free(int p)
+static void player_free(int p)
 {
-  int i;
+  int ch;
 
-#if 1
-  plan_free(parray[p].plan_lines);
+  if (parray[p].plan_lines) plan_free(parray[p].plan_lines);
   parray[p].plan_lines = NULL;
-#else
-  for (i = 0; i < MAX_PLAN; i++) { 
-    if (parray[p].planLines[i])
-    {
-      free(parray[p].planLines[i]);
-      parray[p].planLines[i] = NULL;
-    }
-  }
-#endif
-#if 1
-  censor_free(parray[p].censor_list);
+
+  if (parray[p].censor_list) censor_free(parray[p].censor_list);
   parray[p].censor_list = NULL;
-#else
-  for (i = 0; i < MAX_CENSOR; i++) {
-    if (parray[p].censorList[i])
-    {
-      free(parray[p].censorList[i]);
-      parray[p].censorList[i] = NULL;
-    }
-  }
-#endif
-  alias_free(parray[p].alias_list);
+
+  if (parray[p].alias_list) alias_free(parray[p].alias_list);
   parray[p].alias_list = NULL;
-  for (i = 0; i < MAX_NCHANNELS; i++)
-    channel_remove(i, p);
-  return 0;
+
+  for (ch = 0; ch < MAX_NCHANNELS; ch++) channel_remove(ch, p);
+
+  return ;
 }
 
 
-int player_clear(int p)
+void player_clear(int p)
 {
   player_free(p);
-  player_zero(p, 1);
-  parray[p].pstatus = PSTATUS_EMPTY; /* PEM */
-  parray[p].slotstat.inuse = 0;
-  parray[p].slotstat.valid = 0;
-  parray[p].slotstat.connected = 0;
-  parray[p].slotstat.online = 0;
-  parray[p].slotstat.dirty = 0;
+  player_zero(p);
+  parray[p].pstatus = PSTATUS_EMPTY;
+  parray[p].slotstat.is_inuse = 0;
+  parray[p].slotstat.is_valid = 0;
+  parray[p].slotstat.is_connected = 0;
+  parray[p].slotstat.is_online = 0;
+  parray[p].slotstat.is_dirty = 0;
   parray[p].slotstat.fixcount = 0;
-  return 0;
+  parray[p].slotstat.is_registered = 0;
+  return ;
 }
 
 
-int player_disconnect(int p)
+void player_disconnect(int p)
 {
   int p1;
 
-  if(p < 0) return 0;
+  if(p < 0) return ;
+
+#if DEBUG_PLAYER_SLOT
+  Logit( "Disconnect %s: top=%d", player_dumpslot(p), parray_top);
+#endif
+
   player_decline_offers(p, -1, -1);
   player_withdraw_offers(p, -1, -1);
 
   /* [PEM]: Skip these loops if the p is empty or new. */
-  if (parray[p].slotstat.connected) {    
+  if (parray[p].slotstat.is_online) {    
     ReallyRemoveOldGamesForPlayer(p);
   }
+  player_resort();
+  player_save(p);
 
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].slotstat.connected) continue;
+    if (!parray[p1].slotstat.is_connected) continue;
     if (parray[p1].last_tell_from == p) parray[p1].last_tell_from = -1;
     if (parray[p1].last_tell == p) parray[p1].last_tell = -1;
     if (parray[p1].last_pzz == p) parray[p1].last_pzz = -1;
@@ -501,15 +495,11 @@ int player_disconnect(int p)
   for (p1 = 0; p1 < MAX_NCHANNELS; p1++)
     channel_remove(p1, p);
 
-  parray[p].slotstat.connected = 0;
-  parray[p].slotstat.online = 0;
+  parray[p].slotstat.is_connected = 0;
+  parray[p].slotstat.is_online = 0;
   parray[p].pstatus = PSTATUS_EMPTY;
   parray[p].socket = -1;
-#if DEBUG_PLAYER_SLOT
-  Logit( "Player_disconnect %s: top=%d", player_dumpslot(p), parray_top);
-#endif
-  player_resort();
-  return 0;
+  return ;
 }
 
 
@@ -562,9 +552,11 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     parray[p].automail = atoi(cp);
     cp = strtok(NULL, ":"); if(!cp) return 0;
     parray[p].adminLevel = atoi(cp);
+#if EXISTING_USERS_ARE_REGISTERED
 	/* Silently convert users to registered users ... */
     if(parray[p].adminLevel <= ADMIN_USER)
       parray[p].adminLevel = ADMIN_REGISTERED_USER;
+#endif
     if(parray[p].adminLevel >= ADMIN_ADMIN)
       channel_add(CHANNEL_ASHOUT, p);
     cp = strtok(NULL, ":"); if(!cp) return 0;
@@ -624,7 +616,6 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
   } else if (!strcasecmp(attr, "channel:")) {
     channel_add(atoi(value), p);
   } else if (!strcasecmp(attr, "num_plan:")) {
-#if 1
     for(i = atoi(value); i-- > 0; ) {
       fgets(tmp, sizeof tmp, fp);
       if (!(len = strlen(tmp))) {
@@ -634,22 +625,6 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
       tmp[len-1] = '\0';	/* Zap '\n' */
       plan_add(tmp, parray[p].plan_lines);
     }
-#else
-    parray[p].num_plan = atoi(value);
-    if (parray[p].num_plan < 0) parray[p].num_plan = 0;
-    if (parray[p].num_plan > 0) {
-      for (i = 0; i < parray[p].num_plan; i++) {
-        fgets(tmp, sizeof tmp, fp);
-        if (!(len = strlen(tmp))) {
-          Logit( "Error bad plan in file %s", fname);
-          continue; }
-        tmp[len - 1] = '\0';  /* Get rid of '\n' */
-        if (parray[p].planLines[i] != NULL)
-	  free(parray[p].planLines[i]);
-        parray[p].planLines[i] = mystrdup(tmp);
-      }
-    }
-#endif
   } else if (!strcasecmp(attr, "num_alias:")) {
     for(i = atoi(value); i-- > 0; ) {
       fgets(tmp, sizeof tmp, fp);
@@ -664,7 +639,6 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
       alias_add(tmp, tmp1, parray[p].alias_list);
     }
   } else if (!strcasecmp(attr, "num_censor:")) {
-#if 1
     for(i = atoi(value); i-- > 0; ) {
       fgets(tmp, sizeof tmp, fp);
       if (!(len = strlen(tmp))) {
@@ -673,23 +647,6 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
       tmp[len-1] = '\0';	/* Zap '\n' */
       censor_add(tmp, parray[p].censor_list);
     }
-#else
-    parray[p].num_censor = atoi(value);
-    if (parray[p].num_censor < 0) parray[p].num_censor = 0;
-    if (parray[p].num_censor > 0) {
-      for (i = 0; i < parray[p].num_censor; i++) {
-	fgets(tmp, sizeof tmp, fp);
-	if (!(len = strlen(tmp))) {
-	  Logit( "Error bad censor in file %s", fname);
-          continue;
-	}
-        tmp[len - 1] = '\0';	/* Get rid of '\n' */
-        if (parray[p].censorList[i] != NULL)
-          free(parray[p].censorList[i]);
-        parray[p].censorList[i] = mystrdup(tmp);
-      }
-    }
-#endif
   } else if (!strcasecmp(attr, "water:")) {
     parray[p].water = atoi(value);
     if(parray[p].water < 0) parray[p].water = 3;
@@ -787,30 +744,30 @@ int player_read(int p)
   ** Maybe later.
   */
   for (slot = 0; slot < parray_top; slot++) {
-    if(!parray[slot].slotstat.inuse) continue;
-    if(!parray[slot].slotstat.valid) continue;
+    if(!parray[slot].slotstat.is_inuse) continue;
+    if(!parray[slot].slotstat.is_valid) continue;
     if(slot == p) continue;
-    if(parray[slot].slotstat.dirty) player_save(slot);
+    if(parray[slot].slotstat.is_dirty) player_save(slot);
     if(strcmp(parray[slot].login, parray[p].login)) continue;
 #if DEBUG_PLAYER_SLOT
-    Logit("Slot %s forced out by %d", player_dumpslot(slot), p);
+    Logit("Slot %s shadowed by %d", player_dumpslot(slot), p);
 #endif
-    player_clear(slot);
+    /* we don't want player_clear(slot); here. Player is kicked out later */
     }
 
   /* open the player data file */
-  fp = xyfopen(FILENAME_PLAYER_s, "r", parray[p].login );
+  fp = xyfopen(FILENAME_PLAYER_cs, "r", parray[p].login );
   if (!fp) {
     do_copy(parray[p].pname, parray[p].login, sizeof parray[p].pname);
-    parray[p].slotstat.valid = 1;
-    parray[p].slotstat.registered = 0;
+    parray[p].slotstat.is_valid = 1;
+    parray[p].slotstat.is_registered = 0;
     parray[p].rated = 0;
     return -1; /* unregistered */
   }
 
   /* if the player data file exists, the player is registered */
-  parray[p].slotstat.valid = 1;
-  parray[p].slotstat.registered = 1;
+  parray[p].slotstat.is_valid = 1;
+  parray[p].slotstat.is_registered = 1;
 
   while (fgets(line, sizeof line, fp)) {
     if ((len = strlen(line)) <= 1) continue;
@@ -841,9 +798,9 @@ int player_read(int p)
   if (!parray[p].pname[0]) {
     do_copy(parray[p].pname, parray[0].login, sizeof parray[p].pname);
     pcn_out(p, CODE_CR1|CODE_ERROR, FORMAT_WARNING_YOUR_DATA_FILE_IS_CORRUPT_PLEASE_TELL_AN_ADMIN_n);
-    /* (dirty && !valid) will cause Dirty=Invalid to be logged */
+    /* (dirty && !valid) This will cause "Dirty=Invalid" to be logged */
     player_dirty(p);
-    parray[p].slotstat.valid = 0;
+    parray[p].slotstat.is_valid = 0;
   }
   if(!parray[p].RegDate[0]) {
     player_dirty(p);
@@ -904,11 +861,11 @@ int player_read(int p)
 int player_delete(int p)
 {
 
-  if (!parray[p].slotstat.registered) {	/* Player must be registered */
+  if (!parray[p].slotstat.is_registered) {	/* Player must be registered */
     player_clear(p);
     return -1;
   }
-  xyunlink(FILENAME_PLAYER_s, parray[p].login);
+  xyunlink(FILENAME_PLAYER_cs, parray[p].login);
   player_clear(p);
   return 0;
 }
@@ -922,12 +879,12 @@ int player_markdeleted(int p)
     if(!in_list("admin", parray[p].pname))
       return -1;  /* Not an admin, corruption, refuse to save. */
 
-  if (!parray[p].slotstat.registered) {	/* Player must be registered */
+  if (!parray[p].slotstat.is_registered) {	/* Player must be registered */
     return -1;
   }
 
-  xyrename(FILENAME_PLAYER_s,FILENAME_PLAYER_s_DELETE, parray[p].login);
-  fp = xyfopen(FILENAME_PLAYER_s_DELETE, "a");	/* Touch the file */
+  xyrename(FILENAME_PLAYER_cs,FILENAME_PLAYER_cs_DELETE, parray[p].login);
+  fp = xyfopen(FILENAME_PLAYER_cs_DELETE, "a");	/* Touch the file */
   if (fp) {
     player_clear(p);
     fprintf(fp, "\n");
@@ -944,13 +901,13 @@ static int player_save_extended(int p)
   FILE *fp;
   int i;
 
-  parray[p].slotstat.dirty=0;
+  parray[p].slotstat.is_dirty=0;
   /* non-registered player info is not saved! */
-  if (!parray[p].slotstat.registered) {
+  if (!parray[p].slotstat.is_registered) {
     return -1;
     }
 
-  fp = xyfopen(FILENAME_PLAYER_s, "w",parray[p].login);
+  fp = xyfopen(FILENAME_PLAYER_cs, "w",parray[p].login);
   if (!fp) return -1;
 
   fprintf(fp, "Name: %s\n", parray[p].pname);
@@ -1016,33 +973,19 @@ static int player_save_extended(int p)
       fprintf(fp, "Channel: %d\n", i);
   }
 
-#if 0
-  fprintf(fp, "Num_plan: %d\n", parray[p].num_plan);
-  for (i = 0; i < parray[p].num_plan; i++)
-    fprintf(fp, "%s\n", IFNULL(parray[p].planLines[i] , ""));
-#endif
-
-#if 0
-  if(parray[p].num_censor < 0) parray[p].num_censor = 0;
-  fprintf(fp, "Num_censor: %d\n", parray[p].num_censor);
-  for (i = 0; i < parray[p].num_censor; i++)
-    fprintf(fp, "%s\n", parray[p].censorList[i]);
-#endif
   {
     char *c, *a;
 
-#if 1
     fprintf(fp, "Num_plan: %d\n", plan_count(parray[p].plan_lines));
     plan_start(parray[p].plan_lines);
     while (plan_next(&c, parray[p].plan_lines))
       fprintf(fp, "%s\n", c);
-#endif
-#if 1
+
     fprintf(fp, "Num_censor: %d\n", censor_count(parray[p].censor_list));
     censor_start(parray[p].censor_list);
     while (censor_next(&c, parray[p].censor_list))
       fprintf(fp, "%s\n", c);
-#endif
+
     fprintf(fp, "Num_alias: %d\n", alias_count(parray[p].alias_list));
     alias_start(parray[p].alias_list);
     while (alias_next(&c, &a, parray[p].alias_list))
@@ -1055,17 +998,27 @@ static int player_save_extended(int p)
 
 void player_save(int p)
 {
+
+  /* non-registered player info is not saved! */
+  if (!parray[p].slotstat.is_registered) {
+    parray[p].slotstat.is_dirty=0;
+    return;
+  }
+  if (parray[p].slotstat.is_dirty)
+    player_write(p);
+}
+
+
+static void player_write(int p)
+{
   FILE *fp;
   int i;
 
-  parray[p].slotstat.dirty=0;
-  /* non-registered player info is not saved! */
-  if (!parray[p].slotstat.registered) {
-    return;
-    }
+  parray[p].slotstat.is_dirty=0;
 
-  fp = xyfopen(FILENAME_PLAYER_s, "w",parray[p].login);
-  if (!fp) { Logit("Player_save(%s) failed", filename() );
+  fp = xyfopen(FILENAME_PLAYER_cs, "w",parray[p].login);
+  if (!fp) {
+    Logit("Player_write(%s) failed", filename() );
     return; }
 
   if(parray[p].pname[0]) fprintf(fp, "Name: %s\n", parray[p].pname);
@@ -1128,33 +1081,19 @@ void player_save(int p)
       fprintf(fp, "Channel: %d\n", i);
   }
 
-#if 0
-  fprintf(fp, "Num_plan: %d\n", parray[p].num_plan);
-  for (i = 0; i < parray[p].num_plan; i++)
-    fprintf(fp, "%s\n", IFNULL(parray[p].planLines[i] , ""));
-#endif
-
-#if 0
-  if(parray[p].num_censor < 0) parray[p].num_censor = 0;
-  fprintf(fp, "Num_censor: %d\n", parray[p].num_censor);
-  for (i = 0; i < parray[p].num_censor; i++)
-    fprintf(fp, "%s\n", parray[p].censorList[i]);
-#endif
   {
     char *c, *a;
 
-#if 1
     fprintf(fp, "Num_plan: %d\n", plan_count(parray[p].plan_lines));
     plan_start(parray[p].plan_lines);
     while (plan_next(&c, parray[p].plan_lines))
       fprintf(fp, "%s\n", c);
-#endif
-#if 1
+
     fprintf(fp, "Num_censor: %d\n", censor_count(parray[p].censor_list));
     censor_start(parray[p].censor_list);
     while (censor_next(&c, parray[p].censor_list))
       fprintf(fp, "%s\n", c);
-#endif
+
     fprintf(fp, "Num_alias: %d\n", alias_count(parray[p].alias_list));
     alias_start(parray[p].alias_list);
     while (alias_next(&c, &a, parray[p].alias_list))
@@ -1174,24 +1113,25 @@ int player_find_fd(int fd)
     if (slot >=0 && parray[slot].socket == fd) return slot;
   }
   for (slot = 0; slot < parray_top; slot++) {
-    if (!parray[slot].slotstat.inuse) continue;
-    if (!parray[slot].slotstat.connected) continue;
+    if (!parray[slot].slotstat.is_inuse) continue;
+    if (!parray[slot].slotstat.is_connected) continue;
     if (parray[slot].socket != fd) continue;
     parray_index_fd[fd]=slot;
     return slot;
   }
+  parray_index_fd[fd] = -1;
   return -1;
 }
 
 
 int player_find_login(const char *name)
 {
-  int i;
+  int slot;
 
-  for (i = 0; i < parray_top; i++) {
-    if (!parray[i].slotstat.inuse) continue;
-    if (!parray[i].slotstat.online) continue;
-    if (!strcmp(parray[i].login, name)) return i;
+  for (slot = 0; slot < parray_top; slot++) {
+    if (!parray[slot].slotstat.is_inuse) continue;
+    if (!parray[slot].slotstat.is_online) continue;
+    if (!strcmp(parray[slot].login, name)) return slot;
   }
   return -1;
 }
@@ -1203,8 +1143,8 @@ int player_find_part_login(const char *name)
   int found = -1;
 
   for (i = 0; i < parray_top; i++) {
-    if (!parray[i].slotstat.inuse) continue;
-    if (!parray[i].slotstat.online) continue;
+    if (!parray[i].slotstat.is_inuse) continue;
+    if (!parray[i].slotstat.is_online) continue;
     if (strncmp(parray[i].login, name, strlen(name))) continue;
     if (found >= 0) return -2; 	/* Ambiguous */
     found = i;
@@ -1215,37 +1155,15 @@ int player_find_part_login(const char *name)
 
 int check_censored(int p, const char *name) 
 {
-#if 1
-  return (censor_lookup(name, parray[p].censor_list) != NULL);
-#else
-  int i;
 
-  for (i = 0; i < parray[p].num_censor; i++) {
-    if(parray[p].censorList[i]) {
-      if ((strcasecmp(parray[p].censorList[i], name)) == 0)
-        return 1;
-    }
-  }
-  return 0;
-#endif
+  return (censor_lookup(name, parray[p].censor_list) ? 1 : 0 );
 }
 
 
 int player_censored(int p, int p1)
 {
-#if 1
-  return (censor_lookup(parray[p1].login, parray[p].censor_list) != NULL);
-#else
-  int i;
 
-  for (i = 0; i < parray[p].num_censor; i++) {
-    if(parray[p].censorList[i]) {
-      if ((strcasecmp(parray[p].censorList[i], parray[p1].login)) == 0)
-        return 1;
-    }
-  }
-  return 0;
-#endif
+  return (censor_lookup(parray[p1].login, parray[p].censor_list) ? 1 : 0);
 }
 
 
@@ -1255,8 +1173,8 @@ int player_count()
   int i;
 
   for (i = 0; i < parray_top; i++) {
-    if (!parray[i].slotstat.inuse) continue;
-    if (!parray[i].slotstat.online) continue;
+    if (!parray[i].slotstat.is_inuse) continue;
+    if (!parray[i].slotstat.is_online) continue;
     count++;
   }
   if (count > player_high) player_high = count;
@@ -1266,7 +1184,7 @@ int player_count()
 
 int player_idle(int p)
 {
-  if (parray[p].slotstat.online)
+  if (parray[p].slotstat.is_online)
     return globClock - parray[p].last_command_time;
   else
     return globClock - parray[p].logon_time;
@@ -1284,7 +1202,7 @@ static void write_p_inout(int inout, int p, FILE *fp, int maxlines)
   if (!fp)
     return;
   fprintf(fp, "%d %s %d %d %s\n", inout, parray[p].pname, (int) globClock, 
-                  parray[p].slotstat.registered, 
+                  parray[p].slotstat.is_registered, 
                   dotQuad(parray[p].thisHost));
   fclose(fp);
   if(parray[p].num_logons % 100 == 0) {
@@ -1299,24 +1217,24 @@ void player_write_loginout(int p, int inout)
   FILE *fp;
 
   fp=xyfopen(FILENAME_LOGONS, "a");
-  write_p_inout(P_LOGIN, p, fp, 100);
-  if (parray[p].slotstat.registered) {
-    fp=xyfopen(FILENAME_PLAYER_LOGONS_s, "a", parray[p].login);
-    write_p_inout(P_LOGIN, p, fp, 24);
+  write_p_inout(inout, p, fp, 100);
+  if (parray[p].slotstat.is_registered) {
+    fp=xyfopen(FILENAME_PLAYER_cs_LOGONS, "a", parray[p].login);
+    write_p_inout(inout, p, fp, 24);
   }
   switch(inout) {
   case P_LOGIN:
     parray[p].num_logons++;
     Logit("Login : %s %d/%d/%s%s %s", 
                   parray[p].pname, p, parray[p].socket,
-                  parray[p].slotstat.registered ? "R" : "U", 
+                  parray[p].slotstat.is_registered ? "R" : "U", 
                   parray[p].adminLevel >= ADMIN_ADMIN ? "***" : "", 
                   dotQuad(parray[p].thisHost));
     break;
   case P_LOGOUT:
     Logit("Logout : %s %d/%d/%s%s %s", 
                   parray[p].pname, p, parray[p].socket,
-                  parray[p].slotstat.registered ? "R" : "U", 
+                  parray[p].slotstat.is_registered ? "R" : "U", 
                   parray[p].adminLevel >= ADMIN_ADMIN ? "***" : "", 
                   dotQuad(parray[p].thisHost));
     break;
@@ -1332,7 +1250,7 @@ int player_lastconnect(int p)
   char ipstr[20];
   char buff[MAX_LINE_SIZE];
 
-  fp = xyfopen(FILENAME_PLAYER_LOGONS_s, "r", parray[p].login);
+  fp = xyfopen(FILENAME_PLAYER_cs_LOGONS, "r", parray[p].login);
   if (!fp)
     return 0;
   inout=1; 
@@ -1359,7 +1277,7 @@ int player_lastdisconnect(int p)
   char loginName[MAX_LOGIN_NAME+1];
   char buff[MAX_LINE_SIZE];
 
-  fp = xyfopen(FILENAME_PLAYER_LOGONS_s, "r", parray[p].login);
+  fp = xyfopen(FILENAME_PLAYER_cs_LOGONS, "r", parray[p].login);
   if (!fp)
     return 0;
   while (fgets(buff,sizeof buff, fp)) {
@@ -1431,8 +1349,8 @@ struct pending * player_pending_new(int p, int p1, int type)
   ptr = pending_new(p,p1,type);
   if(!ptr) return NULL;
 
-  if(p >=0 && parray[p].slotstat.online) parray[p].outgoing++;
-  if(p1 >=0 && parray[p1].slotstat.online) parray[p1].incoming++;
+  if(p >=0 && parray[p].slotstat.is_online) parray[p].outgoing++;
+  if(p1 >=0 && parray[p1].slotstat.is_online) parray[p1].incoming++;
   return ptr;
 }
 
@@ -1443,9 +1361,9 @@ void player_pending_delete(struct pending * ptr)
   if(!ptr) return ;
   if(!ptr->valid) return;
   p1=ptr->whofrom;
-  if(p1 >=0 && parray[p1].slotstat.connected) parray[p1].outgoing--;
+  if(p1 >=0 && parray[p1].slotstat.is_connected) parray[p1].outgoing--;
   p1=ptr->whoto;
-  if(p1 >=0 && parray[p1].slotstat.connected) parray[p1].incoming--;
+  if(p1 >=0 && parray[p1].slotstat.is_connected) parray[p1].incoming--;
   pending_delete(ptr);
   return ;
 }
@@ -1618,11 +1536,11 @@ int player_game_ended(int g)
   int p;
 
   for (p = 0; p < parray_top; p++) {
-    if (!parray[p].slotstat.connected) continue;
+    if (!parray[p].slotstat.is_connected) continue;
     player_remove_observe(p, g);
   }
-  player_remove_requests(garray[g].white, garray[g].black, -1);
-  player_remove_requests(garray[g].black, garray[g].white, -1);
+  player_remove_requests(garray[g].white.pnum, garray[g].black.pnum, -1);
+  player_remove_requests(garray[g].black.pnum, garray[g].white.pnum, -1);
   return 0;
 }
 
@@ -1630,8 +1548,8 @@ int player_game_ended(int g)
 int player_num_messages(int p)
 {
 
-  if (!parray[p].slotstat.registered) return 0;
-  return xylines_file(FILENAME_PLAYER_MESSAGES_s, parray[p].login);
+  if (!parray[p].slotstat.is_registered) return 0;
+  return xylines_file(FILENAME_PLAYER_cs_MESSAGES, parray[p].login);
 }
 
 
@@ -1640,11 +1558,11 @@ int player_add_message(int top, int fromp, char *message)
   FILE *fp;
   int t = globClock;
 
-  if (!parray[top].slotstat.registered) return -1;
-  if (!parray[fromp].slotstat.registered) return -1;
-  if ((xylines_file(FILENAME_PLAYER_MESSAGES_s,parray[top].login) >= MAX_MESSAGES) && (parray[top].adminLevel < ADMIN_ADMIN))
+  if (!parray[top].slotstat.is_registered) return -1;
+  if (!parray[fromp].slotstat.is_registered) return -1;
+  if ((xylines_file(FILENAME_PLAYER_cs_MESSAGES,parray[top].login) >= MAX_MESSAGES) && (parray[top].adminLevel < ADMIN_ADMIN))
     return -1;
-  fp = xyfopen(FILENAME_PLAYER_MESSAGES_s, "a", parray[top].login);
+  fp = xyfopen(FILENAME_PLAYER_cs_MESSAGES, "a", parray[top].login);
   if (!fp) return -1;
   fprintf(fp, "%s at %s GMT: %s\n", parray[fromp].pname, strgtime((time_t *) &t), message);
   fclose(fp);
@@ -1655,9 +1573,9 @@ int player_add_message(int top, int fromp, char *message)
 int player_show_messages(int p)
 {
 
-  if (!parray[p].slotstat.registered) return -1;
+  if (!parray[p].slotstat.is_registered) return -1;
   /* if (lines_file(fname) <= 0) return -1; */
-  pxysend_file(p, FILENAME_PLAYER_MESSAGES_s, parray[p].login );
+  pxysend_file(p, FILENAME_PLAYER_cs_MESSAGES, parray[p].login );
   pcn_out(p, CODE_INFO, FORMAT_PLEASE_TYPE_qERASEq_TO_ERASE_YOUR_MESSAGES_AFTER_READINGn);
   return 0;
 }
@@ -1666,69 +1584,42 @@ int player_show_messages(int p)
 int player_clear_messages(int p)
 {
 
-  if (!parray[p].slotstat.registered) return -1;
-  xyunlink(FILENAME_PLAYER_MESSAGES_s, parray[p].login );
+  if (!parray[p].slotstat.is_registered) return -1;
+  xyunlink(FILENAME_PLAYER_cs_MESSAGES, parray[p].login );
   return 0;
 }
 
-#if 0
-int player_search(int p, char *name)
-/*
- * Find player matching the given string. First looks for exact match
- *  with a logged in player, then an exact match with a registered player,
- *  then a partial unique match with a logged in player, then a partial
- *  match with a registered player.
- *  Returns player number if the player is connected, negative (player number)
- *  if the player had to be connected, and 0 if no player was found
+/* 
+ * look for EXACT match in parray.
+ * if not found: check in registered user's files and maybe read in.
+ * If found: fix slot and return slotnumber
  */
+int player_fetch(const char *name)
 {
-  static char buffer[16384];
-  int i, p1, count;
+  int slot, rc;
 
   /* exact match with connected player? */
-  if ((p1 = player_find_login(name)) >= 0) {
-    return p1 + 1;
+  if ((slot = player_find_login(name)) >= 0) {
+    player_fix(slot);
+    return slot ;
   }
   /* exact match with registered player? */
-  count = search_directory(buffer, sizeof buffer, name, FILENAME_PLAYER_s, name);
-  if (count == 1 && !strcmp(name, buffer)) {
-    goto ReadPlayerFromFile;	/* found an unconnected registered player */
+  rc = xystat(NULL, FILENAME_PLAYER_cs, name);
+  if (rc) return -1;
+
+  slot = player_new();
+  if (slot < 0) return slot;
+  do_copy(parray[slot].login, name, sizeof parray[slot].login);
+  do_copy(parray[slot].pname, name, sizeof parray[slot].pname);
+  if (player_read(slot)) {
+    player_clear(slot);
+    return -1;
   }
-  /* partial match with connected player? */
-  if ((p1 = player_find_part_login(name)) >= 0) {
-    return p1 + 1;
-  }
-  /* partial match with registered player? */
-  if (count < 1) {
-    pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_MATCHING_THAT_NAME_n);
-    return 0;
-  }
-  if (count > 1) {
-    char *s = buffer;
-    struct multicol *m = multicol_start(2000); /* max. of 2000 names */
-    pprintf(p, "-- Matches: %d names --", count);
-    for (i = 0; i < count; i++) {
-      multicol_store( m, s );
-      s += strlen(s) + 1;
-    }
-    multicol_pprint( m, p, 78, 1 );
-    multicol_end(m);
-    return 0;
-  }
-ReadPlayerFromFile:
-  p1 = player_new();
-  if (player_read(p1, buffer)) {
-    player_remove(p1);
-    pcn_out(p, CODE_ERROR, FORMAT_ERROR_A_PLAYER_NAMED_s_WAS_EXPECTED_BUT_NOT_FOUND_n, buffer);
-    pcn_out(p, CODE_ERROR, FORMAT_PLEASE_INFORM_AN_ADMIN_OF_THIS_THANK_YOU_n);
-    return 0;
-  }
-  return -p1-1;
+  return slot;
 }
-#endif
 
 
-int player_fetch(const char *name)
+int player_find_sloppy(const char *name)
 /*
  * Find player matching the given string. First looks for exact match
  *  with a logged in player, then an exact match with a registered player,
@@ -1737,23 +1628,18 @@ int player_fetch(const char *name)
  *  Returns slot number if the player was found
  *  -1 if no player was found
  *  -cnt if more players were found
- *  when a player was found, it's slot is fixed.
+ *  iff one player was found, it's slot is fixed.
  */
 {
-  int slot, rc;
+  int slot;
   char lower[sizeof parray[0].pname];
 
   do_copy(lower,name, sizeof lower);
   stolower(lower);
   /* exact match with connected player? */
-  if ((slot = player_find_login(lower)) >= 0) {
-    player_fix(slot);
-    return slot ;
-  }
   /* exact match with registered player? */
-  rc = xystat(NULL, FILENAME_PLAYER_s, lower);
-  if (!rc) {
-    goto ReadPlayerFromFile;	/* found an unconnected registered player */
+  if ((slot = player_fetch(lower)) >= 0) {
+    return slot ;
   }
   /* partial match with connected player? */
   if ((slot = player_find_part_login(lower)) >= 0) {
@@ -1761,17 +1647,6 @@ int player_fetch(const char *name)
     return slot ;
   }
   return -1;
-
-ReadPlayerFromFile:
-  slot = player_new();
-  if (slot < 0) return slot;
-  do_copy(parray[slot].login, lower, sizeof parray[slot].login);
-  do_copy(parray[slot].pname, name, sizeof parray[slot].pname);
-  if (player_read(slot)) {
-    player_clear(slot);
-    return -1;
-  }
-  return slot;
 }
 
 

@@ -13,8 +13,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _MINK_H_
-#define _MINK_H_
+#ifndef MINK_H
+#define MINK_H
 
 #include <stdio.h>	/* for the FILE declarations below */
 
@@ -98,10 +98,10 @@ extern void getcaps(struct minkgame *g, int *wh, int *bl); /* #w/b stones captur
 extern int loadpos(FILE *, struct minkgame *);
 
 /* private functions */
-#if _MINK_C_
+#if MINK_C
 static char cnv_file2ch(int i);	/* convert file number 0-18 to character */
 static void ufmark(struct minkgame *g);/* put a move-marker on union-find log */
-#endif /* _MINK_C_ */
+#endif /* MINK_C */
 /* none of yer business:) */
 
-#endif /* _MINK_H_ */
+#endif /* MINK_H */

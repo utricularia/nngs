@@ -1,5 +1,5 @@
-#ifndef _ALIAS_H_
-#define _ALIAS_H_
+#ifndef ALIAS_H
+#define ALIAS_H
 
 #include <stdio.h>	/* for the size_t definition */
 
@@ -10,7 +10,7 @@ extern struct alias * alias_init(void);
 extern size_t alias_count(struct alias * p);
 
 /* Returns a pointer to the alias of cmd if found, NULL otherwise. */
-extern char *alias_lookup(char *cmd, struct alias *p);
+extern char *alias_lookup(const char *cmd, struct alias *p);
 
 /* Adds the alias for cmd. Returns 1 if it replaced an old entry,
 ** or 0 if it was a new entry.
@@ -20,7 +20,7 @@ extern int alias_add(const char *cmd, const char *alias, struct alias *p);
 /* Removes alias for cmd from list. Returns 1 if it was there,
 ** or 0 if it wasn't found.
 */
-extern int alias_rem(char *cmd, struct alias *p);
+extern int alias_rem(const char *cmd, struct alias *p);
 
 /* Initiates an iteration through the list.
 ** A typical iteration (through the list 'al') looks like this:
@@ -46,4 +46,4 @@ extern int alias_next(char **cp, char **ap, struct alias *p);
 */
 extern void alias_free(struct alias *p);
 
-#endif /* _ALIAS_H_ */
+#endif /* ALIAS_H */

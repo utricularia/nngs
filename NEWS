@@ -15,3 +15,10 @@ Version 1.0.0
 Version 1.1.14 (2002 May)
 - should be considered the first stable beta :-)
 - basic functionality (playing games) tested by automated testclient.
+- very stable, no leaks !-)
+
+Version 1.1.15 (2004 Sep/Oct/Nov)
+- major bugfixes for filename/directory handling.
+- fixed EPIPE-handling
+- fixed "courtesy" - timing error.
+- added aban command

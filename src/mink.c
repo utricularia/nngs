@@ -17,11 +17,19 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+extern int random(void);
+#endif
+
 #include <assert.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
@@ -33,6 +41,11 @@
 #define _MINK_C_ 1
 #include "mink.h"
 #include "utils.h"
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 
 #define MOVECOLOR(i)	(((i) & 1) ? GO_BLACK : GO_WHITE)
@@ -101,11 +114,11 @@ void initmink()
 {
   int i,j;
 
-  Zob = calloc(MAXSize, sizeof *Zob);
-  assert(Zob != NULL);
+  Zob = malloc(MAXSize * sizeof *Zob);
   for (i=0; i<MAXSize; i++)
     for (j=0; j<2; j++)
-      Zob[i][j] = (xulong)random() << (sizeof(xulong)-1)/2 | (xulong)random();
+      Zob[i][j] = (xulong)random() << (sizeof(xulong)-1)/2 
+	        | (xulong)random();
 }
 
 struct minkgame *initminkgame(int width, int height, int rules)
@@ -140,7 +153,7 @@ struct minkgame *initminkgame(int width, int height, int rules)
 void savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos)
 {
   int i,j,k,n,p,x,y,max;
-  char *star;
+  const char *star;
   struct kibitz *kp;
 
   if (g->rules == RULES_ING && (n = g->handicap)) {
@@ -272,7 +285,7 @@ void setnocaps(struct minkgame *g, int value)
 int sethcap(struct minkgame *g, int n)	/* returns 1 if succesful */
 {
   int i,x,y,max;
-  char *star;
+  const char *star;
 
   if (g->movenr || n==0)
     return 0;
@@ -622,7 +635,7 @@ void listmove(struct minkgame *g, int i, char *buf)	/* list move i in game g */
 void printboard(struct minkgame *g, twodstring buf)
 {
   int p,x,y,xpos;
-  char *star;
+  const char *star;
 
   sprintf(buf[0],"   ");
   for (x=1; x<=g->width; x++)

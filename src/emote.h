@@ -6,12 +6,8 @@
 
    %G% %W%
 */
-#ifndef _EMOTE_H_
-#define _EMOTE_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* C++ */
+#ifndef EMOTE_H
+#define EMOTE_H
 
 /*
    EmoteInit saves pathname off, does NOT check that we can read the file
@@ -34,8 +30,5 @@ const char *EmoteMkStr(const char *pszKey, const char *pszUsr,
 
 int EmoteLook(const char *pszKey);
 
-#ifdef __cplusplus
-}
-#endif /* C++ */
 
-#endif /* ifndef _EMOTE_H_ */
+#endif /* ifndef EMOTE_H */

@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _COMMAND_LIST_H
-#define _COMMAND_LIST_H
+#ifndef COMMAND_LIST_H
+#define COMMAND_LIST_H
 
 /* #define WANT_LANGUAGE 1*/
 #undef WANT_LANGUAGE
@@ -41,8 +41,8 @@
   p - optional integer
   i - word or integer
   n - optional word or integer
-  s - string to end
-  t - optional string to end
+  s - string to end of line
+  t - optional string to end of line
   
   If the parameter option is given in lower case then the parameter is 
   converted to lower case before being passsed to the function. If it is
@@ -54,6 +54,7 @@
  */
  /* Name	Options	Functions	Security */
 struct command_type command_list[] = {
+  {"aban",             "ooo",   com_aban,       ADMIN_ADMIN },
   {"accept",		"n",	com_accept,	ADMIN_USER },
   {"actitle",           "dS",   com_actitle,    ADMIN_ADMIN },
   {"addlist",           "ww",   com_addlist,   	ADMIN_ADMIN },
@@ -82,9 +83,9 @@ struct command_type command_list[] = {
   {"bmuzzle",           "o",    com_bmuzzle,     ADMIN_MASTER },
   {"censor",		"o",	com_censor,	ADMIN_USER },
   {"channel",		"p",	com_channel,	ADMIN_USER },
-  {"chkip",             "w",    com_checkIP,    ADMIN_ADMIN },
-  {"chkpl",             "w",    com_checkPLAYER, ADMIN_ADMIN },
-  {"chksc",             "d",    com_checkSOCKET, ADMIN_ADMIN },
+  {"chkip",             "w",    com_chk_ip,    ADMIN_ADMIN },
+  {"chkpl",             "w",    com_chk_player, ADMIN_ADMIN },
+  {"chksc",             "d",    com_chk_socket, ADMIN_ADMIN },
   {"choice",            "w",    com_choice,     ADMIN_USER },
   {"client",		"d",	com_which_client,	ADMIN_USER },
   {"clntvrfy",		"T",    com_clntvrfy,   ADMIN_USER },
@@ -292,4 +293,4 @@ struct alias_type g_alias_list[] = {
   {NULL, NULL}
 };
 
-#endif /* _COMMAND_LIST_H */
+#endif /* COMMAND_LIST_H */

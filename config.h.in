@@ -58,7 +58,10 @@
 #undef FIND_FILE
 
 /* games dir */
-#undef GAMES_DIR
+#undef GAME_DIR
+
+/* cgames dir */
+#undef CGAME_DIR
 
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM

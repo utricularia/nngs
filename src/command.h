@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _COMMAND_H
-#define _COMMAND_H
+#ifndef COMMAND_H
+#define COMMAND_H
 
 extern const char *mess_dir;
 extern const char *help_dir;
@@ -34,6 +34,7 @@ extern const char *stats_dir;
 extern const char *config_dir;
 extern const char *player_dir;
 extern const char *game_dir;
+extern const char *cgame_dir;
 extern const char *problem_dir;
 extern const char *board_dir;
 extern const char *def_prompt;
@@ -63,6 +64,8 @@ extern const char *stats_games;
 extern const char *stats_rgames;
 extern const char *stats_cgames;
 
+extern const char *version_string;
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -77,14 +80,6 @@ extern int startuptime;
 extern int player_high;
 extern int game_high;
 extern int MailGameResult;
-
-extern const char *server_name;
-extern const char *server_address;
-extern const char *server_email;
-extern const char *server_http;
-extern const char *geek_email;
-
-extern const char *version_string;
 
 extern struct stat RatingsBuf1, RatingsBuf2;
 
@@ -122,6 +117,7 @@ extern struct stat RatingsBuf1, RatingsBuf2;
 #define ADMIN_MASTER	50
 #define ADMIN_DEMIGOD   60
 #define ADMIN_GOD	100
+#define EXISTING_USERS_ARE_REGISTERED 1
 
 #define TYPE_NULL 0
 #define TYPE_WORD 1
@@ -157,11 +153,11 @@ struct alias_type {
 
 extern int commanding_player; /* The player whose command your in */
 
-extern int process_input(int, char *);
-extern int process_new_connection(int, unsigned int);
-extern int process_disconnection(int);
-extern int process_incomplete(int, char *);
-extern int process_heartbeat(int *);
+extern int process_input(int fd, char *str);
+extern void process_new_connection(int fd, unsigned int addr);
+extern void process_disconnection(int fd);
+extern int process_incomplete(int fd, char * line);
+extern int process_heartbeat(int *fdp);
 
 extern void commands_init(void);
 
@@ -172,4 +168,4 @@ extern void command_init(void);
 extern int command_admin_level(int c);
 extern int match_command(const char *);
 
-#endif /* _COMMAND_H */
+#endif /* COMMAND_H */

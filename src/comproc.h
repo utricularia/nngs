@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _COMPROC_H
-#define _COMPROC_H
+#ifndef COMPROC_H
+#define COMPROC_H
 #include <stdio.h> /* for FILE */
 
 extern int com_rating_recalc(int, struct parameter *);
@@ -80,7 +80,7 @@ extern int com_style(int, struct parameter *);
 extern int com_promote(int, struct parameter *);
 extern int com_alias(int, struct parameter *);
 extern int com_unalias(int, struct parameter *);
-extern int create_new_gomatch(int, int, int, int, int, int, int, int, int);
+extern int create_new_gomatch(int, int, int, int, int, int, int, int);
 extern int com_servers(int, struct parameter *);
 extern int com_sendmessage(int, struct parameter *);
 extern int com_messages(int, struct parameter *);
@@ -138,7 +138,6 @@ extern int com_nrating(int, struct parameter *);
 extern int com_rating(int, struct parameter *);
 #endif
 extern int plogins(int, FILE *);
-extern int a_who(int, int, int *);
 extern int com_dnd(int, struct parameter *);
 extern int com_which_client(int, struct parameter *);
 extern void AutoMatch(int, int, int *, float *);
@@ -172,4 +171,4 @@ extern int com_lashout(int, struct parameter *);
 #define CLIENT_JAGOCLIENT	22
 #define CLIENT_GTKGO		23
 
-#endif /* _COMPROC_H */
+#endif /* COMPROC_H */

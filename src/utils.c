@@ -40,6 +40,14 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+/* AvK: sorry ... */
+#define off_t size_t
+extern FILE *popen(const char *, const char*);
+extern int *pclose(FILE *fp);
+extern int fileno(FILE *fp); /* should be in stdio ... */
+extern int ftruncate(int fd, off_t pos);
+extern int vsnprintf(char *buff,size_t s, const char *format, va_list ap);
+#undef off_t 
 #endif
 
 #ifdef HAVE_CTYPE_H
@@ -50,11 +58,9 @@
 #include <sys/stat.h>
 #endif
 
-/*
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-*/
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -97,6 +103,7 @@
 #define DMALLOC_FUNC_CHECK 1
 #endif
 
+
 struct searchdata mysearchdata;
 static char filename1[MAX_FILENAME_SIZE];
 static char filename2[MAX_FILENAME_SIZE];
@@ -105,7 +112,6 @@ static int pcvprintf(int, int, const char *, va_list);
 
 static int mkdir_p(const char *);
 static int pprompt(int);
-static size_t xyfilename(char *buf,int num,...);
 static size_t vafilename(char *buf,int num, va_list ap);
 static int lines_file(char *file);
 static FILE * vafopen(int num, const char * mode, va_list ap);
@@ -134,7 +140,7 @@ char *KillTrailWhiteSpace(char *str)
   len = strlen(str);
 
   while (!stop) {
-    if(iswhitespace(str[len - 1])) {
+    if (iswhitespace(str[len - 1])) {
       str[len - 1] = '\0';
       len--;
     }
@@ -143,7 +149,7 @@ char *KillTrailWhiteSpace(char *str)
   return str;
 }
 
-char *getword(const char *str)
+char *getword(char *str)
 {
   int i;
   static char word[MAX_WORD_SIZE];
@@ -168,7 +174,7 @@ const char *SendCode(int p, int Code)
 {
   static char word[MAX_WORD_SIZE];
 
-  if(!parray[p].client) {
+  if (!parray[p].client) {
     switch(Code) {
       case CODE_SHOUT: strcpy(word, "\n");
                   break;
@@ -190,21 +196,21 @@ const char *SendCode(int p, int Code)
   return word;
 }
 
-char *eatword(const char *str)
+char *eatword(char *str)
 {
   while (*str && !iswhitespace(*str))
     str++;
-  return (char *) str;
+  return str;
 }
 
-char *eatwhite(const char *str)
+char *eatwhite(char *str)
 {
   while (*str && iswhitespace(*str))
     str++;
-  return (char *) str;
+  return str;
 }
 
-char *nextword(const char *str)
+char *nextword(char *str)
 {
   return eatwhite(eatword(str));
 }
@@ -218,7 +224,7 @@ int mail_string_to_address(const char *addr, const char *subj, const char *str)
     return -1;
   sprintf(com, "%s -s \"%s\" %s", MAILPROGRAM, subj, addr);
   Logit("Mail command: %s",com);
-  fp = popen(com, "w");
+  fp = popen(&com[0], "w");
   if (!fp)
     return -2;
   fprintf(fp, "From: %s\n", server_email);
@@ -348,8 +354,8 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
     idx = sprintf(bigtmp,"\n");
   }
   if (code) {
-    char *cp;
-    cp=(char*) SendCode(p, code);
+    const char *cp;
+    cp= SendCode(p, code);
     len = strlen(cp);
     memcpy(bigtmp+idx,cp,len);
     idx += len;
@@ -364,7 +370,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
   if (rc < 0) {
     Logit("pcvprintf buffer overflow code==%d, format==\"%s\"",code,format);
     len=sizeof bigtmp -1; bigtmp[len] = 0;
-    format=NULL; strcpy((char*) format, "myabort()" );
+    strcpy(NULL, "myabort()" );
   }
   else len = idx+rc;
 
@@ -447,13 +453,13 @@ static int pprompt(int p)
   char tmp[MAX_LINE_SIZE];
   int len=0;
 
-  if(parray[p].client) {
+  if (parray[p].client) {
     len=sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].protostate);
   }
-  else if(parray[p].protostate == STAT_SCORING) {
+  else if (parray[p].protostate == STAT_SCORING) {
     len=sprintf(tmp,"Enter Dead Group: "); 
   } else {
-    if(parray[p].extprompt) {
+    if (parray[p].extprompt) {
       len=sprintf(tmp, "|%s/%d%s| %s ", 
         parray[p].last_tell >= 0 ? parray[parray[p].last_tell].pname : "",
         parray[p].last_channel, 
@@ -462,7 +468,7 @@ static int pprompt(int p)
     }
     else len=sprintf(tmp, "%s",parray[p].prompt);
   }
- if(len>0) net_send(parray[p].socket, tmp, len);
+ if (len>0) net_send(parray[p].socket, tmp, len);
   return len;
 }
 
@@ -523,8 +529,8 @@ int psend_file(int p, const char *dir, const char *file)
     return -1;
   }
 
-  if(Debug) Logit("Opened \"%s\"", fname);
-  if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (Debug) Logit("Opened \"%s\"", fname);
+  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   while ((cp=fgets( tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
     net_sendStr(parray[p].socket, tmp);
@@ -533,11 +539,11 @@ int psend_file(int p, const char *dir, const char *file)
   if (cp) {
     do_copy(parray[p].last_file, fname, sizeof parray[0].last_file);
     parray[p].last_file_line = (parray[p].d_height-1);
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     pcn_out(p, CODE_INFO, FORMAT_TYPE_OR_qNEXTq_TO_SEE_NEXT_PAGE_n);
   }
   else {
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
   fclose(fp);
   return 0;
@@ -617,18 +623,18 @@ int pmore_file( int p )
     return -1;
   }
   
-  if(parray[p].client) {
+  if (parray[p].client) {
   pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
   while((cp=fgets(tmp, sizeof tmp, fp))) {
-    if(lcount >= (parray[p].last_file_line + parray[p].d_height-1)) break;
-    if(lcount >= parray[p].last_file_line) 
+    if (lcount >= (parray[p].last_file_line + parray[p].d_height-1)) break;
+    if (lcount >= parray[p].last_file_line) 
       net_sendStr(parray[p].socket, tmp);
     lcount++;
   }
   if (cp) {
     parray[p].last_file_line += parray[p].d_height-1;
-    if(parray[p].client) {
+    if (parray[p].client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
     pcn_out(p, CODE_INFO, FORMAT_TYPE_qNEXTq_OR_TO_SEE_NEXT_PAGE_n);
@@ -636,7 +642,7 @@ int pmore_file( int p )
   else {
     parray[p].last_file[0] = '\0';
     parray[p].last_file_line = 0;
-    if(parray[p].client) {
+    if (parray[p].client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
   }
@@ -644,32 +650,27 @@ int pmore_file( int p )
   return 0;
 }
 
-int pmail_file(int p, const char *dir, const char *file)
+int pmail_file(int p, const char *subj, const char *fname)
 {
   FILE *infile, *outfile;
-  char fname[MAX_FILENAME_SIZE];
   char buffer[MAX_STRING_LENGTH];
   char com[MAX_STRING_LENGTH];
-  char dircopy[MAX_FILENAME_SIZE];
-  char filecopy[MAX_FILENAME_SIZE];
+  char subcopy[MAX_FILENAME_SIZE];
   int num, ret;
 
   ret = 0;
 
   /* AvK: avoid writing const strings ... */
-  strcpy(dircopy,dir);
-  strcpy(filecopy,file);
-  if (dir)
-    sprintf(fname, "%s/%s", eatwhite(dircopy), eatwhite(filecopy));
-  else
-    strcpy(fname, eatwhite(filecopy));
+  strcpy(subcopy,subj);
+ 
+  Logit("pmail_file(%d,%s,%s)", p, subj, fname);
   if (!(infile = xfopen(fname, "r")))
     return -1;
 
   if (parray[p].email[0] && safestring(parray[p].email)) {
     sprintf(com, "%s -s \"%s\" %s", 
-                  MAILPROGRAM, eatwhite(filecopy), parray[p].email);
-    outfile = popen(com, "w");
+                  MAILPROGRAM, eatwhite(subcopy), parray[p].email);
+    outfile = popen(&com[0], "w");
     fputc('\n', outfile);
     while ((num = fread(buffer, 1, 1000, infile))) {
       fwrite(buffer, 1, num, outfile);
@@ -697,9 +698,9 @@ int xpsend_command(int p, const char *command, char *input, int num, ...)
   Logit("xpsend_command(%d,%s,%d):%s", p, IFNULL(input,"{Null}"), num, cmdline);
 
   if (input)
-    fp = popen(cmdline, "w");
+    fp = popen(&cmdline[0], "w");
   else
-    fp = popen(cmdline, "r");
+    fp = popen(&cmdline[0], "r");
   if (!fp) {
     va_end(ap);
     return -1;
@@ -745,7 +746,7 @@ char *stolower(char *str)
   return str;
 }
 
-static char * unsafechars = ">!&*?/<|`$;()[]" ;
+static char unsafechars[] = ">!&*?/<|`$;()[]" ;
 int safechar(int c)
 {
 #if 0
@@ -770,7 +771,7 @@ int safestring(const char *str)
       return 0;
   }
 #else
-  if(str[strcspn(str,unsafechars)])
+  if (str[strcspn(str,unsafechars)])
     return 0;
   else return 1;
 #endif
@@ -784,6 +785,7 @@ int safefilename(const char *path)
     return 0;
   for (	;*path; path++) {
     if (*path == '.' || *path == '/') return 0;
+    if (*path == '%' || *path == '\\') return 0; /* Dont want these. AvK */
   }
   return 1;
 }
@@ -840,10 +842,10 @@ char *newhms(int t)
   t = t % 3600;
   m = t / 60;
   s = t % 60;
-  if(h > 99) h = 99;
+  if (h > 99) h = 99;
   if (h) {
       sprintf(tstr, "%dh", h);
-  } else if(m) {
+  } else if (m) {
     sprintf(tstr, "%dm", m);
   } else {
       sprintf(tstr, "%ds", s);
@@ -976,9 +978,9 @@ char *strgtime(const time_t * clk)
 unsigned tenth_secs()
 {
   struct timeval tp;
-  struct timezone tzp;
+  /* struct timezone tzp; */
 
-  gettimeofday(&tp, &tzp);
+  gettimeofday(&tp, NULL);
 /* .1 seconds since 1970 almost fills a 32 bit int! So lets subtract off
  * the time right now */
   return ((tp.tv_sec - NNGS_EPOCH) * 10) + (tp.tv_usec / 100000);
@@ -1019,9 +1021,9 @@ int truncate_file(char *file, int lines)
     fprintf(stderr,"truncate_file: File '%s' not found!\n",file);
     return 1;
   }
-  if(Debug) Logit("Opened %s", file);
+  if (Debug) Logit("Opened %s", file);
   while ((cp=fgets(tBuf[bptr], MAX_LINE_SIZE, fp))) {
-    len = strlen(cp); if(len < 1) continue;
+    len = strlen(cp); if (len < 1) continue;
     if (tBuf[bptr][len-1] != '\n') {	/* Line too long */
       fclose(fp);
       return -1;
@@ -1063,7 +1065,7 @@ int truncate_file(char *file, int lines)
     fprintf(stderr,"truncate_file: File '%s' not found!\n",file);
     return 1;
   }
-  if(Debug) Logit("Opened %s", file);
+  if (Debug) Logit("Opened %s", file);
   while (fgets(tBuf[bptr], MAX_LINE_SIZE, fp)) {
     if (tBuf[bptr][strlen(tBuf[bptr]) - 1] != '\n') {
       fclose(fp);
@@ -1131,16 +1133,18 @@ int file_has_pname(const char *fname, const char *plogin)
 const char *file_wplayer(const char *fname)
 {
   static char tmp[sizeof parray[0].pname];
-  char *ptr;
+  const char *ptr;
+  size_t len;
 
 	/* skip leading directory part */
   ptr = strrchr(fname, '/');
-  if(!ptr) ptr = (char*)fname;
+  if (!ptr) ptr = fname;
   else ptr++;
+  len = strcspn(ptr, "-");
   do_copy(tmp, ptr, sizeof tmp);
   ptr = strrchr(tmp, '-');
   if (!ptr) return "";
-  *ptr = '\0';
+  if (len < sizeof tmp) tmp[len] = 0;
   return (const char *) tmp;
 }
 
@@ -1148,11 +1152,19 @@ const char *file_wplayer(const char *fname)
 const char *file_bplayer(const char *fname)
 {
   static char tmp[sizeof parray[0].pname];
-  char *ptr;
+  const char *ptr;
+  size_t len;
 
+	/* skip leading directory part */
+  ptr = strrchr(fname, '/');
+  if (!ptr) ptr = fname;
+  else ptr++;
   ptr = strrchr(fname, '-');
   if (!ptr) return "";
-  do_copy(tmp, ptr+1, sizeof tmp);
+  else ptr++;
+  len = strcspn(ptr, "-");
+  do_copy(tmp, ptr, sizeof tmp);
+  if (len < sizeof tmp) tmp[len] = 0;
   return (const char *) tmp;
 }
 
@@ -1161,8 +1173,10 @@ const char *file_bplayer(const char *fname)
 #endif
 char *dotQuad(unsigned int a)
 {
-  static char tmp[20];
+  static char buff[40];
+  static char *tmp = NULL;
 
+  tmp = (tmp == buff) ? buff+20: buff;
 #if !(BYTE_ORDER==LITTLE_ENDIAN)
   sprintf(tmp, "%d.%d.%d.%d", (a & 0xff),
 	  (a & 0xff00) >> 8,
@@ -1236,7 +1250,7 @@ int search_directory(char *buffer, int buffersize, char *filter, int num, ...)
   vafilename(filename1,num, ap);
 
   sprintf(command, "ls -1 %s", filename1);
-  fp = popen(command, "r");
+  fp = popen( &command[0] , "r");
   if (!fp) {
     va_end(ap);
     return -1;
@@ -1264,7 +1278,7 @@ int display_directory(int p, const char *buffer, int count)
 {
 #define MAX_DISP 800		/* max. no. filenames to display */
 
-  char *s = buffer;
+  const char *s = buffer;
   struct multicol *m = multicol_start(MAX_DISP);
   int i;
 
@@ -1353,7 +1367,7 @@ int do_copy(char *dest, const char *s, int max)
   int i;
 
   i = strlen(s);
-  if(i >= max) {
+  if (i >= max) {
     Logit("Attempt to copy large string %s (len = %d, max = %d)", s, i, max);
     i = max -1;
   }
@@ -1361,7 +1375,7 @@ int do_copy(char *dest, const char *s, int max)
   memcpy(dest, s, i);
   dest[i] = '\0';
 #else
-  if(max > 0) max -= 1;
+  if (max > 0) max -= 1;
   strncpy(dest, s, max);
   dest[max] = '\0';		/* [PEM]: Make sure it's terminated. */
 #endif
@@ -1387,24 +1401,24 @@ FILE * xfopen(const char * name, const char * mode)
 
   do {
     fp=fopen(name,mode);
-    if(fp) break;
+    if (fp) break;
     err=errno;
 
 /* Don't log missing files when mode is read.
 ** (unregistered players, missing messagefiles, etc)
 */
-    if(*mode=='r') break;
+    if (*mode=='r') break;
 
     Logit("Xfopen: fopen(\"%s\", \"%s\") failed: %d, %s"
 	  ,name,mode, err,strerror(err) );
 
-    if(*mode=='r') break;
+    if (*mode=='r') break;
 
     switch(err) {
     case ENOENT:
-      if(mode_for_dir) {
+      if (mode_for_dir) {
         err=mkdir_p(name);
-        if(err> 0) continue;
+        if (err> 0) continue;
 	}
     default:
       goto quit;
@@ -1471,7 +1485,7 @@ static FILE * pvafopen(int p, int num, const char * mode, va_list ap)
     lang = parray[p].language;
     pre = language_num2prefix(lang);
     fp=xyfopen(num+2, mode, pre); /* num+2 := ..HELP_s */
-    if(fp) break;
+    if (fp) break;
     pre = language_num2prefix(LANGUAGE_DEFAULT);
     fp=xyfopen(num+2, mode, pre);
     break;
@@ -1481,7 +1495,7 @@ static FILE * pvafopen(int p, int num, const char * mode, va_list ap)
     lang = parray[p].language;
     pre = language_num2prefix(lang);
     fp=xyfopen(num+2, mode, pre, nam); /* num+2 := ..HELP_s_s */
-    if(fp) break;
+    if (fp) break;
     pre = language_num2prefix(LANGUAGE_DEFAULT);
     fp=xyfopen(num+2, mode, pre, nam);
     break;
@@ -1537,7 +1551,7 @@ int xyunlink(int num,...)
   ** filename1[], so it relies on the caller having called one 
   ** of the other xy...() functions first.
   */
-int xylink(int num,...)
+int xylink(int num, ...)
 {
   va_list ap;
   int rc;
@@ -1546,13 +1560,14 @@ int xylink(int num,...)
 
   memset(filename2,0,sizeof filename2);
   vafilename(filename2,num, ap);
-  rc=link(filename1, filename2);
+  if ((rc=strcmp(filename1, filename2)))
+    rc=link(filename1, filename2);
 
   va_end(ap);
   return rc;
 }
 
-static size_t xyfilename(char *buf,int num,...)
+int xyfilename(char *buf,int num, ...)
 {
   va_list ap;
   int rc;
@@ -1591,11 +1606,13 @@ size_t len;
     goto filename_help_1;
   case FILENAME_HELP_l:
     i1= va_arg(ap,int);
+    goto filename_help_1;
   filename_help_1:
     cp1=language_num2prefix(i1);
     goto filename_help_0;
   case FILENAME_HELP_s:
     cp1= va_arg(ap,char*);
+    goto filename_help_0;
   filename_help_0:
     len=sprintf(buf, "%s/%s", help_dir, cp1);
     break;
@@ -1628,11 +1645,13 @@ size_t len;
     goto filename_ahelp_s_1;
   case FILENAME_AHELP_l:
     i1= va_arg(ap,int);
+    goto filename_ahelp_s_1;
   filename_ahelp_s_1:
     cp1=language_num2prefix(i1);
     goto filename_ahelp_s_0;
   case FILENAME_AHELP_s:
     cp1= va_arg(ap,char*);
+    goto filename_ahelp_s_0;
   filename_ahelp_s_0:
     len=sprintf(buf, "%s/%s", ahelp_dir, cp1);
     break;
@@ -1654,23 +1673,23 @@ filename_ahelp_l_index_0:
   case FILENAME_PLAYER :
     len=sprintf(buf, "%s", player_dir);
     break;
-  case FILENAME_PLAYER_s :
+  case FILENAME_PLAYER_cs :
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c/%s", player_dir, cp1[0], cp1);
     break;
-  case FILENAME_PLAYER_s_DELETE :
+  case FILENAME_PLAYER_cs_DELETE :
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c/%s.delete", player_dir, cp1[0], cp1);
     break;
-  case FILENAME_PLAYER_LOGONS_s :
+  case FILENAME_PLAYER_cs_LOGONS :
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c/%s.%s", player_dir, cp1[0], cp1, stats_logons);
     break;
-  case FILENAME_PLAYER_MESSAGES_s :
+  case FILENAME_PLAYER_cs_MESSAGES :
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c/%s.%s", player_dir, cp1[0], cp1, stats_messages);
     break;
-  case FILENAME_PLAYER_GAMES_s:
+  case FILENAME_PLAYER_cs_GAMES:
     cp1 = va_arg(ap,char*);
     len=sprintf(buf,"%s/player_data/%c/%s.%s", stats_dir,cp1[0]
     , cp1, STATS_GAMES);
@@ -1684,42 +1703,58 @@ filename_ahelp_l_index_0:
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c" , game_dir, cp1[0]);
     break;
-  case FILENAME_GAMES_cs_s :
+  case FILENAME_GAMES_bs_s :
+    cp1= va_arg(ap,char*);
+    cp2= va_arg(ap,char*);
+    len=sprintf(buf, "%s/%c/%s-%s" , game_dir, cp2[0], cp1, cp2);
+    break;
+  case FILENAME_GAMES_ws_s :
     cp1= va_arg(ap,char*);
     cp2= va_arg(ap,char*);
     len=sprintf(buf, "%s/%c/%s-%s" , game_dir, cp1[0], cp1, cp2);
     break;
 
   case FILENAME_CGAMES:
-    len=sprintf(buf, "%s/%s" , game_dir, "cgames" );
+    len=sprintf(buf, "%s" , cgame_dir );
     break;
   case FILENAME_CGAMES_c:
     cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s/%c" , game_dir, "cgames" , cp1[0]);
+    len=sprintf(buf, "%s/%c" , cgame_dir, cp1[0]);
     break;
-  case FILENAME_CGAMES_cs_s_s:
+  case FILENAME_CGAMES_cs:
+    cp1= va_arg(ap,char*);
+    len=sprintf(buf, "%s/%c/%s" , cgame_dir, cp1[0], cp1);
+    break;
+  case FILENAME_CGAMES_ws_s_s:
     cp1= va_arg(ap,char*);
     cp2= va_arg(ap,char*);
     cp3= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s/%c/%s-%s-%s" , game_dir, "cgames"
+    len=sprintf(buf, "%s/%c/%s-%s-%s" , cgame_dir
 		, cp1[0], cp1, cp2, cp3);
+    break;
+  case FILENAME_CGAMES_bs_s_s:
+    cp1= va_arg(ap,char*);
+    cp2= va_arg(ap,char*);
+    cp3= va_arg(ap,char*);
+    len=sprintf(buf, "%s/%c/%s-%s-%s" , cgame_dir
+		, cp2[0], cp1, cp2, cp3);
     break;
 
   case FILENAME_RATINGS :
-    len=sprintf(buf,ratings_file);
+    len=sprintf(buf,"%s", ratings_file);
     break;
   case FILENAME_RESULTS :
-    len=sprintf(buf, results_file);
+    len=sprintf(buf, "%s", results_file);
     break;
   case FILENAME_NRESULTS :
-    len=sprintf(buf, nresults_file);
+    len=sprintf(buf, "%s", nresults_file);
     break;
 
   case FILENAME_LADDER9 :
-    len=sprintf(buf, ladder9_file);
+    len=sprintf(buf, "%s", ladder9_file);
     break;
   case FILENAME_LADDER19 :
-    len=sprintf(buf, ladder19_file);
+    len=sprintf(buf, "%s", ladder19_file);
     break;
 
   case FILENAME_NEWS_s :
@@ -1737,7 +1772,7 @@ filename_ahelp_l_index_0:
     len=sprintf(buf, "%s/adminnews.%s", news_dir, cp1);
     break;
   case FILENAME_NOTEFILE :
-    len=sprintf(buf, note_file);
+    len=sprintf(buf, "%s", note_file);
     break;
   case FILENAME_LOGONS :
     len=sprintf(buf, "%s/%s", stats_dir, stats_logons);
@@ -1770,7 +1805,7 @@ filename_ahelp_l_index_0:
     break;
 
   case FILENAME_FIND :
-    len=sprintf(buf, FIND_FILE);
+    len=sprintf(buf, "%s", FIND_FILE);
     break;
   case FILENAME_LISTINDEX :
     len=sprintf(buf, "%s/index", lists_dir);
@@ -1783,18 +1818,21 @@ filename_ahelp_l_index_0:
     cp1= va_arg(ap,char*);
     len=sprintf(buf, "%s/%s.old", lists_dir, cp1);
     break;
+  case FILENAME_LIST_BAN :
+    len=sprintf(buf, "%s/%s", lists_dir, "ban");
+    break;
 
   case FILENAME_PROBLEM_d :
     i1= va_arg(ap,int);
     len=sprintf(buf, "%s/xxqj%d.sgf", problem_dir, i1);
     break;
-  default:
+  default: /* this will fail on open, and appear in the log ... */
     len=sprintf(buf, "/There/was/a/default/filename:%d", num);
     break;
   }
 
 #if 0
-if(strstr(buf,"home/nngs/nngs/share/nngssrv/stats/player_data/j/joop"))
+if (strstr(buf,"home/nngs/nngs/share/nngssrv/stats/player_data/j/joop"))
 	raise(5 /* SIGTRAP */ );
 #endif
 
@@ -1831,10 +1869,10 @@ static int mkdir_p(const char * name)
 
   for(slash=buff; (slash=strchr(slash+1, '/' )); ) {
 	/* this is to catch double / in paths */
-    if(slash[-1] == '/') continue;
+    if (slash[-1] == '/') continue;
     *slash=0 ;
     rc=stat(buff, &statbuff);
-    if(!rc) err=EEXIST; /* this is used to skip existing prefix */
+    if (!rc) err=EEXIST; /* this is used to skip existing prefix */
     else {
       rc=mkdir(buff, mode_for_dir);
       err=(rc) ? errno: 0;
@@ -1894,11 +1932,10 @@ int pcn_out_prompt(int p, int code, int num,...)
 }
 
 /* AvK This is just a wrapper around crypt.
-** It exists to detect platforms where no working crypt()
-** exists. Instead, these seem to contain a stub, which only returns NULL.
+** some platforms have no working crypt()
+** , but do contain a stub, which only returns NULL.
 **
-** If crypt returns NULL: we issue a warning to stderr
-** and to the logfile, and bail out.
+** We first call crypt(), if it returns NULL: we issue a warning and bail out.
 ** Desperate people could return something usefull here.
 */
 char * mycrypt(const char *passwd, const char * salt)
@@ -1906,12 +1943,12 @@ char * mycrypt(const char *passwd, const char * salt)
   char *cp;
 
   cp=crypt(passwd, salt);
-  if(!cp) {
+  if (!cp) {
     fprintf(stderr,"\n%s,line %d: Need a working crypt() function!\n"
            , __FILE__,__LINE__);
     Logit("%s,line %d: Need a working crypt() function!"
            , __FILE__,__LINE__);
-    exit(0);
+    main_exit(0);
   }
   return cp;
 }
@@ -1926,7 +1963,7 @@ int xystat(struct stat * sp, int num, ...)
 
   memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
-  if(!sp) sp = &local;
+  if (!sp) sp = &local;
   rc = stat(filename1, sp);
 
   va_end(ap);
@@ -1973,4 +2010,31 @@ int parse_rank(int num, int ch)
   default: /* Bad rating. */ break;
   }
   return num;
+}
+
+
+int asc2ipaddr(char *str, unsigned *add)
+{
+  int rc;
+  unsigned vals[4];
+
+  str += strspn(str,"0xX");
+  rc = sscanf(str, "%u.%u.%u.%u", vals,vals+1,vals+2, vals+3);
+  switch(rc) {
+  case 0:
+  case 1:
+    rc = sscanf(str, "%x", vals);
+    if (rc != 1) break;
+    *add = vals[0];
+    return 0;
+  default: break;
+  case 4:
+    *add
+      =(vals[0]&0xff) <<24
+      |(vals[1]&0xff) <<16
+      |(vals[2]&0xff) <<8
+      |(vals[3]&0xff)  ;
+    return 0;
+  }
+  return -1;
 }

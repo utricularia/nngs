@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _CHANNEL_H_
-#define _CHANNEL_H_
+#ifndef CHANNEL_H
+#define CHANNEL_H
 
 /* Set the number of channels (100+6 is plenty) */
 /* AvK: NCHANNELS==normal channels, OCHANNELS=other */
@@ -63,4 +63,4 @@ extern int channel_remove(int, int);
 extern int channel_add(int, int);
 extern int add_to_yell_stack(int, char *);
 
-#endif /* _CHANNEL_H */
+#endif /* CHANNEL_H */

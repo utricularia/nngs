@@ -33,11 +33,20 @@
 #include <string.h>
 #endif
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 
 #include "nngsconfig.h"
 #include "common.h"
 #include "multicol.h"
 #include "utils.h"
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 /* grimm */
 /*char *strchr( char *s, int c);*/
@@ -57,7 +66,7 @@ struct multicol *multicol_start(int maxArray)
   return m;
 }
 
-int multicol_store(struct multicol * m, char *str)
+int multicol_store(struct multicol * m, const char *str)
 {
   if (m->num >= m->arraySize)
     return -1;
@@ -68,7 +77,7 @@ int multicol_store(struct multicol * m, char *str)
   return 0;
 }
 
-int multicol_store_sorted(struct multicol *m, char *str)
+int multicol_store_sorted(struct multicol *m, const char *str)
 /* use this instead of milticol_store to print a list sorted */
 {
   int i;  int found = 0;

@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _VARIABLE_H_
-#define _VARIABLE_H_
+#ifndef VARIABLE_H
+#define VARIABLE_H
 
 struct var_list {
   const char *name;
@@ -39,4 +39,4 @@ extern int var_set(int, const char *, const char *, int *);
 
 extern struct var_list variables[];
 
-#endif /* _VARIABLE_H_ */
+#endif /* VARIABLE_H */

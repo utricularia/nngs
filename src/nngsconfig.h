@@ -19,8 +19,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _NNGSCONFIG_H_
-#define _NNGSCONFIG_H_
+#ifndef NNGSCONFIG_H
+#define NNGSCONFIG_H
 
 /* CONFIGURE THIS: The port on which the server binds */
 #define DEFAULT_PORT 9696
@@ -28,9 +28,14 @@
 /* If you want to have a running byte count */
 #define WANT_BYTE_COUNT 1
 
-/* Set this to filemode!=0 if you want to create non-existing 
-** directories on the fly. */
-#define MODE_FOR_DIR 0755
+/* Set this to MODE_FOR_DIR !=0 if you want to create non-existing 
+** directories on the fly. This allows you to start without the
+** {help,player,games} files in the right place, at the risk of
+** creating them at the wrong places. More specifically: all over
+** the place. Use with care.
+** */
+/*define MODE_FOR_DIR 0755 */
+#define MODE_FOR_DIR 0
 
 /* AvK this is for regression testing.
 ** If set, it attempts to imitate the
@@ -41,8 +46,8 @@
 
 /* The name of the server */
 #define SERVER_NAME "NNGS Worldwide"
-#define SERVER_ADDRESS "nngs.cosmic.org 9696"
-#define SERVER_EMAIL "bugs@nngs.cosmic.org"
+#define SERVER_ADDRESS "nngs.localhost 9696"
+#define SERVER_EMAIL "nngs@localhost"
 #define SERVER_HTTP "http://nngs.cosmic.org"
 #define GEEK_EMAIL NULL
 
@@ -102,6 +107,6 @@ extern int gettimeofday(struct timeval *tp,...);
 extern int      fileno(FILE *);
 #endif
 
-#endif
+#endif /* SGI */
 
-#endif /* _NNGSCONFIG_H_ */
+#endif /* NNGSCONFIG_H */

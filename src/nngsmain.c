@@ -62,11 +62,19 @@ void player_array_init(void);
 void player_init(void);
 static void usage(char *);
 
+static void usage(char *progname);
+static void GetArgs(int argc, char *argv[]);
+static void main_event_loop(void);
+static void TerminateServer(int sig);
+static void BrokenPipe(int sig);
+static void read_ban_ip_list(void);
+
+
 static void usage(char *progname) {
   fprintf(stderr, "Usage: %s [-p port] [-h]\n", progname);
   fprintf(stderr, "\t\t-p port\t\tSpecify port. (Default=%d)\n", DEFAULT_PORT);
   fprintf(stderr, "\t\t-h\t\tDisplay this information.\n");
-  exit(1);
+  main_exit(1);
 }
 
 static void GetArgs(int argc, char *argv[])
@@ -108,7 +116,7 @@ static void TerminateServer(int sig)
   Logit("Got signal %d", sig);
   TerminateCleanup();
   net_closeAll();
-  exit(1);
+  main_exit(1);
 }
 
 
@@ -116,6 +124,7 @@ static void BrokenPipe(int sig)
 {
   static time_t lasttime=0;
   static unsigned count=0;
+
   signal(SIGPIPE, BrokenPipe);
   count++;
   if(globClock - lasttime > 10) {
@@ -131,6 +140,10 @@ int main(int argc, char *argv[])
 {
   FILE *fp;
 
+#ifdef USING_DMALLOC
+  dmalloc_debug(1);
+#endif
+
   GetArgs(argc, argv);
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
@@ -139,9 +152,10 @@ int main(int argc, char *argv[])
 #else
   signal(SIGPIPE, BrokenPipe);
 #endif
+  read_ban_ip_list();
   if (net_init(port)) {
     fprintf(stderr, "Network initialize failed on port %d.\n", port);
-    exit(1);
+    main_exit(1);
   }
   startuptime = time(NULL);
   player_high = 0;
@@ -195,5 +209,35 @@ int main(int argc, char *argv[])
   main_event_loop();
   Logit("Closing down.");
   net_closeAll();
+  main_exit(0);
   return 0;
+}
+
+void main_exit(int code)
+{
+
+#ifdef USING_DMALLOC
+  dmalloc_log_unfreed();
+  dmalloc_shutdown();
+#endif
+  exit(code);
+}
+
+
+static void read_ban_ip_list(void)
+{
+  FILE *fp;
+  int rc,cnt=0;
+  char buff[100];
+  unsigned bot, top;
+
+  fp = xyfopen(FILENAME_LIST_BAN, "r");
+  if (!fp) return;
+  while(fgets(buff, sizeof buff, fp)) {
+    rc = sscanf(buff, "%x %x", &bot, &top);
+    if (rc < 2) continue;
+    cnt += range_add(bot,top);
+  }
+  fclose(fp);
+  Logit("Ipban %d from %s", cnt, filename() );
 }

@@ -13,6 +13,11 @@
 #include "utils.h"
 #include "plan.h"
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #define INITSIZE 10
 
 struct plan

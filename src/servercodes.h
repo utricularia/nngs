@@ -1,5 +1,5 @@
-#ifndef _SERVERCODE_H
-#define _SERVERCODE_H 1
+#ifndef SERVERCODE_H
+#define SERVERCODE_H 1
 
 /* 
    These are the possible values for in parray.protostate.
@@ -50,7 +50,7 @@
 #define CODE_EMOTETO  501
 #define CODE_PING     502
 	/* AvK: Sendcodes can now be or'ed with CODE_CR1 to prepend a NL */
-#define CODE_MASK     512
+#define CODE_MASK     511
 #define CODE_CR1      1024
 	/* These are used for the second number on the protocol lines
         ** when the first number is '1' (CODE_PROMPT)
@@ -70,4 +70,4 @@
 #define STAT_TEACHING	9	/* Unused */
 #define STAT_COMPLETE	10	/* Unused */
 
-#endif /* _SERVERCODE_H */
+#endif /* SERVERCODE_H */

@@ -3,8 +3,8 @@
 ** Per-Erik Martin (pem@nngs.cosmic.org) 1999-11-25
 */
 
-#ifndef _CHKADDR_H_
-#define _CHKADDR_H_
+#ifndef CHKADDR_H
+#define CHKADDR_H
 
 /* Check if an email address seems to be correct, that is, on the form
  *   name@domainname
@@ -17,4 +17,4 @@
  */
 extern int chkaddr(const char *s);
 
-#endif /* _chkaddr_h */
+#endif /* chkaddr_h */

@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _GAMEDB_H_
-#define _GAMEDB_H_
+#ifndef GAMEDB_H_
+#define GAMEDB_H_
 
 	/* AvK Fixme: to avoid dependency on sys/types.h:ulong,
 	** mink.h now supplies xulong. (typedef'd as unsigned long, anyway)
@@ -69,8 +69,6 @@
 struct game {
 	/* Key info */
   int gstatus;
-  int white;
-  int black;
 #ifdef PAIR
   int pairwith;
   int pairstate;
@@ -99,32 +97,29 @@ struct game {
   int gotype;
   int rules;         /* RULES_NET or RULES_ING */
   float komi;
-  int time_type; /* If timed or untimed */
-  int Byo;         /* Byo time per player */
-  int ByoS;        /* Byo stones per player */
+  struct timestuff {
+    int time_type;	/* If timed or untimed */
+    int byotime;	/* Byo time per player */
+    int byostones;	/* Byo stones per player */
+    } ts;
 	/* move state */
   int onMove;
   int num_pass; 
-  int wInByo;
-  int bInByo;
-  int wByoStones;  /* Stones left to play in byo period */
-  int bByoStones;  /* Stones left to play in byo period */
-  int wTime;
-  int bTime;
+  struct playerstuff {
+    int pnum;
+    int old_num;	/* Contains the old game player number */
+    int timeleft;
+    int numbyo;		/* player in byo-yomi: number of byo periods entered */
+    int byostones;	/* Stones left to play in byo period */
+  /* GOE */
+    int penalty;	/* number of penalty points */
+    } black,white;
   int clockStopped;
   int nocaps;
-  /* GOE */
-  int B_penalty;	 /* number of B penalty points */
-  int W_penalty;	 /* number of W penalty points */
-  int num_Bovertime;      /* number of B overtime periods entered */
-  int num_Wovertime;      /* number of W overtime periods entered */
 	/* Result */
   int result;
   int winner;
   float gresult;
-	/* Misc :-) */
-  int old_white; /* Contains the old game player number */
-  int old_black; /* Contains the old game player number */
 } ;
 
 extern struct game *garray;
@@ -164,92 +159,11 @@ extern int game_read(struct game *, int, int);
 extern int game_delete(int, int);
 extern int game_save(int);
 
-extern int pgames(int, char *);
-extern void game_write_complete(int, int, twodstring);
+extern int pgames(int, FILE *);
+extern void game_write_complete(int, twodstring);
 extern int game_count(void);
 extern int game_get_num_ob(int);
-extern int write_g_out(int, FILE *, int, int, char *);
+extern int write_g_out(int, FILE *, int, char *);
 extern int game_save_complete(int, FILE *, twodstring);
-#endif /* _GAMEDB_H_ */
+#endif /* GAMEDB_H_ */
 
-#if WANT_NEWSERVER
-
-typedef struct _game {
-
-char *PlayerList;          /* colon delimited, NUL terminated list of players */
-unsigned long game_id;     /* ID of the game.  Should be unique */
-go_game_t go_game;         /* pointer to go game dependent information */
-c4_game_t c4_game;         /* pointer to connect-4 game dependent information */
-/* etc */
-} game;
-
-typedef struct _go_game_t {
-  int wInByo;
-  int wByoStones;  /* Stones left to play in byo period */
-  int bInByo;
-  int bByoStones;  /* Stones left to play in byo period */
-  int Byo;         /* Byo time per player */
-  int ByoS;        /* Byo stones per player */
-  time_t timeOfStart; 
-  float komi;
-  int num_pass; 
-  int Teach;
-  int Ladder9;
-  int Ladder19;
-  int Ladder_Possible;
-#ifdef PAIR
-  int pairwith;
-  int pairstate;
-#endif
-  int wTime;
-  int bTime;
-  int clockStopped;
-  int rated;
-  int nocaps;
-  int Private;
-  int type;
-  int size;
-  int gotype;
-  int look;
-  char *gtitle;
-  minkgame *GoGame;
-  int onMove;
-  float gresult;
-  struct mvinfo *mvinfos;
-  int nmvinfos;
-
-  /* Not saved in game file */
-  int white;
-  int black;
-  int old_white; /* Contains the old game player number */
-  int old_black; /* Contains the old game player number */
-  int status;
-
-  unsigned startTime;    /* The relative time the game started  */
-  unsigned lastMoveTime; /* Last time a move was made */
-  unsigned lastDecTime;  /* Last time a players clock was decremented */
-
-  int result;
-  int winner;
-  int width, height;    /* board dimensions */
-  move *moves;          /* move history */
-  int mvsize,movenr;    /* size of moves and number of moves played */
-  int *board;           /* current state of go-board */
-  xulongpair *zob;       /* zobrist random numbers */
-  int *uf;              /* union-find structure */
-  uf_log *uflog;        /* log of changes to uf */
-  int logsize,logid;    /* size of uflog & number of changes to uf */
-#ifdef MINKKOMI
-  float komi;
-#endif
-  int handicap;         /* handicap */
-  int caps[4];          /* # stones captured */
-  xulong hash;
-  int root,kostat;      /* root is temporary variable used in group merging */
-} go_game;
-
-typedef struct _c4_game_t {
-  int whatever;
-} c4_game;
-
-#endif /* NEWSERVER */

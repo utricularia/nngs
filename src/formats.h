@@ -21,8 +21,8 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 */
-#ifndef FORMATS_H_
-#define FORMATS_H_
+#ifndef FORMATS_H
+#define FORMATS_H
 
 #include "language.h"
 
@@ -54,7 +54,7 @@ void language_init(void)
 #define GER(n_,s_) /*  ger [n_] = s_; */
 #endif /* WANT_TO_DEFINE */
 
-#define FORMAT_COUNT 844
+#define FORMAT_COUNT (851+1)
 #define FORMAT_empty 0
 ENG(FORMAT_empty,"");
 
@@ -403,18 +403,10 @@ CHI(FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_,"您並非正在下棋.");
 GER(FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_,"Sie spielen kein Spiel.");
 
 #define FORMAT_s_HAS_INCREASED_YOUR_BONUS_BY_d_n 84
-ENG(FORMAT_s_HAS_INCREASED_YOUR_BONUS_BY_d_n,"%s has increased your bonus by %d.\n");
-CHI(FORMAT_s_HAS_INCREASED_YOUR_BONUS_BY_d_n,"%s 將您的點數加了 %d 點.\n");
-GER(FORMAT_s_HAS_INCREASED_YOUR_BONUS_BY_d_n,"%s hat ihren Bonus um %d vergroessert.\n");
 
 #define FORMAT_s_HAS_DECREASED_YOUR_BONUS_BY_d_n 85
-ENG(FORMAT_s_HAS_DECREASED_YOUR_BONUS_BY_d_n,"%s has decreased your bonus by %d.\n");
-CHI(FORMAT_s_HAS_DECREASED_YOUR_BONUS_BY_d_n,"%s 將您的點數減了 %d 點.\n");
 
 #define FORMAT_BONUS_dn 86
-ENG(FORMAT_BONUS_dn,"Bonus:              %d\n");
-CHI(FORMAT_BONUS_dn,"點數:              %d\n");
-GER(FORMAT_BONUS_dn,"Bonus:              %d\n");
 
 #define FORMAT_s_HAS_JOINED_CHANNEL_d_n 87
 ENG(FORMAT_s_HAS_JOINED_CHANNEL_d_n,"%s has joined channel %d.\n");
@@ -2950,9 +2942,33 @@ ENG(FORMAT_SERVER_ADDRESS_sn,"Server address: %s\n");
 #define FORMAT_SERVER_VERSION_sn 843
 ENG(FORMAT_SERVER_VERSION_sn,"Server version: %s\n");
 
+#define FORMAT_NEED_IP_ADDRESSn 844
+ENG(FORMAT_NEED_IP_ADDRESSn,"Need an ip-address\n");
+
+#define FORMAT_NEED_NAMEn 845
+ENG(FORMAT_NEED_NAMEn,"Need a name\n");
+
+#define FORMAT_IP_ADDRESS_s_s_BAN_IS_dn 846
+ENG(FORMAT_IP_ADDRESS_s_s_BAN_IS_dn,"IP-address %s-%s: ban is %d\n");
+ 
+#define FORMAT_PLAYER_s_AT_s_sBANNED_RANGE_sONLINEn 847
+ENG(FORMAT_PLAYER_s_AT_s_sBANNED_RANGE_sONLINEn,"Player %s at %s (%sbanned range) %sonline\n");
+
+#define FORMAT_NEED_ADCP_IP_ADDRESSn 848
+ENG(FORMAT_NEED_ADCP_IP_ADDRESSn,"Need {adcp+-?.} IP-address [IP-address]\n");
+
+#define FORMAT_IP_BAN_CHANGED_dn 849
+ENG(FORMAT_IP_BAN_CHANGED_dn,"IP-address-bans changed: %d\n");
+
+#define FORMAT_IP_RANGES_n 850
+ENG(FORMAT_IP_RANGES_n,"IP-address-ban ranges:\n");
+
+#define FORMAT__s 851
+ENG(FORMAT__s," %s");
+
 /** end insert here */
 #if WANT_TO_DEFINE
   } 
 #endif /* WANT_TO_DEFINE */
 
-#endif /* FORMATS_H_ */
+#endif /* FORMATS_H */

@@ -22,8 +22,8 @@
     GNU General Public License for more details.
 */
 
-#ifndef _COMMON_H_
-#define _COMMON_H_
+#ifndef COMMON_H
+#define COMMON_H
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -54,4 +54,4 @@ extern unsigned long byte_count;
 extern int Debug;
 extern int globClock;
 
-#endif /* _COMMON_H_ */
+#endif /* COMMON_H */
