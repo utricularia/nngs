@@ -3285,16 +3285,16 @@ int create_new_gomatch(int wp, int bp,
   garray[g].ts.byoticks = SECS2TICS(byo_time);
   garray[g].ts.byostones = 25;    /* Making an assumption here */
   garray[g].black.ticksleft = SECS2TICS(start_time);
-  garray[g].black.numbyo = 0;
+  garray[g].black.byoperiods = 0;
   garray[g].black.penalty = 0;
   garray[g].white.ticksleft = SECS2TICS(start_time);
-  garray[g].white.numbyo = 0;
+  garray[g].white.byoperiods = 0;
   garray[g].white.penalty = 0;
   if (parray[wp].slotstat.is_registered && parray[bp].slotstat.is_registered) garray[g].rated = 1;
   else garray[g].rated = 0;
   if (!strcmp(parray[wp].srank, "NR")) garray[g].rated = 0;
   if (!strcmp(parray[bp].srank, "NR")) garray[g].rated = 0;
-  garray[g].onMove = BLACK;
+  garray[g].onMove = PLAYER_BLACK;
   garray[g].timeOfStart = globClock;
   garray[g].starttick = read_tick();
   garray[g].lastMovetick = garray[g].starttick;
@@ -3347,10 +3347,10 @@ int create_new_gomatch(int wp, int bp,
   parray[bp].protostate = STAT_PLAYING_GO;
   parray[wp].game = g;
   parray[wp].opponent = bp;
-  parray[wp].side = WHITE;
+  parray[wp].side = PLAYER_WHITE;
   parray[bp].game = g;
   parray[bp].opponent = wp;
-  parray[bp].side = BLACK;
+  parray[bp].side = PLAYER_BLACK;
   send_go_boards(g, 0);
   if(garray[g].Teach == 1) return COM_OKN;
   if(size == 19) {

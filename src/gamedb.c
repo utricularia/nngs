@@ -188,10 +188,10 @@ static void game_zero(struct game *g, int size)
   g->ts.byostones = 25;
   g->white.ticksleft = SECS2TICS(300);
   g->white.byostones = -1;
-  g->white.numbyo = 0;
+  g->white.byoperiods = 0;
   g->black.ticksleft = SECS2TICS(300);
   g->black.byostones = -1;
-  g->black.numbyo = 0;
+  g->black.byoperiods = 0;
   g->Ladder9 = 0;
   g->Ladder19 = 0;
   g->Tourn = 0;
@@ -260,15 +260,6 @@ int game_finish(int g)
   return 0;
 }
 
-char *ggame_str(int xtime, int size, int byo_time)
-{
-  static char tstr[100];
-
-    sprintf(tstr, "%d %d %d", xtime, size, byo_time);
-
-  return tstr;
-}
-
 void add_kib(struct game *g, int movecnt, char *s)
 {
   int i;
@@ -305,7 +296,7 @@ void send_go_board_to(int g, int p)
     side = parray[p].side;
   } else {
     observing = 1;
-    side = WHITE;
+    side = PLAYER_WHITE;
   }
   /*game_update_time(g);*/
   getcaps(garray[g].GoGame, &wc, &bc);
@@ -534,10 +525,10 @@ void game_disconnect(int g, int p)
 {
 #ifdef PAIR
   if(paired(parray[p].game)) {
-    game_ended(garray[g].pairwith, NEITHER, END_LOSTCONNECTION);
+    game_ended(garray[g].pairwith, PLAYER_NEITHER, END_LOSTCONNECTION);
   }
 #endif /* PAIR */
-  game_ended(g, NEITHER, END_LOSTCONNECTION);
+  game_ended(g, PLAYER_NEITHER, END_LOSTCONNECTION);
 }
 
 static void savekib(FILE *fp, struct game *g)
@@ -587,11 +578,11 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "b_penalty:")) {
     g->black.penalty = atoi(value);
   } else if (!strcmp(attr, "b_over:")) {
-    g->black.numbyo = atoi(value);
+    g->black.byoperiods = atoi(value);
   } else if (!strcmp(attr, "w_penalty:")) {
     g->white.penalty = atoi(value);
   } else if (!strcmp(attr, "w_over:")) {
-    g->white.numbyo = atoi(value);
+    g->white.byoperiods = atoi(value);
   } else if (!strcmp(attr, "title:")) {
     g->gtitle = mystrdup(value);
   } else if (!strcmp(attr, "event:")) {
@@ -628,9 +619,9 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "byos:")) {
     g->ts.byostones = atoi(value);
   } else if (!strcmp(attr, "w_byo:")) {
-    g->white.numbyo = atoi(value);
+    g->white.byoperiods = atoi(value);
   } else if (!strcmp(attr, "b_byo:")) {
-    g->black.numbyo = atoi(value);
+    g->black.byoperiods = atoi(value);
   } else if (!strcmp(attr, "w_byostones:")) {
     g->white.byostones = atoi(value);
   } else if (!strcmp(attr, "b_byostones:")) {
@@ -669,11 +660,11 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "movesrnext:")) {  /* value meaningless */
     /* PEM: Get the true onMove. */
     switch (loadgame(fp, g->GoGame)) {
-    case GO_BLACK:
-      g->onMove = BLACK;
+    case MINK_BLACK:
+      g->onMove = PLAYER_BLACK;
       break;
-    case GO_WHITE:
-      g->onMove = WHITE;
+    case MINK_WHITE:
+      g->onMove = PLAYER_WHITE;
       break;
     }
   } else if (!strcmp(attr, "kibitz:")) {  /* value meaningless */
@@ -743,8 +734,8 @@ int game_read(struct game *g, int wp, int bp)
   if (g->num_pass >= 2) {
     back(g->GoGame);
     g->num_pass = 1;
-    if (g->onMove==WHITE) g->onMove = BLACK;
-    else g->onMove = WHITE;
+    if (g->onMove == PLAYER_WHITE) g->onMove = PLAYER_BLACK;
+    else g->onMove = PLAYER_WHITE;
   }
   /* Need to do notification and pending cleanup */
   return 0;
@@ -890,8 +881,8 @@ int game_save(int g)
   fprintf(fp, "B_Time: %d\n", garray[g].black.ticksleft);
   fprintf(fp, "Byo: %d\n", garray[g].ts.byoticks);
   fprintf(fp, "ByoS: %d\n", garray[g].ts.byostones);
-  fprintf(fp, "W_Byo: %d\n", garray[g].white.numbyo);
-  fprintf(fp, "B_Byo: %d\n", garray[g].black.numbyo);
+  fprintf(fp, "W_Byo: %d\n", garray[g].white.byoperiods);
+  fprintf(fp, "B_Byo: %d\n", garray[g].black.byoperiods);
   fprintf(fp, "W_ByoStones: %d\n", garray[g].white.byostones);
   fprintf(fp, "B_ByoStones: %d\n", garray[g].black.byostones);
   fprintf(fp, "ClockStopped: %d\n", garray[g].clockStopped);

@@ -1169,7 +1169,7 @@ void TerminateCleanup()
 
   for (g = 0; g < garray_top; g++) {
     if (garray[g].gstatus != GSTATUS_ACTIVE) continue;
-    game_ended(g, NEITHER, END_ADJOURN);
+    game_ended(g, PLAYER_NEITHER, END_ADJOURN);
   }
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_inuse) continue;

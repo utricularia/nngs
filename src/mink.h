@@ -28,13 +28,13 @@ typedef unsigned long ulong; /* cygwin doesn't have it in sys/types.h */
 typedef unsigned long xulong; /* better create our own typedef names */
 #endif
 
-#define GO_EMPTY	0		/* these 3 colors must be in [0..3] */
-#define GO_BLACK	1
-#define GO_WHITE	2
+#define MINK_EMPTY	0		/* these 3 colors must be in [0..3] */
+#define MINK_BLACK	1
+#define MINK_WHITE	2
 
-#define EDGE	-1
-#define PASS	-1
-#define KOMI 5.5		/* default value for komi */
+#define MINK_EDGE	-1
+#define MINK_PASS	-1
+#define MINK_KOMI 5.5		/* default value for komi */
 
 #define FIXEDHCAP 1             /* If you want fixed handicaps by default */
 

@@ -55,9 +55,9 @@
 #define END_NOTENDED 4         /* The game is in progress */
 #define END_DONE 5             /* The game is finished, was scored */
 
-#define WHITE 0x00
-#define BLACK 0x80
-#define NEITHER 10
+#define PLAYER_BLACK 0
+#define PLAYER_WHITE 1
+#define PLAYER_NEITHER 2
 
 #define NOTPAIRED	0
 #define PAIR1		1
@@ -116,7 +116,7 @@ struct game {
     int pnum;
     int old_num;	/* Contains the old game player number */
     int ticksleft;
-    int numbyo;		/* player in byo-yomi: number of byo periods entered */
+    int byoperiods;		/* player in byo-yomi: number of byo periods entered */
     int byostones;	/* Stones left to play in byo period */
   /* GOE */
     int penalty;	/* number of penalty points */
@@ -137,8 +137,6 @@ extern int game_remove(int);
 extern int game_finish(int);
 
 extern char *game_time_str(int, int, int, int);
-extern char *game_str(int, int, int, int, int, char *, char *);
-extern char *ggame_str(int, int, int);
 extern int game_isblitz(int, int, int, int, char *, char *);
 
 extern void add_kib(struct game *g, int movecnt, char *s);

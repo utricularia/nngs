@@ -404,7 +404,7 @@ static void player_zero(int p)
   parray[p].last_problem = 0;
   parray[p].thisHost = 0;
   parray[p].lastHost = 0;
-  parray[p].lastColor = WHITE;
+  parray[p].lastColor = PLAYER_WHITE;
   parray[p].rating = 0;
   parray[p].orating = 0;
   parray[p].silent_login = 0;
@@ -1318,7 +1318,7 @@ void player_pend_print(int p, struct pending * pend)
   case PEND_TMATCH:
   case PEND_GMATCH:
   case PEND_MATCH:
-    sprintf(tmp, "%s.", ggame_str(pend->param3, pend->param2, pend->param4));
+    sprintf(tmp, "%d %d %d.", pend->param3, pend->param2, pend->param4);
     break;
   case PEND_PAUSE:
     sprintf(tmp, "to pause the clock.");

@@ -340,16 +340,16 @@ ENG(FORMAT_WHITE_PLAYER_s_ssn,"White Player: %s %3.3s%s\n")
 #define FORMAT_BLACK_PLAYER_s_ssn 68
 ENG(FORMAT_BLACK_PLAYER_s_ssn,"Black Player: %s %3.3s%s\n")
 
-#define FORMAT_STORED_GAMES_FOR_s_ 69
-ENG(FORMAT_STORED_GAMES_FOR_s_,"Stored games for %s:")
+#define FORMAT_STORED_GAMES_FOR_s_n 69
+ENG(FORMAT_STORED_GAMES_FOR_s_n,"Stored games for %s:\n")
 
-#define FORMAT_COMPLETED_GAMES_FOR_s_ 70
-ENG(FORMAT_COMPLETED_GAMES_FOR_s_,"Completed games for %s:")
-GER(FORMAT_COMPLETED_GAMES_FOR_s_,"Gespielte Spiele fuer %s:")
+#define FORMAT_COMPLETED_GAMES_FOR_s_n 70
+ENG(FORMAT_COMPLETED_GAMES_FOR_s_n,"Completed games for %s:\n")
+GER(FORMAT_COMPLETED_GAMES_FOR_s_n,"Gespielte Spiele fuer %s:\n")
 
-#define FORMAT_FOUND_d_COMPLETED_GAMES_ 71
-ENG(FORMAT_FOUND_d_COMPLETED_GAMES_,"Found %d completed games.")
-GER(FORMAT_FOUND_d_COMPLETED_GAMES_,"%d gespielte Spiele gefunden.")
+#define FORMAT_FOUND_d_COMPLETED_GAMES_n 71
+ENG(FORMAT_FOUND_d_COMPLETED_GAMES_n,"Found %d completed games.\n")
+GER(FORMAT_FOUND_d_COMPLETED_GAMES_n,"%d gespielte Spiele gefunden.\n")
 
 #define FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n 72
 ENG(FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,"The player %s is now in byo-yomi.")
@@ -370,9 +370,8 @@ GER(FORMAT_YOU_MUST_BE_ONE_OF_THE_TWO_PLAYERS_TO_SRESIGN_,"Sie muesse einer von 
 #define FORMAT_YOU_CAN_T_SRESIGN_FOR_A_PLAYER_WHOSE_ADMIN_LEVEL_IS_HIGHER_THAN_YOURS_ 76
 ENG(FORMAT_YOU_CAN_T_SRESIGN_FOR_A_PLAYER_WHOSE_ADMIN_LEVEL_IS_HIGHER_THAN_YOURS_,"You can't sresign for a player whose admin level is higher than yours.")
 
-#define FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_ 77
-ENG(FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_,"There is no stored game %s vs. %s (Hmmmmm)")
-GER(FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_,"Kein gespeichertes Spiel %s gegen %s (Hmmmmm)")
+#define FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_n 77
+ENG(FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_n,"There is no stored game %s vs. %s (Hmmmmm)\n")
 
 #define FORMAT_THERE_IS_NO_PLAYER_MATCHING_THAT_NAME_n 78
 ENG(FORMAT_THERE_IS_NO_PLAYER_MATCHING_THAT_NAME_n,"There is no player matching that name.\n")
@@ -1942,9 +1941,6 @@ ENG(FORMAT_CLIENT_TYPE_CHANGED_TO_,"Client type changed to: ")
 #define FORMAT_CODE_COMMANDn 511
 ENG(FORMAT_CODE_COMMANDn,"Code Command\n")
 
-#define FORMAT_COMPLETED_GAMES_FOR_s_n 512
-ENG(FORMAT_COMPLETED_GAMES_FOR_s_n,"Completed games for %s:\n")
-
 #define FORMAT_CONFIDENCE_f_PERCENTn 513
 ENG(FORMAT_CONFIDENCE_f_PERCENTn,"Confidence = %.2f percent\n")
 
@@ -2019,11 +2015,9 @@ ENG(FORMAT_FOUND_d_NAMES_,"Found %d names.")
 #define FORMAT_FOUND_d_OBSERVERS_ 537
 ENG(FORMAT_FOUND_d_OBSERVERS_,"Found %d observers.")
 
-#define FORMAT_FOUND_d_STORED_GAMES_ 538
-ENG(FORMAT_FOUND_d_STORED_GAMES_,"Found %d stored games.")
+#define FORMAT_FOUND_d_STORED_GAMES_n 538
+ENG(FORMAT_FOUND_d_STORED_GAMES_n,"Found %d stored games.\n")
 
-#define FORMAT_FOUND_0_STORED_GAMES_ 539
-ENG(FORMAT_FOUND_0_STORED_GAMES_,"Found 0 stored games.")
 
 #define FORMAT_FULL_NAME_SET_TO_s_n 540
 ENG(FORMAT_FULL_NAME_SET_TO_s_n,"Full Name set to %s.\n")
@@ -2508,8 +2502,8 @@ ENG(FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_n,"There is no player by that name.\n
 #define FORMAT_THERE_IS_NO_PROBLEM_NUMBER_d 708
 ENG(FORMAT_THERE_IS_NO_PROBLEM_NUMBER_d,"There is no problem number %d")
 
-#define FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s 709
-ENG(FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s,"There is no stored game %s vs. %s")
+#define FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn 709
+ENG(FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn,"There is no stored game %s vs. %s\n")
 
 #define FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n 710
 ENG(FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n,"There was an internal error.  Please notify an admin!\n")
@@ -2685,8 +2679,8 @@ ENG(FORMAT_YOU_CANNOT_OBSERVE_A_GAME_THAT_YOU_ARE_PLAYING_,"You cannot observe a
 #define FORMAT_YOU_CANNOT_REVIEW_MULTIPLE_SGF_FILES_n 765
 ENG(FORMAT_YOU_CANNOT_REVIEW_MULTIPLE_SGF_FILES_n,"You cannot review multiple SGF files.\n")
 
-#define FORMAT_YOU_CANNOT_TOUCH_SOMEONE_ELSES_STORED_GAME 766
-ENG(FORMAT_YOU_CANNOT_TOUCH_SOMEONE_ELSES_STORED_GAME,"You cannot touch someone elses stored game")
+#define FORMAT_YOU_CANNOT_TOUCH_SOMEONE_ELSES_STORED_GAME_n 766
+ENG(FORMAT_YOU_CANNOT_TOUCH_SOMEONE_ELSES_STORED_GAME_n,"You cannot touch someone elses stored game.\n")
 
 #define FORMAT_YOU_DECLINE_THE_ADJOURN_REQUEST_FROM_s_n 767
 ENG(FORMAT_YOU_DECLINE_THE_ADJOURN_REQUEST_FROM_s_n,"You decline the adjourn request from %s.\n")

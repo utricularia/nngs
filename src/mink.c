@@ -38,7 +38,7 @@ extern int random(void);
 
 
 #include "nngsmain.h"
-#define _MINK_C_ 1
+#define MINK_C 1
 #include "mink.h"
 #include "utils.h"
 
@@ -48,9 +48,9 @@ extern int random(void);
 #endif
 
 
-#define MOVECOLOR(i)	(((i) & 1) ? GO_BLACK : GO_WHITE)
+#define MOVECOLOR(i)	(((i) & 1) ? MINK_BLACK : MINK_WHITE)
 #define LASTCOLOR(g)	MOVECOLOR((g)->movenr)
-#define OTHERCOL(c)	(GO_BLACK + GO_WHITE - (c))
+#define OTHERCOL(c)	(MINK_BLACK + MINK_WHITE - (c))
 
 /* the following macros are to be used only w.r.t. a game struct called g */
 #define Vdiff		((g)->width+1)		/* vertical index difference */
@@ -97,13 +97,13 @@ static void startgame(struct minkgame *g)
 
   g->movenr = g->logid = 0;
   g->hash = 0L;
-  g->caps[GO_WHITE] = g->caps[GO_BLACK] = 0;
+  g->caps[MINK_WHITE] = g->caps[MINK_BLACK] = 0;
   for (x=0; x<ESize; x++)
-    g->board[x] = GO_EMPTY;
+    g->board[x] = MINK_EMPTY;
   for (y=0; y<ESize; y+=Vdiff)
-    g->board[y] = EDGE;
+    g->board[y] = MINK_EDGE;
   for (x=1; x<Vdiff; x++)
-    g->board[x] = g->board[x+ESize-Vdiff] = EDGE;
+    g->board[x] = g->board[x+ESize-Vdiff] = MINK_EDGE;
 }
 
 typedef xulong xulongpair[2];
@@ -132,7 +132,7 @@ struct minkgame *initminkgame(int width, int height, int rules)
   g->rules = rules;
   g->handicap = 0;
 #ifdef MINKKOMI
-  g->komi = KOMI;
+  g->komi = MINK_KOMI;
 #endif
   g->board = calloc(ESize, sizeof *g->board);
   assert(g->board != NULL);
@@ -183,7 +183,7 @@ void savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos)
       }
     } else {
       fprintf(fp,";%c[", "WB"[i&1]);
-      if (p == PASS)
+      if (p == MINK_PASS)
         fprintf(fp, "tt");
       else fprintf(fp,"%c%c", 'a'-1+ p%Vdiff, 'a' + g->height - p/Vdiff);
       fprintf(fp,"]");
@@ -227,7 +227,7 @@ int loadgame(FILE *fp, struct minkgame *g)	/* return player_to_move if OK */
     else if (play(g, point(g, mfile - ('a'-1), g->height - (rank - 'a')),0) == 0)
        return 0;
   }
-  return g->movenr & 1 ? GO_WHITE: GO_BLACK ;
+  return g->movenr & 1 ? MINK_WHITE: MINK_BLACK ;
 }
 
 int loadpos(FILE *fp, struct minkgame *g)	/* return player_to_move if OK */
@@ -243,7 +243,7 @@ int loadpos(FILE *fp, struct minkgame *g)	/* return player_to_move if OK */
         return 0;
     }
   }
-  return g->movenr & 1 ? GO_WHITE: GO_BLACK ;
+  return g->movenr & 1 ? MINK_WHITE: MINK_BLACK ;
 }
 
 xulong gethash(struct minkgame *g)
@@ -354,7 +354,7 @@ static void ufadd(struct minkgame *g, int i, int v)	/* logged change to union-fi
 
 static void fill(struct minkgame *g, int p, int c)	/* fill empty space from point p with color c */
 {
-  if (g->board[p] == GO_EMPTY) {
+  if (g->board[p] == MINK_EMPTY) {
     g->hash ^= Zob[p][c];
     g->board[p] = c;
     g->caps[c]--;
@@ -367,11 +367,11 @@ static void fill(struct minkgame *g, int p, int c)	/* fill empty space from poin
 
 static int capture(struct minkgame *g, int p, int c)	/* return #stones captured */
 {
-  if (g->board[p] == GO_EMPTY || g->board[p] == EDGE)
+  if (g->board[p] == MINK_EMPTY || g->board[p] == MINK_EDGE)
     return 0;
   if (g->board[p] == c) {
     g->hash ^= Zob[p][c];
-    g->board[p] = GO_EMPTY;
+    g->board[p] = MINK_EMPTY;
     g->caps[c]++;
     return 1 + capture(g,p-Vdiff,c) + capture(g,p-1,c)
              + capture(g,p+1,c) + capture(g,p+Vdiff,c);
@@ -386,9 +386,9 @@ static int neighbour(struct minkgame *g, int p, int c)
 {
   int nc,nr;
 
-  if ((nc = g->board[p]) == EDGE)
+  if ((nc = g->board[p]) == MINK_EDGE)
     return 0;
-  if (nc == GO_EMPTY) {
+  if (nc == MINK_EMPTY) {
     ufadd(g,g->root,-1);	/* extra liberty */
     g->kostat = -1;
     return 0;
@@ -435,7 +435,7 @@ int back(struct minkgame *g)	/* return 1 on succes */
     startgame(g);
     return 1;
   }
-  if (p == PASS)
+  if (p == MINK_PASS)
     return 1;
 /*  if (g->nocaps == 0) { */
     if (mv->self)
@@ -452,7 +452,7 @@ int back(struct minkgame *g)	/* return 1 on succes */
     }
 /*  } */
   for (; (i = g->uflog[--g->logid].index); g->uf[i] = g->uflog[g->logid].value);
-  g->board[p] = GO_EMPTY;
+  g->board[p] = MINK_EMPTY;
   g->hash = (mv-1)->hash;
   return 1;
 }
@@ -461,7 +461,7 @@ void forward(struct minkgame *g)
 {
   int p;
 
-  if ((p = g->moves[g->movenr+1].point) == PASS)
+  if ((p = g->moves[g->movenr+1].point) == MINK_PASS)
     g->movenr++;
   else play(g,p,0);
 }
@@ -534,7 +534,7 @@ int play(struct minkgame *g, int p, int ko)	/* return whether move is legal */
   int c;
   struct minkmove *mv;
 
-  if (g->board[p] != GO_EMPTY || p == g->moves[g->movenr].ko)
+  if (g->board[p] != MINK_EMPTY || p == g->moves[g->movenr].ko)
     return 0;
   if (g->rules == RULES_ING &&
      (g->movenr&1) && g->movenr < 2 * g->handicap)
@@ -574,10 +574,10 @@ int pass(struct minkgame *g)	/* if pass is i'th consecutive one, return i */
   int i;
 
   growmoves(g);
-  g->moves[i = ++g->movenr].point = PASS;
+  g->moves[i = ++g->movenr].point = MINK_PASS;
   g->moves[g->movenr].ko = 0;
   g->moves[g->movenr].hash = g->moves[g->movenr-1].hash;
-  while (g->moves[--i].point == PASS) ;
+  while (g->moves[--i].point == MINK_PASS) ;
   return g->movenr - i;
 }
 
@@ -630,7 +630,7 @@ void listmove(struct minkgame *g, int i, char *buf)	/* list move i in game g */
   pt = g->moves[i].point;
   if (pt < -1)
     sprintf(buf,"Handicap %d",-1-pt);
-  else if (pt == PASS)
+  else if (pt == MINK_PASS)
     sprintf(buf,"Pass");
   else sprintf(buf, "%c%d", cnv_file2ch(pt%Vdiff), pt/Vdiff);
 }
@@ -660,7 +660,7 @@ void printboard(struct minkgame *g, twodstring buf)
   for (x=1; x<=g->width; x++)
      sprintf(buf[y]+2*x+1," %c", cnv_file2ch(x));
   p = g->moves[g->movenr].point;
-  if (p > 0 && p != PASS ) {
+  if (p > 0 && p != MINK_PASS ) {
     y = g->height + 1 - p / Vdiff;
     x = 2 * (p % Vdiff) + 2;
     buf[y][2] = BOARDCHARS[9];
@@ -675,7 +675,7 @@ void printboard(struct minkgame *g, twodstring buf)
     {
       x = *star++ - 'a' + 1;
       y = *star++ - 'a' + 1;
-      if (g->board[point(g,x,y)] == GO_EMPTY)
+      if (g->board[point(g,x,y)] == MINK_EMPTY)
         buf[g->height+1-y][x*2+2] = BOARDCHARS[8];
     }
   }
@@ -701,18 +701,18 @@ void boardstatus(struct minkgame *g, twodstring buf)
 
 static int findowner(struct minkgame *g, int p)
 {
-  if (g->board[p] == EDGE || g->board[p] == 4+GO_EMPTY)
+  if (g->board[p] == MINK_EDGE || g->board[p] == 4+MINK_EMPTY)
     return 0;
-  if (g->board[p] != GO_EMPTY)
+  if (g->board[p] != MINK_EMPTY)
     return g->board[p];
-  g->board[p] = 4+GO_EMPTY;
+  g->board[p] = 4+MINK_EMPTY;
   return findowner(g,p-Vdiff) | findowner(g,p-1)
          | findowner(g,p+1) | findowner(g,p+Vdiff);
 }
 
 static void setowner(struct minkgame *g, int p, int c)
 {
-  if (g->board[p] == 4+GO_EMPTY) {
+  if (g->board[p] == 4+MINK_EMPTY) {
     g->board[p] = 4 + c;
     setowner(g,p-Vdiff,c);
     setowner(g,p-1,c);
@@ -723,8 +723,8 @@ static void setowner(struct minkgame *g, int p, int c)
 
 void getcaps(struct minkgame *g, int *wh, int *bl)
 {
-  *wh = g->caps[GO_WHITE];
-  *bl = g->caps[GO_BLACK];
+  *wh = g->caps[MINK_WHITE];
+  *bl = g->caps[MINK_BLACK];
 }
 
 void countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, int *bo)
@@ -733,21 +733,21 @@ void countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, i
 
   *wt = *bt = *wo = *bo = 0;  /* territory and occupied */
   for (p=Vdiff+1; p<ESize-Vdiff; p++) {
-    if (g->board[p] == EDGE)
+    if (g->board[p] == MINK_EDGE)
       continue;
-    if (g->board[p] == GO_EMPTY && (own = findowner(g,p)))
+    if (g->board[p] == MINK_EMPTY && (own = findowner(g,p)))
       setowner(g,p,own);
-    if (g->board[p] == GO_BLACK)
+    if (g->board[p] == MINK_BLACK)
       (*bo)++;
-    else if (g->board[p] == 4+GO_BLACK)
+    else if (g->board[p] == 4+MINK_BLACK)
       (*bt)++;
-    else if (g->board[p] == GO_WHITE)
+    else if (g->board[p] == MINK_WHITE)
       (*wo)++;
-    else if (g->board[p] == 4+GO_WHITE)
+    else if (g->board[p] == 4+MINK_WHITE)
       (*wt)++;
   }
   boardstatus(g, buf);
   for (p=Vdiff+1; p<ESize-Vdiff; p++)
     if (g->board[p] >= 4)
-      g->board[p] = GO_EMPTY;
+      g->board[p] = MINK_EMPTY;
 }
