@@ -137,7 +137,7 @@ int com_anews(int p, struct parameter* param)
   FILE *fp;
   char junk[MAX_LINE_SIZE];
   char *junkp;
-  int crtime;
+  time_t crtime;
   char count[10];
   int flag, len;
 
@@ -155,15 +155,15 @@ int com_anews(int p, struct parameter* param)
     while ((junkp=fgets(junk, sizeof junk, fp))) {
       if ((len = strlen(junk))<=1) continue;
       junk[len-1]=0;
-      sscanf(junkp, "%d %s", &crtime, count);
+      sscanf(junkp, "%d %s", (int *) &crtime, count);
       junkp=nextword(junkp); 
       junkp=nextword(junkp);
       if (((param[0].type==TYPE_WORD) && (!strcmp(param[0].val.word,"all")))) {
-        pprintf(p, "%3s (%s) %s\n", count, strltime((time_t *) &crtime), junkp);
+        pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
         flag=1;
       } else {
         if ((crtime - player_lastconnect(p))>0) {
-          pprintf(p, "%3s (%s) %s\n", count, strltime((time_t *) &crtime), junkp);
+          pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
           flag=1;
 	}
       }
@@ -171,7 +171,7 @@ int com_anews(int p, struct parameter* param)
     fclose(fp);
     crtime=player_lastconnect(p);
     if (!flag) {
-      pprintf(p, "There is no news since your last login (%s).\n",strltime((time_t *) &crtime));
+      pprintf(p, "There is no news since your last login (%s).\n",strltime(&crtime));
     } else {
       pprintf(p, "%s\n",
                 parray[p].client ? "6 Info" : "");
@@ -188,11 +188,11 @@ int com_anews(int p, struct parameter* param)
     while ((junkp=fgets(junk, sizeof junk, fp))) {
       if ((len = strlen(junk))<=1) continue;
       junk[len-1]=0;
-      sscanf(junkp, "%d %s", &crtime, count);
+      sscanf(junkp, "%d %s", (int *) &crtime, count);
       if (!strcmp(count,param[0].val.word)) {
         junkp=nextword(junkp); 
         junkp=nextword(junkp);
-        pprintf(p, "\nNEWS %3s (%s)\n\n         %s\n\n", count, strltime((time_t *) &crtime), junkp);
+        pprintf(p, "\nNEWS %3s (%s)\n\n         %s\n\n", count, strltime(&crtime), junkp);
         break;
       }
     }
@@ -453,7 +453,7 @@ static char downer[1024];
 void ShutDown()
 {
   int p1;
-  int shuttime = globClock;
+  time_t shuttime = globClock;
 
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_connected) continue;
@@ -461,9 +461,9 @@ void ShutDown()
   }
   TerminateCleanup();
 #if 0
-  fprintf(stderr, "Shutdown ordered at %s by %s.\n", strltime((time_t *) &shuttime), downer);
+  fprintf(stderr, "Shutdown ordered at %s by %s.\n", strltime(&shuttime), downer);
 #endif
-  Logit("Shutdown ordered at %s by %s.", strltime((time_t *) &shuttime), downer);
+  Logit("Shutdown ordered at %s by %s.", strltime(&shuttime), downer);
   net_closeAll();
   system("touch .shutdown");
   main_exit(0);

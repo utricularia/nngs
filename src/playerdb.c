@@ -732,7 +732,7 @@ int player_read(int p)
   char *attr, *value;
   FILE *fp;
   int len, rat, gm, slot;
-  int shuttime = globClock;
+  time_t tt = globClock;
   char trnk;
 
   gm = 0;
@@ -804,7 +804,7 @@ int player_read(int p)
   }
   if(!parray[p].RegDate[0]) {
     player_dirty(p);
-    do_copy(parray[p].RegDate, strltime((time_t *) &shuttime), sizeof parray[p].RegDate);
+    do_copy(parray[p].RegDate, strltime(&tt), sizeof parray[p].RegDate);
   }
 #ifdef NNGSRATED
   if (!strcasecmp(parray[p].ranked, "NR") ) {
@@ -1243,11 +1243,11 @@ void player_write_loginout(int p, int inout)
     }
 }
 
-int player_lastconnect(int p)
+time_t player_lastconnect(int p)
 {
   FILE *fp;
-  int inout, thetime, registered;
-  int last = 0;
+  int inout;
+  time_t thetime, registered, last = 0;
   char loginName[MAX_LOGIN_NAME+1];
   char ipstr[20];
   char buff[MAX_LINE_SIZE];
@@ -1259,7 +1259,7 @@ int player_lastconnect(int p)
   while (fgets(buff,sizeof buff, fp)) {
     if (inout == P_LOGIN)
       last = thetime;
-    if (sscanf(buff, "%d %s %d %d %s", &inout, loginName, &thetime, 
+    if (sscanf(buff, "%d %s %d %d %s", &inout, loginName, (int*) &thetime, 
                        &registered, ipstr) != 5) {
       Logit( "Error in login info format. %s", filename() );
       fclose(fp);
@@ -1558,7 +1558,7 @@ int player_num_messages(int p)
 int player_add_message(int top, int fromp, char *message)
 {
   FILE *fp;
-  int t = globClock;
+  time_t tt = globClock;
 
   if (!parray[top].slotstat.is_registered) return -1;
   if (!parray[fromp].slotstat.is_registered) return -1;
@@ -1566,7 +1566,7 @@ int player_add_message(int top, int fromp, char *message)
     return -1;
   fp = xyfopen(FILENAME_PLAYER_cs_MESSAGES, "a", parray[top].login);
   if (!fp) return -1;
-  fprintf(fp, "%s at %s GMT: %s\n", parray[fromp].pname, strgtime((time_t *) &t), message);
+  fprintf(fp, "%s at %s GMT: %s\n", parray[fromp].pname, strgtime(&tt), message);
   fclose(fp);
   return 0;
 }

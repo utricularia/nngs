@@ -74,6 +74,10 @@
 #define MAX_RANK 60
 #define MAX_RANKED 12
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
 #include "pending.h"
 /*
  * Note: the player array is used as a cache for the player data file.
@@ -112,8 +116,8 @@ struct player_ {
 	unsigned  is_online:1;	/* Player is logged on and can receive */
 	unsigned  is_registered:1;	/* registered Player, data should be saved */
 	unsigned  is_dirty:1;	/* Data has changed */
-	unsigned fixcount:2;	/* Reference count; for testing */
-	int timestamp;		/* For LRU allocation, should be time_t */
+	unsigned fixcount:2;	/* Reference count; for refleak testing */
+	time_t timestamp;	/* For LRU allocation */
 	} slotstat;
   char pname[MAX_NAME + 1];
   char login[MAX_NAME + 1];	/* login is the same as pname, but lowercase */
@@ -240,7 +244,7 @@ extern int player_idle(int);
 extern int player_ontime(int);
 
 extern void player_write_loginout(int, int);
-extern int player_lastconnect(int);
+extern time_t player_lastconnect(int);
 extern int player_lastdisconnect(int);
 
 extern int player_cmp(int, int, int);

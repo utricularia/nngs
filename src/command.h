@@ -76,7 +76,7 @@ extern const char *version_string;
 
 extern mode_t mode_for_dir;
 
-extern int startuptime;
+extern time_t startuptime;
 extern int player_high;
 extern int game_high;
 extern int MailGameResult;

@@ -108,7 +108,7 @@ int com_register(int p, struct parameter * param)
   char salt[4];
   int p1, p2;
   int idx, len;
-  int shuttime = globClock;
+  time_t shuttime = globClock;
 
   len=strlen(pname);
   if (len > MAX_NAME) {
@@ -154,7 +154,7 @@ int com_register(int p, struct parameter * param)
   do_copy(parray[p1].srank, "NR", sizeof parray[0].srank);
   do_copy(parray[p1].fullname, fullname, sizeof parray[0].fullname);
   do_copy(parray[p1].email, email, sizeof parray[0].email);
-  do_copy(parray[p1].RegDate, strltime((time_t *) &shuttime), sizeof parray[0].RegDate);
+  do_copy(parray[p1].RegDate, strltime(&shuttime), sizeof parray[0].RegDate);
   for (idx = 0; idx < PASSLEN; idx++) {
     passwd[idx] = 'a' + rand() % 26;
   }
@@ -252,7 +252,7 @@ int com_news(int p, struct parameter * param)
   FILE *fp;
   char junk[MAX_LINE_SIZE];
   char *junkp;
-  int crtime;
+  time_t crtime;
   char count[10];
   int flag, len;
 
@@ -269,15 +269,15 @@ int com_news(int p, struct parameter * param)
     while ((junkp=fgets(junk, sizeof junk, fp))) {
       if ((len = strlen(junk))<=1) continue;
       junk[len-1]='\0';
-      sscanf(junkp, "%d %s", &crtime, count);
+      sscanf(junkp, "%d %s", (int*) &crtime, count);
       junkp=nextword(junkp);
       junkp=nextword(junkp);
       if (((param[0].type==TYPE_WORD) && (!strcmp(param[0].val.word,"all")))) {
-        pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime((time_t *) &crtime), junkp);
+        pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
         flag=1;
       } else {
         if ((crtime - player_lastconnect(p))>0) {
-          pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime((time_t *) &crtime), junkp);
+          pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
 	flag=1;
 	}
       }
@@ -285,7 +285,7 @@ int com_news(int p, struct parameter * param)
     fclose(fp);
     crtime=player_lastconnect(p);
     if (!flag) {
-      pcn_out(p,CODE_INFO, FORMAT_THERE_IS_NO_NEWS_SINCE_YOUR_LAST_LOGIN_s_n, strltime((time_t *) &crtime));
+      pcn_out(p,CODE_INFO, FORMAT_THERE_IS_NO_NEWS_SINCE_YOUR_LAST_LOGIN_s_n, strltime(&crtime));
     } else {
       pcn_out(p,CODE_INFO, FORMAT_n);
     }
@@ -300,11 +300,11 @@ int com_news(int p, struct parameter * param)
     while ((junkp=fgets(junk, sizeof junk, fp))) {
       if ((len = strlen(junk))<=1) continue;
       junk[len-1]='\0';
-      sscanf(junkp, "%d %s", &crtime, count);
+      sscanf(junkp, "%d %s", (int*) &crtime, count);
       if (!strcmp(count,param[0].val.word)) {
         junkp=nextword(junkp);
         junkp=nextword(junkp);
-        pcn_out(p,CODE_INFO, FORMAT_NEWS_s_s_nn_sn, count, strltime((time_t *) &crtime), junkp);
+        pcn_out(p,CODE_INFO, FORMAT_NEWS_s_s_nn_sn, count, strltime(&crtime), junkp);
 	break;
       }
     }
@@ -335,7 +335,7 @@ int com_news(int p, struct parameter * param)
 int com_note(int p, struct parameter * param)
 {
   FILE *fp;
-  int t = globClock;
+  time_t tt = globClock;
 
   fp = xyfopen(FILENAME_NOTEFILE,"a");
   if(!fp) {
@@ -344,7 +344,7 @@ int com_note(int p, struct parameter * param)
   }
   fputs(parray[p].pname, fp);
   fputs(" on ",fp);
-  fputs(strgtime((time_t *) & t),fp);
+  fputs(strgtime(&tt),fp);
   fputs(": \n '",fp);
   fputs(param[0].val.string, fp);
   fputs("'\n\n",fp);
@@ -1691,7 +1691,7 @@ int com_set(int p, struct parameter * param)
 int com_stats(int p, struct parameter * param)
 {
   int p1;
-  int t;
+  time_t tt;
   const struct player *LadderPlayer;
 
   if (param[0].type == TYPE_WORD) {
@@ -1713,11 +1713,11 @@ int com_stats(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_WINS_dn, parray[p1].gowins);
   pcn_out(p, CODE_INFO, FORMAT_LOSSES_dn, parray[p1].golose);
   if(!parray[p1].slotstat.is_online) {
-    t = player_lastdisconnect(p1);
+    tt = player_lastdisconnect(p1);
     pcn_out(p, CODE_INFO, FORMAT_LAST_ACCESS_GMT_NOT_ON_sn,
-                t ? strgtime((time_t *) &t) : "Never connected.");
+                tt ? strgtime(&tt) : "Never connected.");
     pcn_out(p,CODE_INFO,  FORMAT_LAST_ACCESS_LOCAL_NOT_ON_sn,
-                t ? strltime((time_t *) &t) : "Never connected.");
+                tt ? strltime(&tt) : "Never connected.");
   }
   else {
     pcn_out(p,CODE_INFO,  FORMAT_IDLE_TIME_ON_SERVER_sn,
@@ -1995,7 +1995,7 @@ int com_password(int p, struct parameter * param)
 
 int com_uptime(int p, struct parameter * param)
 {
-  unsigned long uptime, now;
+  time_t uptime, now;
   const struct player *LPlayer;
   int count;
   UNUSED(param);
@@ -2007,10 +2007,10 @@ int com_uptime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_SERVER_ADDRESS_sn, server_address);
   pcn_out(p, CODE_INFO, FORMAT_SERVER_VERSION_sn, version_string);
 
-  pcn_out(p, CODE_INFO, FORMAT_CURRENT_TIME_GMT_sn, strgtime((time_t *) &now));
-  pcn_out(p, CODE_INFO, FORMAT_CURRENT_LOCAL_TIME_sn, strltime((time_t *) &now));
+  pcn_out(p, CODE_INFO, FORMAT_CURRENT_TIME_GMT_sn, strgtime(&now));
+  pcn_out(p, CODE_INFO, FORMAT_CURRENT_LOCAL_TIME_sn, strltime(&now));
   pcn_out(p, CODE_INFO, FORMAT_THE_SERVER_HAS_BEEN_RUNNING_SINCE_s_GMT_n,
-                          strltime((time_t *) &startuptime));
+                          strltime(&startuptime));
 
   /* Does this break any clients? */
   if (uptime > 86400)
@@ -2052,17 +2052,19 @@ int com_uptime(int p, struct parameter * param)
 
 int com_date(int p, struct parameter * param)
 {
-  int t = globClock;
+  time_t tt = globClock;
   UNUSED(param);
-  pcn_out(p,CODE_INFO, FORMAT_LOCAL_TIME_sn, strltime((time_t *) &t));
-  pcn_out(p,CODE_INFO, FORMAT_GREENWICH_TIME_sn, strgtime((time_t *) &t));
+
+  pcn_out(p,CODE_INFO, FORMAT_LOCAL_TIME_sn, strltime(&tt));
+  pcn_out(p,CODE_INFO, FORMAT_GREENWICH_TIME_sn, strgtime(&tt));
   return COM_OK;
 }
 
 
 int plogins(int p, FILE *fp)
 {
-  int inout, thetime, registered;
+  int inout, registered;
+  time_t thetime;
   char loginName[MAX_LOGIN_NAME + 1];
   char ipstr[50];
   const char *inout_string[] = { "login", "logout" };
@@ -2082,7 +2084,7 @@ int plogins(int p, FILE *fp)
     }
 
     pcn_out(p, CODE_INFO, FORMAT_s_s_s,
-               strltime((time_t *) &thetime), loginName, inout_string[inout]);
+               strltime(&thetime), loginName, inout_string[inout]);
 
     if (parray[p].adminLevel >= ADMIN_ADMIN) {
       pprintf( p, " from %s\n", ipstr );

@@ -261,10 +261,10 @@ int game_finish(int g)
 
 char *ggame_str(int xtime, int size, int byo_time)
 {
-  static char tstr[200];
+  static char tstr[100];
 
     sprintf(tstr, "%d %d %d", xtime, size, byo_time);
-	    
+
   return tstr;
 }
 
@@ -376,14 +376,12 @@ void send_go_boards(int g, int players_only)
   bp = garray[g].black.pnum;
   wp = garray[g].white.pnum;
   sprintf(outStr, "Game %d %s: %s (%d %d %d) vs %s (%d %d %d)\n",
-        g + 1,
-        "I",
-        parray[wp].pname,
-        bc,
+        g + 1, "I",
+        parray[wp].pname, bc,
         garray[g].white.timeleft,
         garray[g].white.byostones,
-        parray[bp].pname,
-        wc,
+
+        parray[bp].pname, wc,
         garray[g].black.timeleft,
         garray[g].black.byostones);
 

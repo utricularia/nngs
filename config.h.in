@@ -90,6 +90,9 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
 /* Define to 1 if you have the <gdbm.h> header file. */
 #undef HAVE_GDBM_H
 
@@ -119,6 +122,12 @@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the `pclose' function. */
+#undef HAVE_PCLOSE
+
+/* Define to 1 if you have the `popen' function. */
+#undef HAVE_POPEN
 
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM

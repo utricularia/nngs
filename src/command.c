@@ -114,7 +114,7 @@ const char *geek_email = GEEK_EMAIL;
 
 const char *version_string = VERSION;
 
-int startuptime;
+time_t startuptime;
 int player_high;
 int game_high;
 int MailGameResult;

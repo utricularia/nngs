@@ -26,3 +26,9 @@ Version 1.1.15 (2004 Sep/Oct/Nov)
 Version 1.1.16 (2004 Nov 21)
 - (configuration/installation) fixes.
   Tested on GNU/linux(i386) and OSF1(alpha).
+
+Version 1.1.17 (2005 Feb 20)
+- byo-yomi fixes. (you have xx minutes) -->> (he has xx minutes)
+  this bug seems very old! I could not find a correct version, even
+  in a cosmic.org (17 aug 2002) version.
+- changed some ints to time_t
