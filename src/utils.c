@@ -237,21 +237,22 @@ int mail_string_to_user(int p, char *str)
 }
 
 /* Process a command for a user */
-int pcommand(int p, const char *comstr,...)
+int pcommand(int p, const char *comstr, ...)
 {
   va_list ap;
   char tmp[MAX_LINE_SIZE];
   int retval;
   int fd = parray[p].socket;
-  va_start(ap, comstr);
 
-  vsprintf(tmp, comstr, ap);
+  va_start(ap, comstr);
+  vsnprintf(tmp, sizeof tmp, comstr, ap);
+  va_end(ap);
+
   retval = process_input(fd, tmp);
   if (retval == COM_LOGOUT) {
     process_disconnection(fd);
     net_close(fd);
   }
-  va_end(ap);
   return retval;
 }
 

@@ -130,11 +130,10 @@ struct netstruct {
   int telnetState;
   
   /* Input buffering */
-  unsigned  inEnd; /* The amount of data in the inBuf. */
+  unsigned used; /* The amount of data in the inBuf. */
   unsigned  cmdEnd;  /* The end of the first command in the buffer. */
-  unsigned char  *inParseDest, *inParseSrc;
+  unsigned parse_dst, parse_src;
   int  inFull, inThrottled;
-  unsigned char  inBuf[MAX_STRING_LENGTH];
 
   /*
    * For output buffering, we use a circular buffer.  
@@ -142,6 +141,7 @@ struct netstruct {
   int  outLen;
   int  outEnd;  /* How many bytes waiting to be written? */
   char *outBuf;                 /* our send buffer, or NULL if none yet */
+  char  inBuf[MAX_STRING_LENGTH];
 } ;
 
 
@@ -513,10 +513,10 @@ static void  initConn(int fd)  {
   netarray[fd].state = netState_connected;
   netarray[fd].telnetState = 0;
 
-  netarray[fd].inEnd = 0;
+  netarray[fd].used = 0;
   netarray[fd].cmdEnd = 0;
-  netarray[fd].inParseSrc = netarray[fd].inBuf;
-  netarray[fd].inParseDest = netarray[fd].inBuf;
+  netarray[fd].parse_src = 0;
+  netarray[fd].parse_dst = 0;
   netarray[fd].inFull = 0;
   netarray[fd].inThrottled = 0;
 
@@ -598,29 +598,29 @@ static int  clearCmd(int fd)  {
   if (conn->state != netState_connected)
     return 0;
   assert(conn->cmdEnd);
-  assert(conn->cmdEnd <= conn->inEnd);
+  assert(conn->cmdEnd <= conn->used);
 #if 0
-  if (conn->cmdEnd == conn->inEnd)  {
-    conn->inParseDest -= conn->cmdEnd;
-    conn->inParseSrc -= conn->cmdEnd;
-    conn->inEnd = 0;
+  if (conn->cmdEnd == conn->used)  {
+    conn->parse_dst -= conn->cmdEnd;
+    conn->parse_src -= conn->cmdEnd;
+    conn->used = 0;
     conn->cmdEnd = 0;
   } else  {
     int  i;
-    for (i = conn->cmdEnd;  i < conn->inEnd;  ++i)  {
+    for (i = conn->cmdEnd;  i < conn->used;  ++i)  {
       conn->inBuf[i - conn->cmdEnd] = conn->inBuf[i];
     }
-    conn->inEnd -= conn->cmdEnd;
-    conn->inParseDest -= conn->cmdEnd;
-    conn->inParseSrc -= conn->cmdEnd;
+    conn->used -= conn->cmdEnd;
+    conn->parse_dst -= conn->cmdEnd;
+    conn->parse_src -= conn->cmdEnd;
     conn->cmdEnd = 0;
   }
 #else
-  if (conn->cmdEnd < conn->inEnd)
-    memmove(conn->inBuf, conn->inBuf + conn->cmdEnd, conn->inEnd - conn->cmdEnd);
-  conn->inParseDest -= conn->cmdEnd;
-  conn->inParseSrc -= conn->cmdEnd;
-  conn->inEnd -= conn->cmdEnd;
+  if (conn->cmdEnd < conn->used)
+    memmove(conn->inBuf, conn->inBuf + conn->cmdEnd, conn->used - conn->cmdEnd);
+  conn->parse_dst -= conn->cmdEnd;
+  conn->parse_src -= conn->cmdEnd;
+  conn->used -= conn->cmdEnd;
   conn->cmdEnd = 0;
 #endif
   if (checkForCmd(fd) == -1)
@@ -638,47 +638,47 @@ static int  clearCmd(int fd)  {
 static int  checkForCmd(int fd)  {
   struct netstruct  *conn = &netarray[fd];
   unsigned idx;
-  unsigned char  c;
-  unsigned char  *dest, *src;
+  unsigned char uc;
+  char  *dest, *src;
 
-  dest = conn->inParseDest;
-  src = conn->inParseSrc;
-  for (idx = src - conn->inBuf;  idx < conn->inEnd;  ++idx, ++src)  {
-    c = (unsigned char)*src;
+  dest = conn->inBuf + conn->parse_dst;
+  src = conn->inBuf + conn->parse_src;
+  for (idx = conn->parse_src;  idx < conn->used;  ++idx, ++src)  {
+    uc = *(unsigned char*) src;
     switch (conn->telnetState) {
     case 0:                     /* Haven't skipped over any control chars or
                                    telnet commands */
-      if (c == IAC) {
+      if (uc == IAC) {
         conn->telnetState = 1;
-      } else if ((c == '\n') || (c == '\r') || ( c == '\004')) {
+      } else if ((uc == '\n') || (uc == '\r') || ( uc == '\004')) {
 	*dest = '\0';
 	++idx;
-	while ((idx < conn->inEnd) &&
+	while ((idx < conn->used) &&
 	       ((conn->inBuf[idx] == '\n') || (conn->inBuf[idx] == '\r')))
 	  ++idx;
 	conn->cmdEnd = idx;
 	conn->telnetState = 0;
-	conn->inParseSrc = conn->inBuf + idx;
-	conn->inParseDest = conn->inBuf + idx;
+	conn->parse_src = idx;
+	conn->parse_dst = idx;
 	return 0;
-      } else if (!isprint(c) && c <= 127) {/* no idea what this means */
+      } else if (!isprint(uc) && uc <= 127) {/* no idea what this means */
         conn->telnetState = 0;
       } else  {
-        *(dest++) = c;
+        *(dest++) = uc;
       }
       break;
     case 1:                /* got telnet IAC */
       *src = '\n';
-      if (c == IP)  {
+      if (uc == IP)  {
         return -1;            /* ^C = logout */
-      } else if (c == DO)  {
+      } else if (uc == DO)  {
         conn->telnetState = 4;
-      } else if ((c == WILL) || (c == DONT) || (c == WONT))  {
+      } else if ((uc == WILL) || (uc == DONT) || (uc == WONT))  {
         conn->telnetState = 3;   /* this is cheesy, but we aren't using em */
-      } else if (c == AYT) {
-        net_send(fd, ayt, sizeof ayt -1);
+      } else if (uc == AYT) {
+        net_send(fd, (char*) ayt, sizeof ayt -1);
         conn->telnetState = 0;
-      } else if (c == EL) {    /* erase line */
+      } else if (uc == EL) {    /* erase line */
         dest = &conn->inBuf[0];
         conn->telnetState = 0;
       } else  {                  /* dunno what it is, so ignore it */
@@ -689,9 +689,9 @@ static int  checkForCmd(int fd)  {
       conn->telnetState = 0;
       break;
     case 4:                     /* got IAC DO */
-      if (c == TELOPT_TM)
+      if (uc == TELOPT_TM)
         net_send(fd, (char *) will_tm, sizeof will_tm);
-      else if (c == TELOPT_SGA)
+      else if (uc == TELOPT_SGA)
         net_send(fd, (char *) will_sga, sizeof will_sga);
       conn->telnetState = 0;
       break;
@@ -699,9 +699,9 @@ static int  checkForCmd(int fd)  {
       assert(0);
     }
   }
-  conn->inParseSrc = src;
-  conn->inParseDest = dest;
-  if (conn->inEnd == sizeof conn->inBuf)  {
+  conn->parse_src = src - conn->inBuf;
+  conn->parse_dst = dest - conn->inBuf;
+  if (conn->used == sizeof conn->inBuf)  {
     conn->inBuf[sizeof conn->inBuf - 1] = '\0';
     conn->cmdEnd = sizeof conn->inBuf;
   }
@@ -713,11 +713,11 @@ static int  serviceRead(int fd)  {
   int  readAmt;
   struct netstruct  *conn = &netarray[fd];
 
-  if(conn->inEnd > sizeof conn->inBuf) conn->inEnd = sizeof conn->inBuf -1;
+  if(conn->used > sizeof conn->inBuf) conn->used = sizeof conn->inBuf -1;
   assert(conn->state == netState_connected);
-  assert(conn->inEnd < sizeof conn->inBuf);
-  readAmt = read(fd, conn->inBuf + conn->inEnd,
-		 sizeof conn->inBuf - conn->inEnd);
+  assert(conn->used < sizeof conn->inBuf);
+  readAmt = read(fd, conn->inBuf + conn->used,
+		 sizeof conn->inBuf - conn->used);
   if (readAmt == 0)  {
     return -1;
   }
@@ -730,7 +730,7 @@ static int  serviceRead(int fd)  {
       return -1;
     }
   }
-  conn->inEnd += readAmt;
+  conn->used += readAmt;
   if (!conn->cmdEnd)
     return checkForCmd(fd);
   return 0;

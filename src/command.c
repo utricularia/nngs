@@ -982,7 +982,7 @@ int process_incomplete(int fd, char *com_string)
   int p;
   char last_char;
   int len;
-  char qbuff[] = "quit";
+  char *quit = "quit";
 
   p = player_find_fd(fd);
   if (p < 0) {
@@ -999,7 +999,7 @@ int process_incomplete(int fd, char *com_string)
     last_char = '\0';
   if (len == 1 && last_char == '\4') {	/* ctrl-d */
     if (parray[p].pstatus == PSTATUS_PROMPT)
-      process_input(fd, qbuff);
+      process_input(fd, quit);
     return COM_LOGOUT;
   }
   if (last_char == '\3') {	/* ctrl-c */
