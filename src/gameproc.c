@@ -2162,7 +2162,7 @@ int com_moretime(int p, struct parameter * param)
 void game_update_time(int g)
 {
   unsigned now, timesince;
-  int wp, bp, gmove;
+  int wp, bp;
 
   /* If players have "paused" the game */
   if (garray[g].clockStopped) return;

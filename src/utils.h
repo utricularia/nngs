@@ -90,6 +90,14 @@ extern int pprintf2(int, int, const char *);
 extern int Logit(const char *, ...);
 extern int pprintf_prompt(int, const char *, ...);
 extern int cpprintf_prompt(int, int, const char *, ...);
+extern int my_vsnprintf(char *, size_t, const char *, va_list);
+extern int my_snprintf(char *, size_t, const char *, ...);
+#if (!HAVE_VSNPRINTF)
+#define vsnprintf my_vsnprintf
+#endif
+#if (!HAVE_SNPRINTF)
+#define snprintf my_snprintf
+#endif
 extern int psend_raw_file(int, const char *, const char *);
 extern int psend_file(int, const char *, const char *);
 extern int pxysend_raw_file(int, int, ...);

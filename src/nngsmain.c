@@ -43,6 +43,7 @@
 #include "ladder.h"
 #include "emote.h"
 #include "mink.h"
+#include "ip_ban.h"
 
 #ifdef USING_DMALLOC
 #include <dmalloc.h>

@@ -394,6 +394,53 @@ int sncpprintf(char *buff, size_t bufflen, int p, int code, const char *format, 
 }
 #endif
 
+#if (!HAVE_VSNPRINTF)
+/* this is a simple, robust (and clumsy ...)
+ * substitution for the [v]snprintf() functions, which
+ * still seem to be absent on some systems.
+ * Don't complain about performance, instead upgrade your libc.
+ * It uses a temp file, which cannot cause any buffer-overrun.
+ * The trick of unlinking the file immediately after creation
+ * is, of course, a unixism. Other platforms may lose.
+ * A better, but very big implementation can be found in the
+ * Apache sources.
+ */
+int my_vsnprintf(char *dst, size_t siz, const char *format, va_list ap)
+{
+  static FILE * dummy = NULL;
+  int len;
+
+
+  if (!dummy) {
+    char *name;
+    name = tempnam(NULL, NULL);
+    dummy = fopen(name, "w+");
+    if (!dummy) Logit("Could not open tempfile '%s'", name);
+    unlink(name);
+  }
+  else rewind(dummy);
+  len = vfprintf(dummy, format, ap);
+  if (len >= siz) { *dst = NULL; return -1; }
+  rewind(dummy);
+  len = fread(dst, (size_t) (len+1), 1, dummy);
+  return len;
+}
+#endif
+
+#if (!HAVE_SNPRINTF)
+int my_snprintf(char *dst, size_t siz, const char *format, ... )
+{
+  va_list ap;
+  int rc;
+
+  va_start(ap, format);
+  rc = vsnprintf(dst, siz, format, ap);
+  va_end(ap);
+
+  return rc;
+}
+#endif
+
 int cpprintf(int p, int code, const char *format, ...)
 {
   va_list ap;

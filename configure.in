@@ -45,6 +45,7 @@ AC_HEADER_TIME
 AC_C_CONST
 
 AC_CHECK_HEADERS(unistd.h crypt.h term.h fcntl.h dirent.h ctype.h \
+stdio.h stdlib.h string.h \
 utime.h time.h errno.h strings.h signal.h endian.h \
 sys/time.h sys/stat.h sys/socket.h \
 arpa/inet.h arpa/telnet.h \
@@ -60,7 +61,8 @@ dnl results of setlinebuf test used in interface/play_ascii.c
 dnl alarm not available in VC
 dnl vsnprintf not universally available
 dnl usleep not available in Unicos and mingw32
-AC_CHECK_FUNCS(setlinebuf alarm vsnprintf gettimeofday usleep)
+dnl random should be in stdlib
+AC_CHECK_FUNCS(setlinebuf alarm vsnprintf snprintf gettimeofday usleep random)
 
 dnl  ----------- special-case use of gcc ---------
 

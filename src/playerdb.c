@@ -896,6 +896,7 @@ int player_markdeleted(int p)
 
 /* NL undebugged, and the keywords won't all work!  Still need to look
  * at this in more detail. */
+#if 0
 static int player_save_extended(int p)
 {
   FILE *fp;
@@ -994,6 +995,7 @@ static int player_save_extended(int p)
   fclose(fp);
   return 0;
 }
+#endif
 
 
 void player_save(int p)
