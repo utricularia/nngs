@@ -51,6 +51,9 @@
 /* admin help file dir */
 #undef AHELP_DIR
 
+/* cgames dir */
+#undef CGAME_DIR
+
 /* emoticons file */
 #undef EMOTES_FILE
 
@@ -59,9 +62,6 @@
 
 /* games dir */
 #undef GAME_DIR
-
-/* cgames dir */
-#undef CGAME_DIR
 
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
@@ -120,14 +120,23 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
 /* Define to 1 if you have the `setlinebuf' function. */
 #undef HAVE_SETLINEBUF
 
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
 
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H

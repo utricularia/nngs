@@ -19,7 +19,10 @@ mydata_DATA=emotestr
 install-data-hook:
 	for mess in ${MESSAGEDIRS}; do\
 	  install -d $(DESTDIR)$(mydatadir)/$$mess ;\
-	  install -m 644 $$mess/* $(DESTDIR)$(mydatadir)/$$mess ;\
+	  for name in $$mess/*; do\
+	    test -f $$name \
+	    && install -m 644 $$name $(DESTDIR)$(mydatadir)/$$mess ;\
+	  done ;\
 	done
 	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/stats
 	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/players
