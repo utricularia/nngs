@@ -132,7 +132,7 @@ struct netstruct {
   /* Input buffering */
   unsigned  inEnd; /* The amount of data in the inBuf. */
   unsigned  cmdEnd;  /* The end of the first command in the buffer. */
-  char  *inParseDest, *inParseSrc;
+  unsigned char  *inParseDest, *inParseSrc;
   int  inFull, inThrottled;
   unsigned char  inBuf[MAX_STRING_LENGTH];
 

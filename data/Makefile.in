@@ -380,6 +380,7 @@ install-data-hook:
 	for dir in $(HASHDIRS); do\
 	  install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/players/$$dir ; done
 	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/games
+	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/cgames
 	for dir in $(HASHDIRS); do\
 	  install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/games/$$dir ; done
 

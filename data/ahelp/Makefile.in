@@ -239,7 +239,7 @@ uninstall-am: uninstall-ahelpdataDATA uninstall-info-am
 install-data-hook:
 	for lang in ${LANGUAGES}; do\
 	  install -m 755 -d $(DESTDIR)$(ahelpdatadir)/$$lang ;\
-	  install -m 644 $$lang/* $(DESTDIR)$(ahelpdatadir)/$$lang ;\
+	  install -m 644 $$lang/[a-z]* $(DESTDIR)$(ahelpdatadir)/$$lang ;\
 	done
 
 @NO_WARNINGS@
