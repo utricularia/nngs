@@ -412,11 +412,13 @@ int my_vsnprintf(char *dst, size_t siz, const char *format, va_list ap)
     if (!dummy) Logit("Could not open tempfile '%s'", name);
     unlink(name);
   }
-  else rewind(dummy);
+  rewind(dummy);
   len = vfprintf(dummy, format, ap);
+  fflush(dummy);
   if (len >= siz) { *dst = NULL; return -1; }
   rewind(dummy);
-  len = fread(dst, (size_t) (len+1), 1, dummy);
+  len = fread(dst, 1, (size_t) len, dummy);
+  dst[len] = 0;
   return len;
 }
 #endif

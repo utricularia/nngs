@@ -1,5 +1,4 @@
 /* command_list.h
- *
  */
 
 /*
@@ -145,8 +144,6 @@ struct command_type command_list[] = {
   {"pause",		"",	com_pause,	ADMIN_USER },
   {"pending",		"",	com_pending,	ADMIN_USER },
   {"ping",		"",	com_ping,	ADMIN_USER }, 
-  /* PEM: Some admins just had to throw their weight around and interfere
-     with players. :-( */
   {"pose",		"wS",	com_pose,	ADMIN_DEMIGOD },
   {"post",              "S",    com_note,       ADMIN_USER },
   {"problem",		"p",	com_problem,	ADMIN_USER }, 

@@ -207,15 +207,15 @@ static void alias_substitute(int p, char *com_str, char **alias_str)
 }
 
 
-static int noofcomms = 0;
+static int command_count = 0;
 
 /* Initializes. Called once at start. */
 void command_init(void)
 {
-  if (!noofcomms)
+  if (!command_count)
   {
-    noofcomms = COUNTOF(command_list);
-    qsort(&(command_list),noofcomms,sizeof command_list[0],&command_cmp);
+    command_count = COUNTOF(command_list);
+    qsort(command_list, command_count, sizeof command_list[0], &command_cmp);
   }
 }
 
@@ -231,7 +231,7 @@ static int command_cmp(const void * l, const void *r)
 /* Returns the admin level of cmd, or -1 of cmd is out of bounds. */
 int command_admin_level(int cmd)
 {
-  if (cmd < 0 || cmd >= noofcomms)
+  if (cmd < 0 || cmd >= command_count)
     return -1;
   else
     return command_list[cmd].adminLevel;
@@ -246,7 +246,7 @@ int match_command(const char *comm)
 
   /* Binary search. */
   left = 0;                     /* Left most element. */
-  right = noofcomms;            /* Beyond right most element. */
+  right = command_count;            /* Beyond right most element. */
   while (left < right)
   {
     int x, i = (left+right)/2; /* Check the middle element. */
@@ -261,7 +261,7 @@ int match_command(const char *comm)
       /* Check if it's ambiguous. */
       if (i > 0 && !strncmp(comm, command_list[i-1].comm_name, len))
 	return -COM_AMBIGUOUS;
-      if (i+1 < noofcomms && !strncmp(comm, command_list[i+1].comm_name, len))
+      if (i+1 < command_count && !strncmp(comm, command_list[i+1].comm_name, len))
 	return -COM_AMBIGUOUS;
       lastCommandFound = i;
       return i;

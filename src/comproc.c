@@ -40,10 +40,8 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
-extern int snprintf(char * buf, size_t siz, const char *fmt, ...);
-extern FILE * popen(const char*,const char*); /* Sorry */
-extern int pclose(FILE*);
 
+#include "missing.h"
 #include "nngsconfig.h"
 #include "nngsmain.h"
 #include "command.h"
