@@ -40,16 +40,6 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#if 0
-/* AvK: sorry ... */
-#define off_t size_t
-extern FILE *popen(const char *, const char*);
-extern int *pclose(FILE *fp);
-extern int fileno(FILE *fp); /* should be in stdio ... */
-extern int ftruncate(int fd, off_t pos);
-extern int vsnprintf(char *buff,size_t s, const char *format, va_list ap);
-#undef off_t 
-#endif
 #endif
 
 #ifdef HAVE_CTYPE_H
@@ -84,6 +74,7 @@ extern int vsnprintf(char *buff,size_t s, const char *format, va_list ap);
 #include <crypt.h>
 #endif
 
+#include "missing.h"
 #include "nngsconfig.h"
 #include "nngsmain.h"
 #include "utils.h"
