@@ -8,12 +8,13 @@ LANGUAGES=en ch
 install-data-hook:
 	for l in ${LANGUAGES}; do\
 	for f in $$l/* ; do\
-	  d="`echo $$f | sed -e s,/[^/]*$$,,`"; \
+	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
 	  $(mkinstalldirs) $(DESTDIR)$(ahelpdatadir)/$$d; \
 	  if test -f $(srcdir)/$$f; then p=$(srcdir)/$$f; else p=$$f; fi; \
 	  $(INSTALL_DATA) $$p $(DESTDIR)$(ahelpdatadir)/$$f; \
 	  done \
 	done
+
 # Remove these files here... they are created locally
 DISTCLEANFILES = *~
 

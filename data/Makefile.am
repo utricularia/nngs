@@ -7,9 +7,8 @@ SUBDIRS=help ahelp
 # local variables
 #
 MESSAGEDIRS=info ladder lists messages news
-NUMHASH=0 1 2 3 4 5 6 7 8 9
-LETTERHASH=a b c d e f g h i j k l m n o p q r s t u v w x y z
-HASHDIRS=0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z
+WITHSUBTREEDIRS=players cgames games stats/player_data
+ONELETTER=a b c d e f g h i j k l m n o p q r s t u v w x y z
 
 mydatadir=${prefix}/share/${PACKAGE}
 
@@ -17,21 +16,22 @@ mydatadir=${prefix}/share/${PACKAGE}
 mydata_DATA=emotestr
 
 install-data-hook:
-	for mess in ${MESSAGEDIRS}; do\
-	  install -d $(DESTDIR)$(mydatadir)/$$mess ;\
-	  for name in $$mess/*; do\
-	    test -f $$name \
-	    && install -m 644 $$name $(DESTDIR)$(mydatadir)/$$mess ;\
-	  done ;\
+## This is from autobook 14.3 install-data-local:
+install-data-hook:
+	for m in ${MESSAGEDIRS}; do\
+	for f in $$m/* ; do\
+	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
+	  ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d; \
+	  if test -f ${srcdir}/$$f; then p=${srcdir}/$$f; else p=$$f; fi; \
+	  ${INSTALL_DATA} $$p ${DESTDIR}${mydatadir}/$$f; \
+	  done \
 	done
-	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/stats
-	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/players
-	for dir in $(HASHDIRS); do\
-	  install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/players/$$dir ; done
-	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/games
-	install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/cgames
-	for dir in $(HASHDIRS); do\
-	  install -d $(DESTDIR)$(prefix)/share/$(PACKAGE)/games/$$dir ; done
+	for d in ${WITHSUBTREEDIRS}; do\
+	  ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d; \
+	  for s in $(ONELETTER) ; do\
+	    ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d/$$s; \
+	  done \
+	done
 
 # Remove these files here... they are created locally
 DISTCLEANFILES = *~ *%

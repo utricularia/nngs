@@ -8,7 +8,7 @@ LANGUAGES=en ch fr pl
 install-data-hook:
 	for l in ${LANGUAGES}; do\
 	for f in $$l/* ; do\
-	  d="`echo $$f | sed -e s,/[^/]*$$,,`"; \
+	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
 	  $(mkinstalldirs) $(DESTDIR)$(helpdatadir)/$$d; \
 	  if test -f $(srcdir)/$$f; then p=$(srcdir)/$$f; else p=$$f; fi; \
 	  $(INSTALL_DATA) $$p $(DESTDIR)$(helpdatadir)/$$f; \
