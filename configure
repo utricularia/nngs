@@ -1463,7 +1463,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=nngssrv
- VERSION=1.1.15
+ VERSION=1.1.16
 
 
 cat >>confdefs.h <<_ACEOF

@@ -318,8 +318,8 @@ int pprintf(int p, const char *format, ...)
   va_start(ap, format);
 	/* AvK: the strlen could be avoided
 	** if we could trust stdlib on all platforms 
-	** (the printf() family returns the strlen() or -1 )
-	** see cpvrintf() below.
+	** (the printf() family _is_supposed_ to return 
+	** the strlen() of the resulting string, or -1 on error )
 	*/
   retval = vsprintf(tmp, format, ap);
   if ((len=strlen(tmp)) >= sizeof tmp) {
@@ -392,10 +392,13 @@ int sncpprintf(char *buff, size_t bufflen, int p, int code, const char *format, 
 /* this is a simple, robust (and clumsy ...)
  * substitution for the [v]snprintf() functions, which
  * still seem to be absent on some systems.
- * Don't complain about performance, instead upgrade your libc.
- * It uses a temp file, which cannot cause any buffer-overrun.
+ * We use a temp file, which cannot cause any buffer-overrun.
  * The trick of unlinking the file immediately after creation
  * is, of course, a unixism. Other platforms may lose.
+ * We keep the file/inode open all the time and rewind it each
+ * time it is used.
+ *
+ * Don't complain about performance, instead upgrade your libc.
  * A better, but very big implementation can be found in the
  * Apache sources.
  */
@@ -415,7 +418,7 @@ int my_vsnprintf(char *dst, size_t siz, const char *format, va_list ap)
   rewind(dummy);
   len = vfprintf(dummy, format, ap);
   fflush(dummy);
-  if (len >= siz) { *dst = NULL; return -1; }
+  if (len >= siz) { *dst = 0; return -1; }
   rewind(dummy);
   len = fread(dst, 1, (size_t) len, dummy);
   dst[len] = 0;

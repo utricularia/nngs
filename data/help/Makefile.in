@@ -237,7 +237,7 @@ uninstall-am: uninstall-helpdataDATA uninstall-info-am
 
 
 install-data-hook:
-	for l in ${LANGUAGES}; do\
+	@for l in ${LANGUAGES}; do\
 	for f in $$l/* ; do\
 	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
 	  $(mkinstalldirs) $(DESTDIR)$(helpdatadir)/$$d; \

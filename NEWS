@@ -22,3 +22,7 @@ Version 1.1.15 (2004 Sep/Oct/Nov)
 - fixed EPIPE-handling
 - fixed "courtesy" - timing error.
 - added aban command
+
+Version 1.1.16 (2004 Nov 21)
+- (configuration/installation) fixes.
+  Tested on GNU/linux(i386) and OSF1(alpha).

@@ -3,6 +3,21 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.16  2004-11-21 AvK
+- Lots of autoconf/automake stuff fixed in data/ dir
+  (install appeared to work only on linux platforms)
+- Removed [0-9] from one-letter-subdirectories in {player,games,
+  cgames,player_data}. Names are not allowed to start with a digit.
+- Added {cgames,player_data} to installation makefiles.
+  Still more to go; I added missing.h file to supply missing prototypes
+  ([v]snprintf, popen,pclose, random)
+- Changed most of the buffers in network.c (back) to signed char.
+  The only place where an unsigned char is needed, is in the telnet IAC-
+  handling. Also changed some pointers (into the inputbuffer) to offsets.
+- Added a clumsy-but-fully-functional implementation for [v]snprintf()
+  in src/utils.c. Tested on TRU64 (aka OSF1) V4.0. It works.
+- changed default setting for want_adminlevels to yes.
+
 1.1.15  2004-11-03 AvK
 
 - Corrected clock-keeping (black's 1st move used white's clock ...)

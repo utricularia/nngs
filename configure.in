@@ -8,7 +8,7 @@ AM_CONFIG_HEADER(config.h)
 AC_PREREQ(2.52)dnl               dnl Minimum Autoconf version required.
 
 dnl this defines VERSION and PACKAGE
-AM_INIT_AUTOMAKE([nngssrv], [1.1.15])
+AM_INIT_AUTOMAKE([nngssrv], [1.1.16])
 GNU_PACKAGE="GNU $PACKAGE"
 AC_DEFINE_UNQUOTED(GNU_PACKAGE, "$GNU_PACKAGE")
 

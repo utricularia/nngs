@@ -17,6 +17,7 @@ extern int pclose(FILE *fp);
 
 #if ( !HAVE_VSNPRINTF )
 #define HAVE_SNPRINTF 0
+#include <stdarg.h>
 extern int vsnprintf(char *buff,size_t s, const char *format, va_list ap);
 #endif
 

@@ -310,11 +310,13 @@ int sethcap(struct minkgame *g, int n)	/* returns 1 if succesful */
 }
 
 
+#if 0
 static int libs(struct minkgame *g, int p)	/* find #liberty-edges of p's group */
 {
   while ((p = g->uf[p]) > 0) ;
   return -p;
 }
+#endif
 
 
 static void growlog(struct minkgame *g)
@@ -605,11 +607,13 @@ void replay(struct minkgame *g)	/* replay game, e.g. to undo all removes */
 }
 
 
+#if 0
 static void showpass(struct minkgame *g)
 {
   pass(g);
   printf("%c passes.\n",BOARDCHARS[LASTCOLOR(g)]);
 }
+#endif
 
 
 static char cnv_file2ch(int i)

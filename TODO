@@ -30,9 +30,6 @@
 >>CODE
 - clean up header files included all over the place
    ...get rid of stdincludes.h completely: just need to move ulong def.
-- clean up the code wrt warnings
-
-- find fprintf's and change them to log messages??
 
 - Read configuration from .cnf file at startup
 
@@ -54,6 +51,9 @@
   address and get the passwd automatically mailed to them.
 
 - problem when entering dead groups in telnet mode
+- allow external program(gnugo) to estimate/recalculate final score.
+  This will add some extra steps to the game-state, because we can't
+  afford to wait() for the external process.
 
 
 -------------------------------------------------------------------

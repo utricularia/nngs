@@ -6,7 +6,7 @@ LANGUAGES=en ch
 
 ## This is from autobook 14.3 install-data-local:
 install-data-hook:
-	for l in ${LANGUAGES}; do\
+	@for l in ${LANGUAGES}; do\
 	for f in $$l/* ; do\
 	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
 	  $(mkinstalldirs) $(DESTDIR)$(ahelpdatadir)/$$d; \
