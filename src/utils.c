@@ -271,7 +271,7 @@ int Logit(const char *format,...)
   return 0;
 #endif
 
-  time_in = globClock;
+  time_in = globclock.time;
   va_start(ap, format);
 
   retval = vsprintf(tmp, format, ap);
@@ -1017,10 +1017,36 @@ char *strgtime(const time_t * clk)
   return strtime(stm);
 }
 
-/* This is used only for relative timeing since it reports seconds since
- * about 5:00pm on Feb 16, 1994
+/*
+ * To supply a uniform "transaction time", which is constant
+ * within one iteration of the select() loop, we store the time
+ * in the global variable globclock.
+ * Both granularities (1sec, 0.1 sec) are maintained.
+ * The returnvalue is the number of seconds since the last call.
+ * As a side effect, this will reduce the number of systemcalls ...
  */
+/* Ticks are used only for relative timeing (game time limits)
+ * since it reports seconds since about 5:00pm on Feb 16, 1994
+ */
+
 #define NNGS_EPOCH 331939277
+struct ticker globclock = {0,0};
+unsigned refetch_ticker(void)
+{
+  struct timeval tp;
+  unsigned elapsed;
+
+  gettimeofday(&tp, NULL);
+/* .1 seconds since 1970 almost fills a 32 bit int! So lets subtract off
+ * the time right now */
+  elapsed = tp.tv_sec - globclock.time;
+  globclock.time = tp.tv_sec;
+  globclock.tick = SECS2TICS(tp.tv_sec - NNGS_EPOCH)
+   + tp.tv_usec / (1000000/TICSPERSEC);
+  return elapsed;
+}
+
+#if 0
 unsigned read_tick()
 {
   struct timeval tp;
@@ -1033,11 +1059,10 @@ unsigned read_tick()
    + tp.tv_usec / (1000000/TICSPERSEC);
 }
 
-/* This is to translate tenths-secs time back into 1/1/70 time in full
+/* This is to translate tenths-secs ticks back into 1/1/70 time in full
  * seconds, because vek didn't read utils.c when he programmed new ratings.
    1 sec since 1970 fits into a 32 bit int OK. 
 */
-#if 0
 int untenths(unsigned int tenths)
 {
   return tenths/10 + NNGS_EPOCH;

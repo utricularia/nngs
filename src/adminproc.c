@@ -94,7 +94,7 @@ int com_createnews(int p, struct parameter* param)
 /* create new entry in index file */
 
   fp = xyfopen(FILENAME_NEWSINDEX, "a");
-  fprintf(fp, "%d %s %s\n", (int) globClock, count, param[0].val.string);
+  fprintf(fp, "%d %s %s\n", (int) globclock.time, count, param[0].val.string);
   fclose(fp);
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
   return COM_OK;
@@ -126,7 +126,7 @@ int com_createadmnews(int p, struct parameter* param)
 /* create new entry in index file */
 
   fp = xyfopen(FILENAME_ADMINNEWSINDEX, "a");
-  fprintf(fp, "%d %s %s\n", (int) globClock, count, param[0].val.string);
+  fprintf(fp, "%d %s %s\n", (int) globclock.time, count, param[0].val.string);
   fclose(fp);
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
   return COM_OK;
@@ -453,7 +453,7 @@ static char downer[1024];
 void ShutDown()
 {
   int p1;
-  time_t shuttime = globClock;
+  time_t shuttime = globclock.time;
 
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_connected) continue;
@@ -471,7 +471,7 @@ void ShutDown()
 
 void ShutHeartBeat()
 {
-  int t = globClock;
+  int t = globclock.time;
   int p1;
   int timeLeft;
   int crossing = 0;
@@ -519,7 +519,7 @@ int com_shutdown(int p, struct parameter* param)
   int p1, secs;
 
   strcpy(downer, parray[p].pname);
-  shutdownStartTime = globClock;   
+  shutdownStartTime = globclock.time;   
   if (shutdownTime) {         /* Cancel any pending shutdowns */
     for (p1 = 0; p1 < parray_top; p1++) {
       if (!parray[p1].slotstat.is_connected) continue;
@@ -587,7 +587,7 @@ int server_shutdown(int secs, char *why)
   }
   strcpy(downer, "Automatic");
   shutdownTime = secs;
-  shutdownStartTime = globClock;
+  shutdownStartTime = globclock.time;
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_connected) continue;
     pcn_out(p1, CODE_DOWN, FORMAT_AUTOMATIC_SERVER_SHUTDOWN_n);

@@ -108,7 +108,7 @@ int com_register(int p, struct parameter * param)
   char salt[4];
   int p1, p2;
   int idx, len;
-  time_t shuttime = globClock;
+  time_t shuttime = globclock.time;
 
   len=strlen(pname);
   if (len > MAX_NAME) {
@@ -335,7 +335,7 @@ int com_news(int p, struct parameter * param)
 int com_note(int p, struct parameter * param)
 {
   FILE *fp;
-  time_t tt = globClock;
+  time_t tt = globclock.time;
 
   fp = xyfopen(FILENAME_NOTEFILE,"a");
   if(!fp) {
@@ -684,7 +684,7 @@ int com_join(int p, struct parameter * param)
   const struct player *LadderPlayer;
   time_t now;
 
-  now = globClock;
+  now = globclock.time;
 
   if (!parray[p].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_MUST_REGISTER_TO_PLAY_ON_THE_LADDER_);
@@ -2000,7 +2000,7 @@ int com_uptime(int p, struct parameter * param)
   int count;
   UNUSED(param);
 
-  now = globClock;
+  now = globclock.time;
   uptime = now - startuptime;
 
   pcn_out(p, CODE_INFO, FORMAT_SERVER_NAME_sn, server_name);
@@ -2052,7 +2052,7 @@ int com_uptime(int p, struct parameter * param)
 
 int com_date(int p, struct parameter * param)
 {
-  time_t tt = globClock;
+  time_t tt = globclock.time;
   UNUSED(param);
 
   pcn_out(p,CODE_INFO, FORMAT_LOCAL_TIME_sn, strltime(&tt));
@@ -2909,7 +2909,7 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
       && mine->param3 == hers->param3
       && mine->param4 == hers->param4) {
 
-    if(size == 0) return COM_BADPARAMETERS;
+    if (size == 0) return COM_BADPARAMETERS;
     if ((create_new_gomatch(wp, bp,
         size, start_time, byo_time, 0, rulestype, gametype)) == COM_FAILED) {
       pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_A_PROBLEM_CREATING_THE_NEW_MATCH_);
@@ -3295,8 +3295,8 @@ int create_new_gomatch(int wp, int bp,
   if (!strcmp(parray[wp].srank, "NR")) garray[g].rated = 0;
   if (!strcmp(parray[bp].srank, "NR")) garray[g].rated = 0;
   garray[g].onMove = PLAYER_BLACK;
-  garray[g].timeOfStart = globClock;
-  garray[g].starttick = read_tick();
+  garray[g].timeOfStart = globclock.time;
+  garray[g].starttick = globclock.tick;
   garray[g].lastMovetick = garray[g].starttick;
   garray[g].lastDectick = garray[g].starttick;
   garray[g].clockStopped = 0;
@@ -3318,8 +3318,7 @@ int create_new_gomatch(int wp, int bp,
           g + 1,
           parray[wp].pname);
   sprintf(outStr, "Game %d %s: %s (0 %d %d) vs %s (0 %d %d)",
-        g + 1,
-        "I",
+        g + 1, "I",
         parray[wp].pname,
         TICS2SECS(garray[g].white.ticksleft),
         garray[g].white.byostones,

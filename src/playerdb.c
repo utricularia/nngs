@@ -87,7 +87,7 @@ char * player_dumpslot(int p)
     return buff;
   }
 
-  diff = (int) parray[p].slotstat.timestamp - globClock;
+  diff = (int) parray[p].slotstat.timestamp - globclock.time;
 
   idx= sprintf(buff,"%3d/%2d: ", p, parray[p].socket);
   buff[idx++] = (parray[p].slotstat.is_inuse) ? 'u' : '-' ;
@@ -107,7 +107,7 @@ void player_fix(int p)
 {
   if(p < 0) return;
   parray[p].slotstat.is_inuse = 1;
-  parray[p].slotstat.timestamp = globClock;
+  parray[p].slotstat.timestamp = globclock.time;
   parray[p].slotstat.fixcount += 1;
   if(!parray[p].slotstat.fixcount) {
     parray[p].slotstat.fixcount -= 1;
@@ -131,7 +131,7 @@ void player_dirty(int p)
   if(p < 0) return;
   if (parray[p].slotstat.is_valid) {
     parray[p].slotstat.is_dirty = 1;
-    parray[p].slotstat.timestamp = globClock;
+    parray[p].slotstat.timestamp = globclock.time;
     }
   else {
     Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
@@ -190,11 +190,11 @@ static int player_get_empty_slot(void)
 #endif
     player_swapslots(idx, parray_top);
     parray_top++;
-    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globClock;
+    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globclock.time;
   }
   if (idx == parray_top && parray_top < COUNTOF(parray)) {
     parray_top++;
-    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globClock;
+    if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globclock.time;
 #if DEBUG_PLAYER_SLOT
     Logit("Slot %s: top <- %d", player_dumpslot(idx), parray_top);
 #endif
@@ -202,7 +202,7 @@ static int player_get_empty_slot(void)
   player_clear(idx);
   parray[idx].slotstat.is_inuse = 0;
   parray[idx].slotstat.is_valid = 0;
-  parray[idx].slotstat.timestamp = globClock;
+  parray[idx].slotstat.timestamp = globclock.time;
   return idx;
 }
 
@@ -385,7 +385,7 @@ static void player_zero(int p)
   parray[p].last_tell_from = -1;
   parray[p].last_channel = -1;
   parray[p].logon_time = 0;
-  parray[p].last_command_time = globClock;
+  parray[p].last_command_time = globclock.time;
   parray[p].outgoing = 0;
   parray[p].incoming = 0;
   parray[p].adminLevel = ADMIN_GUEST;
@@ -732,7 +732,7 @@ int player_read(int p)
   char *attr, *value;
   FILE *fp;
   int len, rat, gm, slot;
-  time_t tt = globClock;
+  time_t tt = globclock.time;
   char trnk;
 
   gm = 0;
@@ -1187,15 +1187,15 @@ int player_count()
 int player_idle(int p)
 {
   if (parray[p].slotstat.is_online)
-    return globClock - parray[p].last_command_time;
+    return globclock.time - parray[p].last_command_time;
   else
-    return globClock - parray[p].logon_time;
+    return globclock.time - parray[p].logon_time;
 }
 
 
 int player_ontime(int p)
 {
-  return globClock - parray[p].logon_time;
+  return globclock.time - parray[p].logon_time;
 }
 
 
@@ -1203,7 +1203,7 @@ static void write_p_inout(int inout, int p, FILE *fp, int maxlines)
 {
   if (!fp)
     return;
-  fprintf(fp, "%d %s %d %d %s\n", inout, parray[p].pname, (int) globClock, 
+  fprintf(fp, "%d %s %d %d %s\n", inout, parray[p].pname, (int) globclock.time, 
                   parray[p].slotstat.is_registered, 
                   dotQuad(parray[p].thisHost));
   fclose(fp);
@@ -1529,7 +1529,7 @@ int player_remove_observe(int p, int g)
     parray[p].protostate = STAT_WAITING;
     parray[p].observe_list[0] = -1;
   }
-  parray[p].last_command_time = globClock;
+  parray[p].last_command_time = globclock.time;
   return 0;
 }
 
@@ -1558,7 +1558,7 @@ int player_num_messages(int p)
 int player_add_message(int top, int fromp, char *message)
 {
   FILE *fp;
-  time_t tt = globClock;
+  time_t tt = globclock.time;
 
   if (!parray[top].slotstat.is_registered) return -1;
   if (!parray[fromp].slotstat.is_registered) return -1;

@@ -222,7 +222,7 @@ int net_init(int port)  {
   assert(COUNTOF(netarray) <= FD_SETSIZE);
   if (!doneinit)  {
     doneinit = 1;
-    globClock = time(NULL);
+    (void) refetch_ticker();
     for (i = 0;  i < COUNTOF(netarray);  ++i)  {
       /*
        * Set up all conns to be ignored.
@@ -330,7 +330,7 @@ void  net_select(int timeout)
    *   sleep for a second.
    */
   int  moreWork = 0;
-  int  thisClock, newConn;
+  int  elapsed, newConn;
   TIMED;
 
   UNUSED(timeout);
@@ -352,7 +352,7 @@ void  net_select(int timeout)
     flushWrites();
     TIME1("flushWrites()", 0.005);
     numConns = select(COUNTOF(netarray), &nread, &nwrite, NULL, &timer);
-    if (numConns < 0)  {
+    if (numConns == -1)  {
       switch(errno) {
       case EBADF:
 	Logit("EBADF error from select ---");
@@ -376,9 +376,8 @@ void  net_select(int timeout)
      *   have more work to do.
      */
     moreWork = 0;
-    thisClock = time(NULL);
-    if (thisClock != globClock)  {
-      globClock = thisClock;
+    elapsed = refetch_ticker();
+    if (elapsed)  {
       TIME0;
       if (process_heartbeat(&fd) == COM_LOGOUT)  {
 	process_disconnection(fd);

@@ -52,6 +52,7 @@
 
 extern unsigned long byte_count;
 extern int Debug;
-extern int globClock;
+/* extern int globClock; */
+
 
 #endif /* COMMON_H */

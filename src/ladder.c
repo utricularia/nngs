@@ -313,7 +313,7 @@ void PlayerSift(int idx, int nDays)
   int *pCurr;
   int nLate;
   int *pLate;
-  time_t tNow = globClock;
+  time_t tNow = globclock.time;
   const time_t tDay = (time_t)(24 * 60 * 60);
   const time_t tCut = tNow - (nDays * tDay);
   struct player **pp;

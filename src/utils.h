@@ -129,7 +129,7 @@ extern char *strltime(const time_t *);
 extern char *strgtime(const time_t *);
 extern char *strtime_file(const time_t *);
 
-extern unsigned read_tick(void);
+/* extern unsigned read_tick(void); */
 extern char *tenth_str(unsigned int, int);
 extern int untenths(unsigned int);
 extern int do_copy(char *, const char *, int);
@@ -170,6 +170,18 @@ extern void bldsearchdata(char *psz);
 
 int parse_rank(int num, int ch);
 
+#ifndef TICSPERSEC
+#define TICSPERSEC (10)
+#define SECS2TICS(s) ((s)*TICSPERSEC)
+#define TICS2SECS(t) ((t)/TICSPERSEC)
+#endif
+
+struct ticker {
+  time_t time;
+  unsigned tick;
+  };
+extern struct ticker globclock;
+extern unsigned refetch_ticker(void);
 
 #define SDATA_USER 1
 #define SDATA_HOST 2

@@ -85,7 +85,7 @@ void game_ended(int g, int winner, int why)
   FILE *fp;
   time_t now;
 
-  now = globClock;
+  now = globclock.time;
   pb=garray[g].black.pnum ;
   pw=garray[g].white.pnum ;
 
@@ -428,7 +428,6 @@ void process_move(int p, char *command)
 {
   int g;
   int good;
-  unsigned now;
   int gmove;
   int players_only = 0;
 
@@ -516,25 +515,22 @@ void process_move(int p, char *command)
     }
     game_update_time(g);
     if(garray[g].gstatus != GSTATUS_ACTIVE) return;
-    now = read_tick();
-    garray[g].lastMovetick = now;
+    garray[g].lastMovetick = globclock.tick;
     if (garray[g].onMove == PLAYER_WHITE) { 
       garray[g].onMove = PLAYER_BLACK;
       if (garray[g].white.byostones > 0) {
-        if (garray[g].white.byostones == 1) {
+        if (--garray[g].white.byostones == 0) {
           garray[g].white.byostones = garray[g].ts.byostones;
           garray[g].white.ticksleft = garray[g].ts.byoticks;
         }
-        else garray[g].white.byostones--;
       }
     } else {
       garray[g].onMove = PLAYER_WHITE;
       if (garray[g].black.byostones > 0) {
-        if (garray[g].black.byostones == 1) {
+        if (--garray[g].black.byostones == 0) {
           garray[g].black.byostones = garray[g].ts.byostones;
           garray[g].black.ticksleft = garray[g].ts.byoticks;
         }
-        else garray[g].black.byostones--;
       }
     }
   } 
@@ -625,9 +621,8 @@ int com_pause(int p, struct parameter* param)
 	garray[g].black.ticksleft += (garray[g].lastDectick - garray[g].lastMovetick);
       }
     }
-    now = read_tick();
-    garray[g].lastMovetick = now;
-    garray[g].lastDectick = now;
+    garray[g].lastMovetick = globclock.tick;
+    garray[g].lastDectick = globclock.tick;
     pcn_out_prompt(parray[p].opponent, CODE_INFO, FORMAT_s_ACCEPTED_PAUSE_GAME_CLOCK_PAUSED_n,
 		   parray[p].pname);
     pcn_out(p, CODE_INFO, FORMAT_GAME_CLOCK_PAUSED_n);
@@ -643,7 +638,6 @@ int com_pause(int p, struct parameter* param)
 
 int com_unpause(int p, struct parameter * param)
 {
-  int now;
   int g;
   UNUSED(param);
 
@@ -657,9 +651,8 @@ int com_unpause(int p, struct parameter * param)
     return COM_OK;
   }
   garray[g].clockStopped = 0;
-  now = read_tick();
-  garray[g].lastMovetick = now;
-  garray[g].lastDectick = now;
+  garray[g].lastMovetick = globclock.tick;
+  garray[g].lastDectick = globclock.tick;
   pcn_out(p, CODE_INFO, FORMAT_GAME_CLOCK_RESUMED_);
   pcn_out_prompt(parray[p].opponent, CODE_INFO, FORMAT_GAME_CLOCK_RESUMED_n );
   return COM_OK;
@@ -979,7 +972,6 @@ int com_undo(int p, struct parameter * param)
 {
   int gmove, pw, pb;
   int g1, p1, g2;
-  unsigned now;
   char buf[20];
   int num, x;
 
@@ -1052,8 +1044,7 @@ int com_undo(int p, struct parameter * param)
       }
     }
     back(garray[g1].GoGame);
-    now = read_tick();
-    garray[g1].lastMovetick = now;
+    garray[g1].lastMovetick = globclock.tick;
     garray[g1].onMove = PLAYER_BLACK+PLAYER_WHITE - garray[g1].onMove;
     send_go_boards(g1, 0);
     gmove = movenum(garray[g1].GoGame);
@@ -1629,7 +1620,7 @@ int com_load(int p, struct parameter * param)
     }
   }
   garray[g].gstatus = GSTATUS_ACTIVE;
-  garray[g].starttick = read_tick();
+  garray[g].starttick = globclock.tick;
   garray[g].lastMovetick = garray[g].starttick;
   garray[g].lastDectick = garray[g].starttick;
 
@@ -2202,7 +2193,7 @@ void game_update_time(int g)
     return;
   }
 
-  now = read_tick();
+  now = globclock.tick;
   jiffies = now - garray[g].lastDectick;
 
   /* Courtesy to allow hcap setup, etc.... */
@@ -2252,9 +2243,13 @@ void game_update_time(int g)
       garray[g2].white.ticksleft = garray[g].white.ticksleft;
     }
 #endif /* PAIR */
+    /* White's flag fell. If he has not entered byo-yomi yet,
+    ** he will start his first b/y period.
+    ** No stones will be used, but his time keeps ticking ...
+    */
     if (garray[g].white.ticksleft <= 0 && garray[g].white.byoperiods == 0) {
       garray[g].white.byoperiods = 1;
-      garray[g].white.byostones = garray[g].ts.byostones - 1;
+      garray[g].white.byostones = garray[g].ts.byostones;
       garray[g].white.ticksleft = garray[g].ts.byoticks;
       pcn_out(pw, CODE_INFO,
                 FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
@@ -2271,6 +2266,7 @@ void game_update_time(int g)
                 garray[g].white.byostones,
                 TICS2SECS(garray[g].white.ticksleft)/60);
     }
+#if 0
     else if (garray[g].white.byostones > 0) {
       if (--garray[g].white.byostones == 0) {
         garray[g].white.byostones = garray[g].ts.byostones - 1;
@@ -2278,11 +2274,12 @@ void game_update_time(int g)
         garray[g].white.byoperiods += 1;
       }
     }
+#endif
 #ifdef PAIR
     if (paired(g)) {
       if (garray[g2].white.ticksleft <= 0 && garray[g2].white.byoperiods == 0) {
         garray[g2].white.byoperiods = 1;
-        garray[g2].white.byostones = garray[g2].ts.byostones - 1;
+        garray[g2].white.byostones = garray[g2].ts.byostones;
         garray[g2].white.ticksleft = garray[g2].ts.byoticks;
 	  /* AvK split */
         pcn_out(garray[g2].white.pnum, CODE_INFO, 
@@ -2300,6 +2297,7 @@ void game_update_time(int g)
                     garray[g2].white.byostones,
                     TICS2SECS(garray[g2].white.ticksleft)/60);
       }
+#if 0
       else if (garray[g2].white.byostones > 0) {
         if (--garray[g2].white.byostones == 0) {
           garray[g2].white.byostones = garray[g2].ts.byostones - 1;
@@ -2307,6 +2305,7 @@ void game_update_time(int g)
           garray[g2].white.byoperiods += 1;
         }
       }
+#endif
     }
 #endif /* PAIR */
 
@@ -2319,7 +2318,7 @@ void game_update_time(int g)
 #endif /* PAIR */
     if (garray[g].black.ticksleft <= 0 && garray[g].black.byoperiods == 0) {
       garray[g].black.byoperiods = 1;
-      garray[g].black.byostones = garray[g].ts.byostones - 1;
+      garray[g].black.byostones = garray[g].ts.byostones;
       garray[g].black.ticksleft = garray[g].ts.byoticks;
 	/* AvK split */
       pcn_out(garray[g].white.pnum, CODE_INFO,
@@ -2337,6 +2336,7 @@ void game_update_time(int g)
               garray[g].black.byostones,
               TICS2SECS(garray[g].black.ticksleft)/60);
     }
+#if 0
     else if (garray[g].black.byostones > 0) {
       if (garray[g].black.byostones == 0) {
         garray[g].black.byostones = garray[g].ts.byostones - 1;
@@ -2344,6 +2344,7 @@ void game_update_time(int g)
         garray[g].black.byoperiods += 1;
       }
     }
+#endif
 #ifdef PAIR
     if(paired(g)) {
       if ((garray[g2].black.ticksleft <= 0) && (garray[g2].black.byoperiods == 0)) {
@@ -2365,6 +2366,7 @@ void game_update_time(int g)
                garray[g2].black.byostones,
                TICS2SECS(garray[g2].black.ticksleft)/60);
       }
+#if 0
       else if (garray[g2].black.byostones > 0) {
         if (--garray[g2].black.byostones == 0) {
           garray[g2].black.byostones = garray[g2].ts.byostones - 1;
@@ -2372,6 +2374,7 @@ void game_update_time(int g)
           garray[g2].black.byoperiods += 1;
         }
       }
+#endif
     }
 #endif /* PAIR */
   }

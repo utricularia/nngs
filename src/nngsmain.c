@@ -57,7 +57,7 @@ int port, Ladder9, Ladder19, num_19, num_9, completed_games,
 unsigned long byte_count = 0L;
 #endif
 
-int globClock = 0;
+/* int globClock = 0; */
 
 void player_array_init(void);
 void player_init(void);
@@ -128,10 +128,10 @@ static void BrokenPipe(int sig)
 
   signal(SIGPIPE, BrokenPipe);
   count++;
-  if(globClock - lasttime > 10) {
+  if (globclock.time - lasttime > 10) {
     Logit("Got %u Broken Pipes in %d seconds: sig %d\n"
-	, count, globClock - lasttime, sig);
-    lasttime=globClock;
+	, count, globclock.time - lasttime, sig);
+    lasttime=globclock.time;
     count=0;
     }
 }

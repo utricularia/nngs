@@ -608,7 +608,7 @@ static int process_password(int p, char *password)
 	  channel_remove(i, p);
 	}
       }
-      parray[p].logon_time = globClock;
+      parray[p].logon_time = globclock.time;
       parray[p].pstatus = PSTATUS_LOGIN;
       /* player_resort(); */
       parray[p].socket = fd;
@@ -864,7 +864,7 @@ int process_input(int fd, char *com_string)
 
   commanding_player = p;
   strcpy(orig_command, com_string);
-  parray[p].last_command_time = globClock;
+  parray[p].last_command_time = globclock.time;
   switch (parray[p].pstatus) {
     default:
       sprintf(statstr,".status=%d", parray[p].pstatus);
@@ -914,7 +914,7 @@ void process_new_connection(int fd, unsigned int fromHost)
   parray[p].socket = fd;            /* track the FD */
   parray[p].slotstat.is_connected = 1;
   parray[p].slotstat.is_online = 0;
-  parray[p].logon_time = globClock;   /* Set the login time */
+  parray[p].logon_time = globclock.time;   /* Set the login time */
   parray[p].thisHost = fromHost;    /* set the host FROM field */
   parray[p].pass_tries = 0;         /* Clear number of password attempts */
   pxysend_raw_file(p, FILENAME_MESS_LOGIN); /* Send the login file */
@@ -1024,7 +1024,7 @@ int process_heartbeat(int *fdp)
   int p;
   static int last_idle_check;
   static int resu = 0;
-  int now = globClock;
+  int now = globclock.time;
   static struct stat ratingsbuf1, ratingsbuf2;
 #ifdef NNGSRATED
   rdbm_t rdb;

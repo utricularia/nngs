@@ -300,6 +300,7 @@ void send_go_board_to(int g, int p)
   }
   /*game_update_time(g);*/
   getcaps(garray[g].GoGame, &wc, &bc);
+  bbuf[0] = wbuf[0] = 0;
   if(parray[p].i_verbose) {
     if(garray[g].black.byostones > 0) sprintf(bbuf, " B %d", garray[g].black.byostones);
     if(garray[g].white.byostones > 0) sprintf(wbuf, " B %d", garray[g].white.byostones);
@@ -329,11 +330,11 @@ void send_go_board_to(int g, int p)
       else if((yy==4) && (garray[g].GoGame->height > 3))
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn,
                 statstring[yy], hms(TICS2SECS(garray[g].white.ticksleft), 1, 1, 0),
-                (garray[g].white.byostones > 0) ? wbuf : "");
+                wbuf );
       else if((yy==5) && (garray[g].GoGame->height > 4))
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn,
                 statstring[yy], hms(TICS2SECS(garray[g].black.ticksleft), 1, 1, 0),
-                (garray[g].black.byostones > 0) ? bbuf : "");
+                bbuf);
       else if((yy==7) && (garray[g].GoGame->height > 6))
 	if(count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_n, statstring[yy]);
@@ -390,8 +391,7 @@ void send_go_boards(int g, int players_only)
       pcn_out(wp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g].GoGame) - 1, buf[0], buf + 1); 
     }
-    if(parray[wp].bell) 
-       pcn_out_prompt(wp, CODE_CR1|CODE_BEEP, FORMAT_n);
+    if(parray[wp].bell) pcn_out_prompt(wp, CODE_CR1|CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(wp, CODE_CR1|CODE_NONE,FORMAT_n);
   }
 
@@ -403,8 +403,7 @@ void send_go_boards(int g, int players_only)
       pcn_out(bp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g].GoGame) - 1, buf[0], buf + 1); 
     }
-    if(parray[bp].bell)
-      pcn_out_prompt(bp, CODE_BEEP, FORMAT_n);
+    if(parray[bp].bell) pcn_out_prompt(bp, CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(bp, CODE_NONE, FORMAT_n);
   }
 
@@ -414,15 +413,12 @@ void send_go_boards(int g, int players_only)
     if (!parray[p].slotstat.is_online) continue;
     if (!player_is_observe(p, g)) continue;
     if (parray[p].game == g) continue;
-    if(parray[p].i_verbose) send_go_board_to(g, p);
+    if (parray[p].i_verbose) send_go_board_to(g, p);
     else {
       pcn_out(p, CODE_MOVE, FORMAT_s, outStr);
       pcn_out(p, CODE_MOVE, FORMAT_d_c_sn,
-         movenum(garray[g].GoGame) - 1,
-         buf[0],
-         buf + 1);
-      if(parray[p].bell)
-        pcn_out_prompt(p, CODE_BEEP, FORMAT_n);
+         movenum(garray[g].GoGame) - 1, buf[0], buf + 1);
+      if(parray[p].bell) pcn_out_prompt(p, CODE_BEEP, FORMAT_n);
       else pcn_out_prompt(p, CODE_NONE, FORMAT_n);
     }
   }
@@ -726,7 +722,7 @@ int game_read(struct game *g, int wp, int bp)
 
   fclose(fp);
   g->gstatus = GSTATUS_ACTIVE;
-  g->starttick = read_tick();
+  g->starttick = globclock.tick;
   g->lastMovetick = g->starttick;
   g->lastDectick = g->starttick;
 
@@ -767,7 +763,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
     obp = garray[garray[g].pairwith].black.pnum;
   }
 #endif
-  now = globClock;
+  now = globclock.time;
 	/* This is ugly, depends on global filename ... */
   tmp = strrchr(filename(), '/');
   if(garray[g].gresult == 0.0) sprintf(resu, "Resign");
@@ -973,7 +969,7 @@ void game_write_complete(int g, twodstring statstring)
 {
   char fdate[40];
   int wp, bp;
-  int now = globClock;
+  int now = globclock.time;
   char wname[sizeof parray[0].pname], bname[sizeof parray[0].pname];
   FILE *fp;
 
