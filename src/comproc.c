@@ -3281,23 +3281,24 @@ int create_new_gomatch(int wp, int bp,
 #ifdef USING_PRIVATE_GAMES
   garray[g].Private = parray[wp].Private || parray[bp].Private;
 #endif
-  garray[g].black.timeleft = start_time;
+  garray[g].ts.totalticks = SECS2TICS(start_time);
+  garray[g].ts.byoticks = SECS2TICS(byo_time);
+  garray[g].ts.byostones = 25;    /* Making an assumption here */
+  garray[g].black.ticksleft = SECS2TICS(start_time);
   garray[g].black.numbyo = 0;
   garray[g].black.penalty = 0;
-  garray[g].white.timeleft = start_time;
+  garray[g].white.ticksleft = SECS2TICS(start_time);
   garray[g].white.numbyo = 0;
   garray[g].white.penalty = 0;
   if (parray[wp].slotstat.is_registered && parray[bp].slotstat.is_registered) garray[g].rated = 1;
   else garray[g].rated = 0;
   if (!strcmp(parray[wp].srank, "NR")) garray[g].rated = 0;
   if (!strcmp(parray[bp].srank, "NR")) garray[g].rated = 0;
-  garray[g].ts.byotime = byo_time;
-  garray[g].ts.byostones = 25;    /* Making an assumption here */
   garray[g].onMove = BLACK;
-  garray[g].timeOfStart = tenth_secs();
-  garray[g].startTime = tenth_secs();
-  garray[g].lastMoveTime = garray[g].startTime;
-  garray[g].lastDecTime = garray[g].startTime;
+  garray[g].timeOfStart = globClock;
+  garray[g].starttick = read_tick();
+  garray[g].lastMovetick = garray[g].starttick;
+  garray[g].lastDectick = garray[g].starttick;
   garray[g].clockStopped = 0;
   garray[g].rules = rules;
   if(!garray[g].Teach)
@@ -3320,10 +3321,10 @@ int create_new_gomatch(int wp, int bp,
         g + 1,
         "I",
         parray[wp].pname,
-        garray[g].white.timeleft,
+        TICS2SECS(garray[g].white.ticksleft),
         garray[g].white.byostones,
         parray[bp].pname,
-	garray[g].black.timeleft,
+	TICS2SECS(garray[g].black.ticksleft),
 	garray[g].black.byostones);
   if(!garray[g].Teach) {
     if(parray[wp].client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);

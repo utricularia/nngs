@@ -1021,7 +1021,7 @@ char *strgtime(const time_t * clk)
  * about 5:00pm on Feb 16, 1994
  */
 #define NNGS_EPOCH 331939277
-unsigned tenth_secs()
+unsigned read_tick()
 {
   struct timeval tp;
   /* struct timezone tzp; */
@@ -1029,13 +1029,15 @@ unsigned tenth_secs()
   gettimeofday(&tp, NULL);
 /* .1 seconds since 1970 almost fills a 32 bit int! So lets subtract off
  * the time right now */
-  return ((tp.tv_sec - NNGS_EPOCH) * 10) + (tp.tv_usec / 100000);
+  return SECS2TICS(tp.tv_sec - NNGS_EPOCH)
+   + tp.tv_usec / (1000000/TICSPERSEC);
 }
 
 /* This is to translate tenths-secs time back into 1/1/70 time in full
  * seconds, because vek didn't read utils.c when he programmed new ratings.
    1 sec since 1970 fits into a 32 bit int OK. 
 */
+#if 0
 int untenths(unsigned int tenths)
 {
   return tenths/10 + NNGS_EPOCH;
@@ -1045,6 +1047,7 @@ char *tenth_str(unsigned int t, int spaces)
 {
   return hms((t + 5) / 10, 0, 1, spaces);	/* Round it */
 }
+#endif
 
 #define MAX_TRUNC_SIZE 100
 

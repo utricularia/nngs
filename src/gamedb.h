@@ -66,6 +66,12 @@
 #define TIMETYPE_UNTIMED 0
 #define TIMETYPE_TIMED 1
 
+#ifndef TICSPERSEC
+#define TICSPERSEC (10)
+#define SECS2TICS(s) ((s)*TICSPERSEC)
+#define TICS2SECS(t) ((t)/TICSPERSEC)
+#endif
+
 struct game {
 	/* Key info */
   int gstatus;
@@ -76,9 +82,9 @@ struct game {
   char *gtitle;
   char *gevent;
   time_t timeOfStart; 
-  unsigned startTime;    /* The relative time the game started  */
-  unsigned lastMoveTime; /* Last time a move was made */
-  unsigned lastDecTime;  /* Last time a players clock was decremented */
+  unsigned starttick;    /* The tic when this game was started  */
+  unsigned lastMovetick; /* Last tic a move was made */
+  unsigned lastDectick;  /* Last tic a players clock was decremented */
   struct minkgame *GoGame;
   int nmvinfos;
   struct mvinfo *mvinfos;
@@ -99,7 +105,8 @@ struct game {
   float komi;
   struct timestuff {
     int time_type;	/* If timed or untimed */
-    int byotime;	/* Byo time per player */
+    int totalticks;	/* Total game time allowed */
+    int byoticks;	/* Byo ticks per byo period */
     int byostones;	/* Byo stones per player */
     } ts;
 	/* move state */
@@ -108,7 +115,7 @@ struct game {
   struct playerstuff {
     int pnum;
     int old_num;	/* Contains the old game player number */
-    int timeleft;
+    int ticksleft;
     int numbyo;		/* player in byo-yomi: number of byo periods entered */
     int byostones;	/* Stones left to play in byo period */
   /* GOE */

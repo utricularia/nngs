@@ -176,19 +176,20 @@ static void game_zero(struct game *g, int size)
   g->Private = 0;
   g->komi = 0.5;
   g->result = END_NOTENDED;
-  g->ts.time_type = TIMETYPE_UNTIMED;
   g->num_pass = 0;
   g->gtitle = NULL;
   g->gevent = NULL;
   g->GoGame = NULL;
   g->Teach = 0;
   g->Teach2 = 0;
-  g->ts.byotime = 300;
+  g->ts.time_type = TIMETYPE_UNTIMED;
+  g->ts.totalticks = SECS2TICS(300);
+  g->ts.byoticks = SECS2TICS(300);
   g->ts.byostones = 25;
-  g->white.timeleft = 300;
+  g->white.ticksleft = SECS2TICS(300);
   g->white.byostones = -1;
   g->white.numbyo = 0;
-  g->black.timeleft = 300;
+  g->black.ticksleft = SECS2TICS(300);
   g->black.byostones = -1;
   g->black.numbyo = 0;
   g->Ladder9 = 0;
@@ -335,9 +336,13 @@ void send_go_board_to(int g, int p)
       else if(yy==2)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_CAPTURED_BY_O_dn, statstring[yy], bc);
       else if((yy==4) && (garray[g].GoGame->height > 3))
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn, statstring[yy], hms(garray[g].white.timeleft, 1, 1, 0), (garray[g].white.byostones > 0) ? wbuf : "");
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn,
+                statstring[yy], hms(TICS2SECS(garray[g].white.ticksleft), 1, 1, 0),
+                (garray[g].white.byostones > 0) ? wbuf : "");
       else if((yy==5) && (garray[g].GoGame->height > 4))
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn, statstring[yy], hms(garray[g].black.timeleft, 1, 1, 0), (garray[g].black.byostones > 0) ? bbuf : "");
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn,
+                statstring[yy], hms(TICS2SECS(garray[g].black.ticksleft), 1, 1, 0),
+                (garray[g].black.byostones > 0) ? bbuf : "");
       else if((yy==7) && (garray[g].GoGame->height > 6))
 	if(count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_n, statstring[yy]);
@@ -378,11 +383,11 @@ void send_go_boards(int g, int players_only)
   sprintf(outStr, "Game %d %s: %s (%d %d %d) vs %s (%d %d %d)\n",
         g + 1, "I",
         parray[wp].pname, bc,
-        garray[g].white.timeleft,
+        TICS2SECS(garray[g].white.ticksleft),
         garray[g].white.byostones,
 
         parray[bp].pname, wc,
-        garray[g].black.timeleft,
+        TICS2SECS(garray[g].black.ticksleft),
         garray[g].black.byostones);
 
   if((parray[wp].i_verbose) && (garray[g].Teach == 0)) 
@@ -577,6 +582,8 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
     g->ts.time_type = atoi(value);
   } else if (!strcmp(attr, "rules:")) {
     g->rules = atoi(value);
+  } else if (!strcmp(attr, "totalticks:")) {
+    g->ts.totalticks = atoi(value);
   } else if (!strcmp(attr, "b_penalty:")) {
     g->black.penalty = atoi(value);
   } else if (!strcmp(attr, "b_over:")) {
@@ -613,11 +620,11 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
       parray[g->black.pnum].match_type = GAMETYPE_TNETGO;
     }
   } else if (!strcmp(attr, "w_time:")) {
-    g->white.timeleft = atoi(value);
+    g->white.ticksleft = atoi(value);
   } else if (!strcmp(attr, "b_time:")) {
-    g->black.timeleft = atoi(value);
+    g->black.ticksleft = atoi(value);
   } else if (!strcmp(attr, "byo:")) {
-    g->ts.byotime = atoi(value);
+    g->ts.byoticks = atoi(value);
   } else if (!strcmp(attr, "byos:")) {
     g->ts.byostones = atoi(value);
   } else if (!strcmp(attr, "w_byo:")) {
@@ -728,9 +735,9 @@ int game_read(struct game *g, int wp, int bp)
 
   fclose(fp);
   g->gstatus = GSTATUS_ACTIVE;
-  g->startTime = tenth_secs();
-  g->lastMoveTime = g->startTime;
-  g->lastDecTime = g->startTime;
+  g->starttick = read_tick();
+  g->lastMovetick = g->starttick;
+  g->lastDectick = g->starttick;
 
   /* PEM: This used to be done when saving, but that broke things. */
   if (g->num_pass >= 2) {
@@ -812,7 +819,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   fprintf(fp, "PC[%s: %s]\n", server_name, server_address);
   fprintf(fp, "DT[%s]\n", strDTtime(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g].GoGame->width,
-     (garray[g].ts.byotime), garray[g].komi);
+     TICS2SECS(garray[g].ts.totalticks), garray[g].komi);
   if(Debug) Logit("garray[g].nmvinfos = %d", garray[g].nmvinfos);
   savegame(fp, garray[g].GoGame, garray[g].mvinfos, garray[g].nmvinfos);
 
@@ -879,9 +886,9 @@ int game_save(int g)
   fprintf(fp, "W_Penalty: %d\n", garray[g].white.penalty);
   fprintf(fp, "Size: %d\n", (int) garray[g].GoGame->width);
   fprintf(fp, "TimeStart: %d\n", (int) garray[g].timeOfStart);
-  fprintf(fp, "W_Time: %d\n", garray[g].white.timeleft);
-  fprintf(fp, "B_Time: %d\n", garray[g].black.timeleft);
-  fprintf(fp, "Byo: %d\n", garray[g].ts.byotime);
+  fprintf(fp, "W_Time: %d\n", garray[g].white.ticksleft);
+  fprintf(fp, "B_Time: %d\n", garray[g].black.ticksleft);
+  fprintf(fp, "Byo: %d\n", garray[g].ts.byoticks);
   fprintf(fp, "ByoS: %d\n", garray[g].ts.byostones);
   fprintf(fp, "W_Byo: %d\n", garray[g].white.numbyo);
   fprintf(fp, "B_Byo: %d\n", garray[g].black.numbyo);
@@ -892,6 +899,7 @@ int game_save(int g)
   fprintf(fp, "Private: %d\n", garray[g].Private);
   fprintf(fp, "Type: %d\n", garray[g].type);
   fprintf(fp, "TimeType: %d\n", garray[g].ts.time_type);
+  fprintf(fp, "Totalticks: %d\n", garray[g].ts.totalticks);
   fprintf(fp, "GoType: %d\n", garray[g].gotype);
   fprintf(fp, "NumPass: %d\n", garray[g].num_pass);
   fprintf(fp, "Komi: %.1f\n", garray[g].komi);

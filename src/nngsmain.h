@@ -26,7 +26,7 @@
 #define NNGSMAIN_H
 
 /* Heartbeat functions occur approx in this time, including checking for
- * new connections and decrementing timeleft counters. */
+ * new connections and decrementing Ticsleft counters. */
 #define HEARTBEATTIME 1
 
 /* Number of seconds that an idle connection can stand at login or password
@@ -42,6 +42,12 @@
 #define NUMLINES        24 /* Things break if larger, run out of screen space,
                               and those ascii client people trying to play
                               99x99 games (all talby's fault) */
+
+#ifndef TICSPERSEC
+#define TICSPERSEC (10)
+#define SECS2TICS(s) ((s)*TICSPERSEC)
+#define TICS2SECS(t) ((t)/TICSPERSEC)
+#endif
 
 typedef char twodstring[NUMLINES][LINESIZE];
 
