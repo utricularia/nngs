@@ -3,7 +3,23 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.17pre  2005-03-04 AvK
+
+- lots of timing/byo-yomi. Changed all of the timekeeping to
+  0.1 second ticks. Only filedates/logons/gamestarts are still time_t.
+  Timekeeping is basically done on the "heartbeat". This goes
+  for all the "active" games, whether they will receive a move on
+  this select() event or not. The heartbeat can only apply the 1st
+  byo, afterwards the the move will do the checking (+foldover of byo).
+- changed one of the two info-strings to:
+  "You have 5:00 minutes and 25 stones", which seems more appropriate.
+  Hope that won't break clients...
+- the usual renaming of variables.
+- autoconf/aautomake seem to have been changed. Again.
+- changed the ugly macros in language.c. Still ugly.
+
 1.1.16  2004-11-21 AvK
+
 - Lots of autoconf/automake stuff fixed in data/ dir
   (install appeared to work only on linux platforms)
 - Removed [0-9] from one-letter-subdirectories in {player,games,
