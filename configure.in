@@ -21,6 +21,7 @@ AC_EXEEXT
 dnl add -lm to library list since we use some
 dnl math functions such as pow and fabs
 
+dnl AC_SEARCH_LIBS(random,c)
 dnl AC_SEARCH_LIBS(pow,m)
 dnl AC_SEARCH_LIBS(bind,socket)
 dnl AC_SEARCH_LIBS(crypt,crypt)
@@ -61,8 +62,9 @@ dnl results of setlinebuf test used in interface/play_ascii.c
 dnl alarm not available in VC
 dnl vsnprintf not universally available
 dnl usleep not available in Unicos and mingw32
-dnl random should be in stdlib
-AC_CHECK_FUNCS(setlinebuf alarm vsnprintf snprintf gettimeofday usleep random)
+dnl random,popen should be in stdlib
+AC_CHECK_FUNCS(setlinebuf alarm vsnprintf snprintf gettimeofday usleep \
+ random popen)
 
 dnl  ----------- special-case use of gcc ---------
 

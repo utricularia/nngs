@@ -5,7 +5,7 @@ LANGUAGES=en ch
 
 install-data-hook:
 	for lang in ${LANGUAGES}; do\
-	  install -m 755 -d $(DESTDIR)$(ahelpdatadir)/$$lang ;\
+	  install -d $(DESTDIR)$(ahelpdatadir)/$$lang ;\
 	  for name in $$lang/*; do\
 	    test -f $$name \
 	    && install -m 644 $$name $(DESTDIR)$(ahelpdatadir)/$$lang ;\
