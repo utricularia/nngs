@@ -3,7 +3,7 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.17pre  2005-03-04 AvK
+1.1.17 2005-05-25 AvK
 
 - lots of timing/byo-yomi. Changed all of the timekeeping to
   0.1 second ticks. Only filedates/logons/gamestarts are still time_t.
