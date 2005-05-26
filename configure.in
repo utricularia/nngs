@@ -199,5 +199,5 @@ AC_SUBST(LIBS)
 dnl
 dnl this must be the last line of configure.in
 dnl
-AC_OUTPUT([Makefile src/Makefile nrat/Makefile memory/Makefile data/Makefile data/help/Makefile data/ahelp/Makefile])
+AC_OUTPUT([Makefile src/Makefile memory/Makefile data/Makefile data/help/Makefile data/ahelp/Makefile])
 
