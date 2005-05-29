@@ -14,9 +14,6 @@
    Leave the following blank line there!!  Autoheader needs it.  */
 
 
-/* Define for admin levels */
-#undef ADMINLEVELS
-
 /* The concatenation of the strings "GNU ", and PACKAGE.  */
 #undef GNU_PACKAGE
 

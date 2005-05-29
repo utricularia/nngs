@@ -41,7 +41,7 @@
 #include "playerdb.h"
 #include "utils.h"
 #include "ladder.h"
-#include "emote.h"
+#include "emote2.h"
 #include "mink.h"
 #include "ip_ban.h"
 

@@ -107,17 +107,17 @@ AC_DEFINE_UNQUOTED(MAILPROGRAM, "$MAILPROGRAM")
 
 dnl do we want ADMINLEVELS?
 dnl use this for general ifdef stuff if wanted.
-AC_MSG_CHECKING([whether adminlevels are requested])
-AC_ARG_ENABLE(adminlevels,
-  [  --enable-adminlevels     Use admin levels [default=yes]],
-  if test x$enableval = "xyes"; then
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(ADMINLEVELS)
-  else
-      AC_MSG_RESULT([yes])
-  fi,
-  AC_MSG_RESULT([no])
-)
+dnl AC_MSG_CHECKING([whether adminlevels are requested])
+dnl AC_ARG_ENABLE(adminlevels,
+dnl   [  --enable-adminlevels     Use admin levels [default=yes]],
+dnl   if test x$enableval = "xyes"; then
+dnl       AC_MSG_RESULT([yes])
+dnl       AC_DEFINE(ADMINLEVELS)
+dnl   else
+dnl       AC_MSG_RESULT([yes])
+dnl   fi,
+dnl   AC_MSG_RESULT([no])
+dnl )
 
 dnl <Joy> CQ: do stuff like AC_DEFINE_UNQUOTED(MY_VARIABLE,"$something")
 dnl <Joy> CQ: oh yeah i think you need to #undef it in acconfig.h or something

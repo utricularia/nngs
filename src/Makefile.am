@@ -36,6 +36,7 @@ nngssrv_SOURCES = \
 	comproc.c \
 	gamedb.c \
 	playerdb.c \
+	emote2.c \
 	pending.c
 
 noinst_HEADERS =

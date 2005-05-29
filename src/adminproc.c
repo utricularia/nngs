@@ -45,7 +45,7 @@ int com_adrop(int p, struct parameter* param)
 
   LadderPlayer = PlayerNamed(lnum, name);
 
-  if(LadderPlayer == NULL) {
+  if (LadderPlayer == NULL) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_LADDER_PLAYER);
     return COM_OK;
   }
@@ -55,7 +55,7 @@ int com_adrop(int p, struct parameter* param)
     fp = xyfopen(FILENAME_LADDER9, "w");
   else
     fp = xyfopen(FILENAME_LADDER19, "w");
-  if(!fp) {
+  if (!fp) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_);
     return COM_OK;
   }
@@ -282,7 +282,7 @@ int com_asetdebug(int p, struct parameter* param)
   
   else {
     Debug = param[0].val.integer;
-    if(Debug < 0) Debug = 0;
+    if (Debug < 0) Debug = 0;
   }
   return COM_OK;
 }
@@ -548,7 +548,7 @@ int com_shutdown(int p, struct parameter* param)
           secs = secs*10 + *ptr-'0';
           break;
         case ':':
-          if(p1--) {
+          if (p1--) {
             shutdownTime = shutdownTime*60 + secs;
             secs = 0;
             break;   
@@ -618,7 +618,7 @@ int com_pose(int p, struct parameter* param)
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1= carray[CHANNEL_ASHOUT].members[j];
     if (!parray[p1].slotstat.is_connected) continue;
-    if(p1 == p) continue;
+    if (p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_POSE_s_AS_s_s_n,
       parray[p].pname, parray[p1].pname,
@@ -639,7 +639,7 @@ int Show_Admin_Command(int p, const char *comm, const char *command)
   Logit("ADMIN: %s > %s <", parray[p].pname, orig_command);
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1 = carray[CHANNEL_ASHOUT].members[j];
-    if(!parray[p1].slotstat.is_online) continue;
+    if (!parray[p1].slotstat.is_online) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_ADMIN_s_s_n,
       parray[p].pname, orig_command);
@@ -652,7 +652,7 @@ int com_arank(int p, struct parameter* param)
 {
   int p1;
 
-  if(strlen(param[1].val.string) > 4) return COM_OK;
+  if (strlen(param[1].val.string) > 4) return COM_OK;
   p1 = player_fetch(param[0].val.word);
   if (p1 <0) return COM_OK;
   do_copy(parray[p1].ranked, param[1].val.string, sizeof parray[0].ranked);
@@ -668,12 +668,12 @@ int com_noshout(int p, struct parameter* param)
   int j,p1;
   UNUSED(param);
 
-  if(carray[CHANNEL_SHOUT].locked) carray[CHANNEL_SHOUT].locked = 0;
+  if (carray[CHANNEL_SHOUT].locked) carray[CHANNEL_SHOUT].locked = 0;
   else  carray[CHANNEL_SHOUT].locked = 1;
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1=carray[CHANNEL_ASHOUT].members[j];
-    if(!parray[p1].slotstat.is_online) continue;
-    if(p1 == p) continue;
+    if (!parray[p1].slotstat.is_online) continue;
+    if (p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_JUST_TURNED_s_SHOUTS_n, 
       parray[p].pname,
@@ -933,7 +933,7 @@ int com_asethandle(int p, struct parameter* param)
     player_forget(p2);
     return COM_OK;
   }
-  if(p2 < 0) p2=player_new();
+  if (p2 < 0) p2=player_new();
   do_copy(parray[p2].login, newlower, sizeof parray[p2].login);
   if (player_rename(oldlower, newlower) && !player_read(p2)) {
     pcn_out(p, CODE_ERROR, FORMAT_ASETHANDLE_FAILED_);
@@ -959,7 +959,6 @@ int com_asetadmin(int p, struct parameter* param)
   p1 = player_fetch(param[0].val.word);
   if (p1 < 0) return COM_OK;
  
-#ifdef ADMINLEVELS
   if (parray[p].adminLevel <= parray[p1].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_ONLY_SET_ADMINLEVEL_FOR_PLAYERS_BELOW_YOUR_ADMINLEVEL_);
     player_forget(p1);
@@ -975,7 +974,6 @@ int com_asetadmin(int p, struct parameter* param)
     player_forget(p1);
     return COM_OK;
   }
-#endif /* ADMINLEVELS */
 
   oldlevel=parray[p1].adminLevel;
   parray[p1].adminLevel = param[1].val.integer;
@@ -1047,13 +1045,13 @@ int com_actitle(int p, struct parameter* param)
 {
   int i;
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if(strlen(param[1].val.string) > 1000) return COM_OK;
+  if (strlen(param[1].val.string) > 1000) return COM_OK;
 
   free(carray[i].ctitle);
   carray[i].ctitle = mystrdup(param[1].val.string);
@@ -1074,14 +1072,14 @@ int com_reload_ladders(int p, struct parameter* param)
   Ladder19 = LadderNew(LADDERSIZE);
   num_9 = 0;
   fp = xyfopen(FILENAME_LADDER9, "r");
-  if(fp) {
+  if (fp) {
     num_9 = PlayerLoad(fp, Ladder9);
     Logit("%d players loaded from file %s", num_9, ladder9_file);
     fclose(fp);
   }
   num_19 = 0;
   fp = xyfopen(FILENAME_LADDER19, "r");
-  if(fp) {
+  if (fp) {
     num_19 = PlayerLoad(fp, Ladder19);
     Logit("%d players loaded from file %s", num_19, ladder19_file);
     fclose(fp);
@@ -1095,7 +1093,7 @@ int com_hide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
@@ -1111,7 +1109,7 @@ int com_unhide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
@@ -1161,7 +1159,7 @@ int com_aban(int p, struct parameter* param)
   if (param[2].type!=TYPE_WORD) {
     top = bot;
   }
-  else if(strspn(cmd,"+-?") && asc2ipaddr(param[2].val.word, &top) ) {
+  else if (strspn(cmd,"+-?") && asc2ipaddr(param[2].val.word, &top) ) {
     pcn_out(p, CODE_ERROR, FORMAT_NEED_IP_ADDRESSn);
     return COM_OK;
   }

@@ -197,8 +197,7 @@ int net_fd_count = 0;
  * Functions
  **********************************************************************/
 
-static void
-set_nonblocking(int s)
+static void set_nonblocking(int s)
 {
   int flags;
 
@@ -214,7 +213,7 @@ set_nonblocking(int s)
  */
 int net_init(int port)  {
   static int doneinit = 0;
-  int  i;
+  int  fd,i;
   int  opt;
   struct sockaddr_in  addr;
   struct linger  lingerOpt;
@@ -236,19 +235,11 @@ int net_init(int port)  {
     FD_ZERO(&readSet);
     FD_ZERO(&writeSet);
     
-    /*
-     * Set up the console.
-     * On second thought, don't.
-     *
-     * initConn(0);
-     * netarray[0].fromHost = 0;
-     */
   }
 
   assert(numListenFds < COUNTOF(listenFds));
   /* Open a TCP socket (an Internet stream socket). */
-  if ((listenFds[numListenFds] = 
-       socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if ((fd=socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     fprintf(stderr, "NNGS: can't create stream socket\n");
     return -1;
   }
@@ -260,33 +251,29 @@ int net_init(int port)  {
 
   /* added in an attempt to allow rebinding to the port */
   opt = 1;
-  setsockopt(listenFds[numListenFds],
-	     SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt);
+  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt);
   opt = 1;
-  setsockopt(listenFds[numListenFds],
-	     SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof opt);
+  setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof opt);
   lingerOpt.l_onoff = 0;
   lingerOpt.l_linger = 0;
-  setsockopt(listenFds[numListenFds],
-	     SOL_SOCKET, SO_LINGER, &lingerOpt, sizeof lingerOpt);
+  setsockopt(fd, SOL_SOCKET, SO_LINGER, &lingerOpt, sizeof lingerOpt);
 
   if (Debug > 99) {
     opt = 1;
-    setsockopt(listenFds[numListenFds],
-	       SOL_SOCKET, SO_DEBUG, &opt, sizeof opt);
+    setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof opt);
   }
 
-  if (bind(listenFds[numListenFds],
-	   (struct sockaddr *)&addr, sizeof addr) < 0)  {
+  if (bind(fd, (struct sockaddr *)&addr, sizeof addr) < 0)  {
     fprintf(stderr, "NNGS: can't bind local address.  errno=%d\n", errno);
     return -1;
   }
-  set_nonblocking(listenFds[numListenFds]);
+  set_nonblocking(fd);
 
-  listen(listenFds[numListenFds], 5);
+  listen(fd, 5);
 
-  FD_SET(listenFds[numListenFds], &readSet);
-  netarray[listenFds[numListenFds]].state = netState_listening;
+  FD_SET(fd , &readSet);
+  netarray[fd].state = netState_listening;
+  listenFds[numListenFds] = fd;
   ++numListenFds;
   return 0;
 }
@@ -308,7 +295,7 @@ int net_init(int port)  {
  *   }
  * }
  *
- * From this basic system there are some optomizations. If we manage to
+ * From this basic system there are some optimizations. If we manage to
  *   process every command waiting in an inner loop, then we sleep in the
  *   "select()" call since we have nothing else to do. If we leave a command
  *   in any of the input buffers (because there were two or more there
@@ -339,15 +326,13 @@ void  net_select(int timeout)
    *   clear the command from the buffer.
    */
   buglog(("net_select  {"));
-  for (;;)  {
+  while(1)  {
     nread = readSet;
     nwrite = writeSet;
     timer.tv_usec = 0;
-    if (moreWork) { /* Poll. */
-      timer.tv_sec = 0;
-    } else { /* Have nothing better to do than sit and wait for data. */
-      timer.tv_sec = 1;
-    }
+    if (moreWork) timer.tv_sec = 0; /* Poll. */
+    else timer.tv_sec = 1; /* Sit and wait for data. */
+
     TIME0;
     flushWrites();
     TIME1("flushWrites()", 0.005);
@@ -355,18 +340,18 @@ void  net_select(int timeout)
     if (numConns == -1)  {
       switch(errno) {
       case EBADF:
-	Logit("EBADF error from select ---");
-	abort();
+        Logit("EBADF error from select ---");
+        abort();
       case EINTR:
-	Logit("select interrupted by signal, continuing ---");
-	continue;
+        Logit("select interrupted by signal, continuing ---");
+        continue;
       case EINVAL:
-	Logit("select returned EINVAL status ---");
-	abort();
+        Logit("select returned EINVAL status ---");
+        abort();
       case EPIPE:
       default:
-	Logit("Select: error(%d):%s ---", errno, strerror(errno) );
-	continue;
+        Logit("Select: error(%d):%s ---", errno, strerror(errno) );
+        continue;
       }
     }
 
@@ -380,108 +365,113 @@ void  net_select(int timeout)
     if (elapsed)  {
       TIME0;
       if (process_heartbeat(&fd) == COM_LOGOUT)  {
-	process_disconnection(fd);
-	FD_CLR(fd, &nread);
-	FD_CLR(fd, &nwrite);
+        process_disconnection(fd);
+        FD_CLR(fd, &nread);
+        FD_CLR(fd, &nwrite);
       }
       TIME1("process_heartbeat()", 0.05);
     }
     for (fd = 0;  fd < COUNTOF(netarray);  ++fd)  {
       if (netarray[fd].cmdEnd)  {
-	buglog(("%3d: Command \"%s\" left in buf", i, netarray[fd].inBuf));	
-	if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
-	  process_disconnection(fd);
-	  FD_CLR(fd, &nread);
-	  FD_CLR(fd, &nwrite);
-	} else  {
-	  if (clearCmd(fd) == -1)  {
-	    buglog(("%3d: Closing", fd));
-	    process_disconnection(fd);
-	    FD_CLR(fd, &nread);
-	    FD_CLR(fd, &nwrite);
-	  } else  {
-	    if (netarray[fd].cmdEnd) {
-	      /*
-	       * We still have more data in our input buffer, so set the
-	       *   moreWork flag.
-	       */
-	      moreWork = 1;
-	    }
-	  }
-	}
-      } else if (FD_ISSET(fd, &nread))  {
-	if (netarray[fd].state == netState_listening)  {
-	  /* A new inbound connection. */
-	  TIME0;
-	  newConn = newConnection(fd);
-	  TIME1("newConnection()", 0.001);
-	  buglog(("%d: New conn", newConn));
-	  if (newConn >= 0)  {
-	    TIME0;
-	    process_new_connection(newConn, net_connectedHost(newConn));
-	    TIME1("process_new_connection()", 0.002);
-	  }
-	} else  {
-	  {
-	    /* New incoming data. */
-	    buglog(("%d: Ready for read", fd));
-	    if (netarray[fd].state == netState_connected)  {
-	      assert(!netarray[fd].inFull);
-	      if (serviceRead(fd) == -1)  {
-		buglog(("%d: Closed", fd));
-	        netarray[fd].state = netState_disconnected;
-		process_disconnection(fd);
-		FD_CLR(fd, &nread);
-		FD_CLR(fd, &nwrite);
-	      } else  {
-		if (netarray[fd].cmdEnd)  {
-		  if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
-		    process_disconnection(fd);
-		    FD_CLR(fd, &nread);
-		    FD_CLR(fd, &nwrite);
-		  } else  {
-		    if (clearCmd(fd) == -1)  {
-		      buglog(("%3d: Closing", fd));
-		      process_disconnection(fd);
-		      FD_CLR(fd, &nread);
-		      FD_CLR(fd, &nwrite);
-		    } else  {
-		      if (netarray[fd].cmdEnd) {
-			/*
-			 * We still have more data in our input buffer, so set
-			 *   the moreWork flag.
-			 */
-			moreWork = 1;
-		      }
-		    }
-		  }
-		}
-	      }
-	    } else  {
-	      /* It is not connected. */
-	      assert(!FD_ISSET(fd, &readSet));
-	    }
-	  }
-	  /* [PEM]: Testing... */
-	  /* Have read, now try to flush output. */
-	  if ((netarray[fd].state == netState_connected) &&
-	      (netarray[fd].outEnd > 0))
-	    serviceWrite(fd);
-	}
+        buglog(("%3d: Command \"%s\" left in buf", i, netarray[fd].inBuf));
+        if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
+          process_disconnection(fd);
+          FD_CLR(fd, &nread);
+          FD_CLR(fd, &nwrite);
+          continue;
+        }
+        if (clearCmd(fd) == -1)  {
+          buglog(("%3d: Closing", fd));
+          process_disconnection(fd);
+          FD_CLR(fd, &nread);
+          FD_CLR(fd, &nwrite);
+          continue;
+        } 
+        if (netarray[fd].cmdEnd) {
+      /*
+       * We still have more data in our input buffer, so set the
+       *   moreWork flag. It will be processed the next time.
+       */
+          moreWork = 1;
+          continue;
+        }
+        continue; /* NOT_REACHED */
       }
-      else
-      {				/* [PEM]: Testing... */
-	/* No new connection, nothing to read, try to flush output. */
-	if ((netarray[fd].state == netState_connected) &&
-	    (netarray[fd].outEnd > 0))
-	  if (serviceWrite(fd) < 0) {
-	    process_disconnection(fd);
-	    FD_CLR(fd, &nread);
-	    FD_CLR(fd, &nwrite);
-	  }
+      if (FD_ISSET(fd, &nread))  {
+        if (netarray[fd].state == netState_listening)  {
+  /* A new inbound connection. */
+          TIME0;
+          newConn = newConnection(fd);
+          TIME1("newConnection()", 0.001);
+          buglog(("%d: New conn", newConn));
+          if (newConn >= 0)  {
+            TIME0;
+            process_new_connection(newConn, net_connectedHost(newConn));
+            TIME1("process_new_connection()", 0.002);
+          }
+          continue;
+        }
+    /* New incoming data. */
+        buglog(("%d: Ready for read", fd));
+        if (netarray[fd].state == netState_connected)  {
+          assert(!netarray[fd].inFull);
+          if (serviceRead(fd) == -1)  {
+            buglog(("%d: Closed", fd));
+            netarray[fd].state = netState_disconnected;
+            process_disconnection(fd);
+            FD_CLR(fd, &nread);
+            FD_CLR(fd, &nwrite);
+            continue;
+          }
+          if (netarray[fd].cmdEnd)  {
+            if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
+              process_disconnection(fd);
+              FD_CLR(fd, &nread);
+              FD_CLR(fd, &nwrite);
+              continue;
+            }
+            if (clearCmd(fd) == -1)  {
+              buglog(("%3d: Closing", fd));
+              process_disconnection(fd);
+              FD_CLR(fd, &nread);
+              FD_CLR(fd, &nwrite);
+              continue;
+            }
+            if (netarray[fd].cmdEnd) {
+		/*
+		 * We still have more data in our input buffer, so set
+		 *   the moreWork flag.
+		 */
+              moreWork = 1;
+              continue;
+            }
+         }
+        continue; /* NOT REACHED */
+      }
+		/* It is not connected. */
+      assert(!FD_ISSET(fd, &readSet));
+  /* [PEM]: Testing... */
+  /* Have read, now try to flush output. */
+      if ((netarray[fd].state == netState_connected) &&
+         (netarray[fd].outEnd > 0)) {
+        serviceWrite(fd);
+        continue;
+      }
+      continue;
+    } /* fd_isset */
+/* [PEM]: Testing... */
+/* No new connection, nothing to read, try to flush output. */
+    if ((netarray[fd].state == netState_connected) &&
+       (netarray[fd].outEnd > 0)) {
+      if (serviceWrite(fd) < 0) {
+        process_disconnection(fd);
+        FD_CLR(fd, &nread);
+        FD_CLR(fd, &nwrite);
+        continue;
       }
     }
-  }
+  } /* for */
+  } /* while(1) */
 }
 
 
@@ -531,10 +521,10 @@ static void  flushWrites(void)  {
 
   for (fd = 0;  fd < COUNTOF(netarray);  ++fd)  {
     if ((netarray[fd].state == netState_connected) &&
-	(netarray[fd].outEnd > 0))  {
+      (netarray[fd].outEnd > 0))  {
       if (serviceWrite(fd) < 0)  {
-	buglog(("%3d: Write failed.", fd));
-	netarray[fd].outEnd = 0;
+        buglog(("%3d: Write failed.", fd));
+        netarray[fd].outEnd = 0;
       }
     }
   }
@@ -565,12 +555,12 @@ static int  serviceWrite(int fd)  {
     if (conn->inThrottled)  {
       conn->inThrottled = 0;
       if (!conn->inFull)
-	FD_SET(fd, &readSet);
+        FD_SET(fd, &readSet);
     }
   } else  {
 #if 1
     Logit("serviceWrite(): Could write only %d of %d bytes to fd %d.",
-	  writeAmt, conn->outEnd, fd);
+      writeAmt, conn->outEnd, fd);
 #endif
     /*
      * This memmove is costly, but on ra (where NNGS runs) the TCP/IP
@@ -598,30 +588,12 @@ static int  clearCmd(int fd)  {
     return 0;
   assert(conn->cmdEnd);
   assert(conn->cmdEnd <= conn->used);
-#if 0
-  if (conn->cmdEnd == conn->used)  {
-    conn->parse_dst -= conn->cmdEnd;
-    conn->parse_src -= conn->cmdEnd;
-    conn->used = 0;
-    conn->cmdEnd = 0;
-  } else  {
-    int  i;
-    for (i = conn->cmdEnd;  i < conn->used;  ++i)  {
-      conn->inBuf[i - conn->cmdEnd] = conn->inBuf[i];
-    }
-    conn->used -= conn->cmdEnd;
-    conn->parse_dst -= conn->cmdEnd;
-    conn->parse_src -= conn->cmdEnd;
-    conn->cmdEnd = 0;
-  }
-#else
   if (conn->cmdEnd < conn->used)
     memmove(conn->inBuf, conn->inBuf + conn->cmdEnd, conn->used - conn->cmdEnd);
   conn->parse_dst -= conn->cmdEnd;
   conn->parse_src -= conn->cmdEnd;
   conn->used -= conn->cmdEnd;
   conn->cmdEnd = 0;
-#endif
   if (checkForCmd(fd) == -1)
     return -1;
   if (conn->inFull)  {
@@ -650,16 +622,16 @@ static int  checkForCmd(int fd)  {
       if (uc == IAC) {
         conn->telnetState = 1;
       } else if ((uc == '\n') || (uc == '\r') || ( uc == '\004')) {
-	*dest = '\0';
-	++idx;
-	while ((idx < conn->used) &&
-	       ((conn->inBuf[idx] == '\n') || (conn->inBuf[idx] == '\r')))
-	  ++idx;
-	conn->cmdEnd = idx;
-	conn->telnetState = 0;
-	conn->parse_src = idx;
-	conn->parse_dst = idx;
-	return 0;
+        *dest = '\0';
+        ++idx;
+        while ((idx < conn->used) &&
+       ((conn->inBuf[idx] == '\n') || (conn->inBuf[idx] == '\r')))
+          ++idx;
+        conn->cmdEnd = idx;
+        conn->telnetState = 0;
+        conn->parse_src = idx;
+        conn->parse_dst = idx;
+        return 0;
       } else if (!isprint(uc) && uc <= 127) {/* no idea what this means */
         conn->telnetState = 0;
       } else  {
@@ -715,8 +687,7 @@ static int  serviceRead(int fd)  {
   if(conn->used > sizeof conn->inBuf) conn->used = sizeof conn->inBuf -1;
   assert(conn->state == netState_connected);
   assert(conn->used < sizeof conn->inBuf);
-  readAmt = read(fd, conn->inBuf + conn->used,
-		 sizeof conn->inBuf - conn->used);
+  readAmt = read(fd, conn->inBuf + conn->used, sizeof conn->inBuf - conn->used);
   if (readAmt == 0)  {
     return -1;
   }

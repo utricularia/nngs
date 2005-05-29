@@ -61,7 +61,7 @@
 #include "mink.h"
 
 #include "ladder.h"
-#include "emote.h"
+#include "emote2.h"
 
 #include "plan.h"
 #include "censor.h"
