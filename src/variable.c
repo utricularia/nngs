@@ -56,8 +56,8 @@ static int set_boolean_var(int *var, const char *val)
 {
   int v = -1;
 
-  if (val == NULL)
-    return (*var = !*var);
+  if (!val)
+    return (*var = !*var); /* Toggle */
 
   if (sscanf(val, "%d", &v) != 1) {
     if (!strcasecmp(val, "off")) v = 0;
@@ -103,7 +103,7 @@ static int set_shout(int p, const char *var, const char *val)
 
   if (set_boolean_var (&parray[p].i_shout, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_SHOUT_TO_BE_s_, (parray[p].i_shout) ? "True" : "False");
-  if(parray[p].i_shout) channel_add(CHANNEL_SHOUT, p);
+  if (parray[p].i_shout) channel_add(CHANNEL_SHOUT, p);
   else channel_remove(CHANNEL_SHOUT, p);
   return VAR_OK;
 }
@@ -114,7 +114,7 @@ static int set_client(int p, const char *var, const char *val)
 
   if (set_boolean_var(&parray[p].client, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_CLIENT_TO_BE_s_, (parray[p].client)  ? "True" : "False");
-  if(parray[p].client) parray[p].i_verbose = 0;
+  if (parray[p].client) parray[p].i_verbose = 0;
   return VAR_OK;
 }
 
@@ -124,7 +124,7 @@ static int set_lshout(int p, const char *var, const char *val)
 
   if (set_boolean_var(&parray[p].i_lshout, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_LSHOUT_TO_BE_s_, (parray[p].i_lshout)  ? "True" : "False");
-  if(parray[p].i_lshout) channel_add(CHANNEL_LSHOUT, p);
+  if (parray[p].i_lshout) channel_add(CHANNEL_LSHOUT, p);
   else channel_remove(CHANNEL_LSHOUT, p);
 
   return VAR_OK;
@@ -136,7 +136,7 @@ static int set_gshout(int p, const char *var, const char *val)
 
   if (set_boolean_var(&parray[p].i_gshout, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_GSHOUT_TO_BE_s_, (parray[p].i_gshout)  ? "True" : "False");
-  if(parray[p].i_gshout) channel_add(CHANNEL_GSHOUT, p);
+  if (parray[p].i_gshout) channel_add(CHANNEL_GSHOUT, p);
   else channel_remove(CHANNEL_GSHOUT, p);
   return VAR_OK;
 }
@@ -147,7 +147,7 @@ static int set_looking(int p, const char *var, const char *val)
 
   if (set_boolean_var(&parray[p].looking, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_LOOKING_TO_BE_s_, (parray[p].looking)  ? "True" : "False");
-  if(parray[p].looking) parray[p].open = 1;
+  if (parray[p].looking) parray[p].open = 1;
   return VAR_OK;
 }
 
@@ -202,7 +202,7 @@ static int set_pinform(int p, const char *var, const char *val)
 
   if (set_boolean_var (&parray[p].i_login, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_PINFORM_TO_BE_s_, (parray[p].i_login) ? "True" : "False");
-  if(parray[p].i_login) channel_add(CHANNEL_LOGON, p);
+  if (parray[p].i_login) channel_add(CHANNEL_LOGON, p);
   else channel_remove(CHANNEL_LOGON, p);
   return VAR_OK;
 }
@@ -218,7 +218,7 @@ static int set_quiet(int p, const char *var, const char *val)
   parray[p].i_game = !quiet;
 
   pcn_out(p, CODE_INFO, FORMAT_SET_QUIET_TO_BE_s_, (parray[p].i_login) ? "False" : "True");
-  if(parray[p].i_login) {
+  if (parray[p].i_login) {
     channel_add(CHANNEL_LOGON, p);
     channel_add(CHANNEL_GAME, p);
   }
@@ -235,7 +235,7 @@ static int set_ginform(int p, const char *var, const char *val)
   UNUSED(var);
   if (set_boolean_var (&parray[p].i_game, val) < 0) return VAR_BADVAL;
   pcn_out(p, CODE_INFO, FORMAT_SET_GINFORM_TO_BE_s, (parray[p].i_game) ? "True" : "False");
-  if(parray[p].i_game) channel_add(CHANNEL_GAME, p);
+  if (parray[p].i_game) channel_add(CHANNEL_GAME, p);
   else channel_remove(CHANNEL_GAME, p);
 
   return VAR_OK;
@@ -276,7 +276,7 @@ static int set_bell(int p, const char *var, const char *val)
 static int set_rank(int p, const char *var, const char *val)
 {
   UNUSED(var);
-  if(val == NULL) {
+  if (!val) {
     do_copy(parray[p].rank, "-", sizeof parray[0].rank);
     pcn_out(p, CODE_INFO, FORMAT_UNSET_YOUR_RANK_INFO);
     return VAR_OK;
@@ -295,7 +295,7 @@ static int set_rank(int p, const char *var, const char *val)
 static int set_realname(int p, const char *var, const char *val)
 {
   UNUSED(var);
-  if(val == NULL) {
+  if (!val) {
     do_copy(parray[p].fullname, "Not Provided", sizeof parray[0].fullname);
     pcn_out(p, CODE_INFO, FORMAT_UNSET_YOUR_REAL_NAME_INFO);
     return VAR_OK;
@@ -468,7 +468,7 @@ static int set_plan(int p, const char *var, const char *val)
     return VAR_BADVAL;
   if (where < 0)
   {				/* Insert or remove first. */
-    if (val == NULL)
+    if (!val)
     {
       if (count > 0)
 	plan_rem(0, parray[p].plan_lines); /* Remove first. */
@@ -552,19 +552,17 @@ static int set_plan(int p, const char *var, const char *val)
     free(parray[p].planLines[which]);
     parray[p].planLines[which] = NULL;
   }
-  if (val != NULL) {
+  if (val) {
     parray[p].planLines[which] = mystrdup(val);
   } else {
     parray[p].planLines[which] = NULL;
     if (which == parray[p].num_plan - 1) {	/* clear nulls from bottom */
-      while ((parray[p].num_plan > 0) &&
-	     (parray[p].planLines[parray[p].num_plan - 1] == NULL)) {
-	parray[p].num_plan--;
+      for ( ;parray[p].num_plan > 0; parray[p].num_plan--) {
+        if (parray[p].planLines[parray[p].num_plan - 1]) break;
       }
     } else if (which == 0) {	/* clear nulls from top */
-      while ((which < parray[p].num_plan) &&
-	     (parray[p].planLines[which] == NULL)) {
-	which++;
+      for (;which < parray[p].num_plan; which++) {
+        if (parray[p].planLines[which] ) break;
       }
       if (which != parray[p].num_plan) {
 	for (i = which; i < parray[p].num_plan; i++)

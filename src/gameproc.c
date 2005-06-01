@@ -102,7 +102,7 @@ void game_ended(int g, int winner, int why)
     completed_games++;
     getcaps(garray[g].GoGame, &wcaps, &bcaps);
     countscore(garray[g].GoGame, statstring, &wterr, &bterr, &wocc, &bocc);
-    if(Debug)
+    if (Debug)
       Logit("k=%.1f wtr=%d, btr=%d, wocc=%d, bocc=%d, wcaps=%d, bcaps=%d",
                  garray[g].komi, wterr, bterr,  wocc, bocc, wcaps, bcaps);
 #ifdef CHINESESCORE
@@ -286,7 +286,7 @@ void game_ended(int g, int winner, int why)
         PlayerAddWin(Ladder9, Ladder_B->idx);
         PlayerAddLoss(Ladder9, Ladder_W->idx);
         fp = xyfopen(FILENAME_LADDER9, "w");
-        if (fp == NULL) {
+        if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
           num_9 = PlayerSave(fp, Ladder9);
@@ -315,7 +315,7 @@ void game_ended(int g, int winner, int why)
         PlayerAddWin(Ladder19, Ladder_B->idx);
         PlayerAddLoss(Ladder19, Ladder_W->idx);
         fp = xyfopen(FILENAME_LADDER19, "w");
-        if (fp == NULL) {
+        if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
           num_19 = PlayerSave(fp, Ladder19);
@@ -347,7 +347,7 @@ void game_ended(int g, int winner, int why)
         PlayerAddWin(Ladder9, Ladder_W->idx);
         PlayerAddLoss(Ladder9, Ladder_B->idx);
         fp = xyfopen(FILENAME_LADDER9, "w");
-        if (fp == NULL) {
+        if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
           num_9 = PlayerSave(fp, Ladder9);
@@ -362,7 +362,7 @@ void game_ended(int g, int winner, int why)
         PlayerAddWin(Ladder19, Ladder_W->idx);
         PlayerAddLoss(Ladder19, Ladder_B->idx);
         fp = xyfopen(FILENAME_LADDER19, "w");
-        if (fp == NULL) {
+        if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
           num_19 = PlayerSave(fp, Ladder19);
@@ -514,7 +514,7 @@ void process_move(int p, char *command)
       return;
     }
     game_update_time(g);
-    if(garray[g].gstatus != GSTATUS_ACTIVE) return;
+    if (garray[g].gstatus != GSTATUS_ACTIVE) return;
     garray[g].lastMovetick = globclock.tick;
     if (garray[g].onMove == PLAYER_WHITE) { 
       garray[g].onMove = PLAYER_BLACK;
@@ -592,7 +592,6 @@ int com_resign(int p, struct parameter* param)
 int com_pause(int p, struct parameter* param)
 {
   int g;
-  int now;
   struct pending *ptr;
   UNUSED(param);
 
@@ -728,7 +727,7 @@ int com_pteach(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if(garray[g1].Teach2 == 1) {
+  if (garray[g1].Teach2 == 1) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THIS_IS_ALREADY_A_TEACHING_GAME_);
     return COM_OK;
   }
@@ -832,7 +831,7 @@ int com_komi(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if(garray[g1].Teach == 1) {
+  if (garray[g1].Teach == 1) {
     garray[g1].komi = newkomi;
     pcn_out(p, CODE_INFO, FORMAT_SET_THE_KOMI_TO_f, newkomi);
     return COM_OK;
@@ -842,15 +841,15 @@ int com_komi(int p, struct parameter * param)
   
   mine = pending_find(p, p1, PEND_KOMI);
   hers = pending_find(p1, p, PEND_KOMI);
-  if(mine) pendstat |= 1;
+  if (mine) pendstat |= 1;
   else {
      mine = player_pending_new(p, p1, PEND_KOMI);
-     if(!mine) { return COM_OK; }
+     if (!mine) { return COM_OK; }
      mine->float1 = newkomi;
   }
-  if(hers) pendstat |= 2;
+  if (hers) pendstat |= 2;
 
-  if(hers && hers->float1 == mine->float1) {
+  if (hers && hers->float1 == mine->float1) {
     /* komi is agreed upon.  Alter game record */
     garray[g1].komi = newkomi;
     pcn_out(p, CODE_INFO, FORMAT_SET_THE_KOMI_TO_f, newkomi);
@@ -959,7 +958,7 @@ int com_status(int p, struct parameter * param)
 		garray[g1].komi,
                 garray[g1].GoGame->handicap);
   if (!until) until = garray[g1].GoGame->height;
-  if((until - 1) > garray[g1].GoGame->height) return COM_OKN;
+  if ((until - 1) > garray[g1].GoGame->height) return COM_OKN;
   for(x = 0; x < until; x++) {
     pcn_out(p, CODE_STATUS, FORMAT_d_sn,
 		x,
@@ -1024,7 +1023,7 @@ int com_undo(int p, struct parameter * param)
       garray[g1].onMove = PLAYER_BLACK; 
       return COM_OK; 
     }
-    if(((garray[g1].Teach == 0) && (garray[g1].Teach2 == 0)) && x == 0) x = num;
+    if (((garray[g1].Teach == 0) && (garray[g1].Teach2 == 0)) && x == 0) x = num;
     listmove(garray[g1].GoGame, gmove, buf);
     pcn_out(garray[g1].black.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
@@ -1048,7 +1047,7 @@ int com_undo(int p, struct parameter * param)
     garray[g1].onMove = PLAYER_BLACK+PLAYER_WHITE - garray[g1].onMove;
     send_go_boards(g1, 0);
     gmove = movenum(garray[g1].GoGame);
-    if(gmove == 0) {
+    if (gmove == 0) {
       garray[g1].GoGame->handicap = 0;
     }
   }
@@ -1303,7 +1302,7 @@ int com_pair(int p, struct parameter * param)
     return COM_OK;
   }
   
-  if((p == garray[ourgame].black.pnum)   ||
+  if ((p == garray[ourgame].black.pnum)   ||
      (p == garray[theirgame].white.pnum) ||
      (p == garray[theirgame].black.pnum)) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ONE_OF_THE_OTHER_PLAYERS_CANNOT_PAIR_);
@@ -1440,7 +1439,7 @@ int com_allob(int p, struct parameter * param)
     obgame = param[0].val.integer - 1;
   }
   if (obgame >= garray_top) return COM_OK;
-  if(garray[obgame].gstatus != GSTATUS_ACTIVE) return COM_OK;
+  if (garray[obgame].gstatus != GSTATUS_ACTIVE) return COM_OK;
   if (obgame <= 0) obgame = 0;
   g = obgame;
   
@@ -1510,9 +1509,9 @@ int com_touch(int p, struct parameter * param)
   bname = file_bplayer(param[0].val.string);
   wname = file_wplayer(param[0].val.string);
   pw = player_fetch(wname);
-  if(pw < 0) return COM_OK;
+  if (pw < 0) return COM_OK;
   pb = player_fetch(bname);
-  if(pb < 0) {
+  if (pb < 0) {
     player_forget(pw);
     return COM_OK;
     }
@@ -1590,7 +1589,7 @@ int com_load(int p, struct parameter * param)
     return COM_OK;
   }
   Logit("Successfull stat %s", filename() );
-  if(statbuf.st_size == 0) {
+  if (statbuf.st_size == 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_A_SERIOUS_PROBLEM_WITH_YOUR_GAME_RECORD_THIS_IS_SOMETIMESn);
     pcn_out(p, CODE_ERROR, FORMAT_CAUSED_BY_AN_NNGS_CRASH_DURING_YOUR_GAME_);
     pcn_out(p, CODE_ERROR, FORMAT_WE_APOLOGIZE_BUT_THE_GAME_IS_LOST_);
@@ -1722,7 +1721,7 @@ int com_stored(int p, struct parameter * param)
 
   if (param[0].type == TYPE_WORD) {
     p1 = player_fetch(param[0].val.word);
-    if(p1 < 0) {
+    if (p1 < 0) {
       pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_n);
       pcn_out(p, CODE_INFO, FORMAT_FOUND_d_STORED_GAMES_n, 0);
       return COM_OK;
@@ -1784,7 +1783,7 @@ int com_sgf(int p, struct parameter * param)
   }
   pcn_out(p, CODE_INFO,FORMAT_COMPLETED_GAMES_FOR_s_n, pname);
   for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-    if ((strstr(dp->d_name, pname)) == NULL) continue;
+    if (!(strstr(dp->d_name, pname))) continue;
     if (count % 2 == 0) pcn_out(p, CODE_INFO, FORMAT_empty);
     pprintf(p, "%30s", dp->d_name);
     if (count % 2) pprintf(p, "\n");
@@ -1813,7 +1812,7 @@ int com_history(int p, struct parameter * param)
   }
   else player_fix(p1=p);
   if (p1 != p) {
-    if(!parray[p].slotstat.is_registered) {
+    if (!parray[p].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
       player_forget(p1);
       return COM_OK;
@@ -2113,7 +2112,7 @@ int com_moretime(int p, struct parameter * param)
   if (garray[g].white.pnum == p) {
     garray[g].black.ticksleft += SECS2TICS(increment * 60);
 #ifdef PAIR
-    if(paired(g)) {
+    if (paired(g)) {
       garray[g2].black.ticksleft += SECS2TICS(increment * 60);
     }
 #endif
@@ -2121,7 +2120,7 @@ int com_moretime(int p, struct parameter * param)
   if (garray[g].black.pnum == p) {
     garray[g].white.ticksleft += SECS2TICS(increment * 60);
 #ifdef PAIR
-    if(paired(g)) {
+    if (paired(g)) {
       garray[g2].white.ticksleft += SECS2TICS(increment * 60);
     }
 #endif
@@ -2129,8 +2128,8 @@ int com_moretime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCK,
 	    increment);
 #ifdef PAIR
-  if(paired(g)) {
-    if(p == garray[g].black.pnum) {
+  if (paired(g)) {
+    if (p == garray[g].black.pnum) {
       pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
                      FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCKn,
                      increment);
@@ -2147,8 +2146,8 @@ int com_moretime(int p, struct parameter * param)
 	   increment);
 
 #ifdef PAIR
-  if(paired(g)) {
-    if(p == garray[g].black.pnum) {
+  if (paired(g)) {
+    if (p == garray[g].black.pnum) {
       pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
                      FORMAT_YOUR_OPPONENT_HAS_ADDED_d_MINUTES_TO_YOUR_CLOCK_n,
                      increment);
@@ -2199,7 +2198,7 @@ void game_update_time(int g)
   /* Courtesy to allow hcap setup, etc.... */
 #if WANT_HANDICAP_COURTESY
   gmove = movenum(garray[g].GoGame);
-  if(gmove < 2) {
+  if (gmove < 2) {
     garray[g].lastDectick = garray[g].lastMovetick = now;
     return;
     }
@@ -2346,7 +2345,7 @@ void game_update_time(int g)
     }
 #endif
 #ifdef PAIR
-    if(paired(g)) {
+    if (paired(g)) {
       if ((garray[g2].black.ticksleft <= 0) && (garray[g2].black.byoperiods == 0)) {
         garray[g2].black.byoperiods = 1;
         garray[g2].black.byostones = garray[g2].ts.byostones - 1;
@@ -2380,7 +2379,7 @@ void game_update_time(int g)
   }
   garray[g].lastDectick = now;
 #ifdef PAIR
-  if(paired(g)) 
+  if (paired(g)) 
     garray[g2].lastDectick = now;
 #endif /* PAIR */    
 }
@@ -2410,18 +2409,18 @@ int com_sresign(int p, struct parameter * param)
   if (strlen(wname) < 2) return COM_BADPARAMETERS;
 
   pw = player_fetch(wname);
-  if(pw < 0) {
+  if (pw < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
     return COM_OK;
     }
   pb = player_fetch(bname);
-  if(pb < 0) {
+  if (pb < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
     player_forget(pw);
     return COM_OK;
   }
   
-  if((p != pw) && (p != pb)) {
+  if ((p != pw) && (p != pb)) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_MUST_BE_ONE_OF_THE_TWO_PLAYERS_TO_SRESIGN_);
     player_forget(pw);
     player_forget(pb);
@@ -2554,7 +2553,7 @@ int com_problem(int p, struct parameter * param)
 
   until = 0;
 
-  if(param[0].type == TYPE_NULL) {
+  if (param[0].type == TYPE_NULL) {
     problem = parray[p].last_problem + 1;
     parray[p].last_problem++;
   }

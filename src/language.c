@@ -77,13 +77,13 @@ const char * find_format(int lang, int num)
 const char *format=NULL;
 size_t idx;
 
-if(formats_english[0] == NULL) language_init();
+if (!formats_english[0]) language_init();
 
 /* use english if an invalid language was selected */
-  if(lang < 0 || lang >= (int) COUNTOF(languages)) lang = LANGUAGE_DEFAULT;
+  if (lang < 0 || lang >= (int) COUNTOF(languages)) lang = LANGUAGE_DEFAULT;
   
   for(idx=0; idx < COUNTOF(languages); idx++) {
-    if(languages[idx].lang != lang) continue;
+    if (languages[idx].lang != lang) continue;
     format=languages[idx].formats?languages[idx].formats[num]: NULL;
       break;
     }
@@ -91,11 +91,11 @@ if(formats_english[0] == NULL) language_init();
   /* if no format was found for the particular language, then use the
    * default language (should be english since it's the original server
    * language) */
-  if(!format)
+  if (!format)
     format= num < COUNTOF(formats_default) ?formats_default[num]: NULL;
 
   /* if it's still not found, that message was never defined */
-  if(!format) sprintf(format=&badmessage[0],"Lang_%d,Format_%d", lang,num);
+  if (!format) sprintf(format=&badmessage[0],"Lang_%d,Format_%d", lang,num);
 
   return format;
 }
@@ -109,7 +109,7 @@ const char * language_num2prefix(int lang)
   const char *prefix="en";
 
   for(idx=0; idx < COUNTOF(languages); idx++) {
-    if(languages[idx].lang != lang) continue;
+    if (languages[idx].lang != lang) continue;
     prefix=languages[idx].prefix;
     break;
     }
@@ -124,7 +124,7 @@ int language_prefix2num(const char * prefix)
   int lang=LANGUAGE_DEFAULT;
 
   for(idx=0; idx < COUNTOF(languages); idx++) {
-    if(strcmp(languages[idx].prefix,prefix)) continue;
+    if (strcmp(languages[idx].prefix,prefix)) continue;
     lang=languages[idx].lang;
     break;
   }
@@ -163,7 +163,7 @@ static void help_add(char *name, int lang)
   size_t idx;
 
   for(idx=0; idx <help_used; idx++) {
-    if(strcmp(help_ptr[idx].name ,name)) continue;
+    if (strcmp(help_ptr[idx].name ,name)) continue;
     help_ptr[idx].mask |= (1 << lang);
     return;
     }
@@ -197,20 +197,20 @@ static void help_init1(int num)
     dir = xyopendir(num, lang);
     if (!dir) continue;
     while((dp=readdir(dir))) {
-      if(dp->d_name[0] == '.') continue;
+      if (dp->d_name[0] == '.') continue;
       help_add(dp->d_name, lang);
     }
   }
-  if(dir) closedir(dir);
+  if (dir) closedir(dir);
   qsort(help_ptr,help_used, sizeof *help_ptr, help_cmp);
 
 #define LANGMASK(_l) ((1<<LANGUAGE_DEFAULT)|(1<<(_l)))
   for(lang = 0; lang < LANGUAGE_COUNT; lang++) {
     fp = xyfopen(num+(FILENAME_HELP_l_index-FILENAME_HELP_l), "w", lang);
-    if(!fp) continue;
+    if (!fp) continue;
     cnt=0;
     for(idx=0; idx <help_used; idx++) {
-      if(!(help_ptr[idx].mask & LANGMASK(lang))) continue;
+      if (!(help_ptr[idx].mask & LANGMASK(lang))) continue;
       fprintf(fp,"%s\n", help_ptr[idx].name);
       cnt++;
     }
@@ -235,15 +235,15 @@ int search_index(char * buff, size_t buffsiz, const char *needle, int num, int l
   size_t len;
 
   fp=xyfopen(num, "r", lang);
-  if(!fp) return -1;
+  if (!fp) return -1;
 
   nlen = (needle) ? strlen(needle): 0;
   while(fgets(line, sizeof line, fp)) {
-    if(nlen && strncmp(line,needle, nlen)) continue;
+    if (nlen && strncmp(line,needle, nlen)) continue;
     len = strlen(line);
-    if(len < 1) continue;
+    if (len < 1) continue;
     line[len-1]= 0; /* remove \n */
-    if(pos + len>= buffsiz) break;
+    if (pos + len>= buffsiz) break;
     memcpy(buff+pos,line,len); /* len includes '\0' */
     pos += len;
     cnt++;

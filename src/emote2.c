@@ -132,7 +132,7 @@ char *cp=NULL;
 static char linebuff[ 2000 ];
     
 fp=xyfopen(FILENAME_EMOTE, "r");
-if(!fp) return NULL; 
+if (!fp) return NULL; 
 
 len = strlen(key);
 
@@ -146,8 +146,8 @@ len = strlen(key);
   }
 fclose(fp);
 len=strlen(cp);
-if(len) len--;
-if(cp[len] == '\n') cp[len] = 0;
+if (len) len--;
+if (cp[len] == '\n') cp[len] = 0;
 return cp;
 }
 
@@ -235,10 +235,10 @@ static char * emote_next_arg(void)
   default: argtyp = 0; break;
   }
 
-  if(argtyp) {
+  if (argtyp) {
     argpos++;
     for(arglen=argpos; argstr[arglen]; arglen++) {
-      if(argstr[arglen] == argtyp) break;
+      if (argstr[arglen] == argtyp) break;
       }
   } else {
     for(arglen=argpos; argstr[arglen]; arglen++) {

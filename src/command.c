@@ -478,8 +478,8 @@ int process_command(int p, char *com_string)
 
   stolower(comm);               /* All commands are case-insensitive */
 
-  if(parray[p].game >= 0) {
-    if(go_move(garray[parray[p].game].GoGame, comm)) {
+  if (parray[p].game >= 0) {
+    if (go_move(garray[parray[p].game].GoGame, comm)) {
       return COM_ISMOVE;
     }
   }
@@ -556,7 +556,7 @@ static void process_login(int p, char *login)
     for (i = 0; i < MAX_CHANNELS; i++) channel_remove(i, p);
     pprintf(p, "Login: ");
   }
-  else if(!parray[p].slotstat.is_registered) pcommand(p, "\n");
+  else if (!parray[p].slotstat.is_registered) pcommand(p, "\n");
   return;
 }
 
@@ -588,7 +588,7 @@ static int process_password(int p, char *password)
   net_echoOn(parray[p].socket);
 
   if (parray[p].slotstat.is_registered && parray[p].passwd[0]) {
-    if(strlen(password) < 2) {
+    if (strlen(password) < 2) {
       parray[p].pstatus = PSTATUS_PASSWORD;
       pprintf(p, "\n%s", parray[p].client ? "1 1\n" : "Password: ");
       net_echoOff(parray[p].socket);
@@ -617,7 +617,7 @@ static int process_password(int p, char *password)
 	pprintf(p, "\n\nInvalid password!\n\n");
       }
       pprintf(p, "Login: ");
-      if(parray[p].pass_tries++ > 3) {
+      if (parray[p].pass_tries++ > 3) {
         player_clear(p);
 	return COM_LOGOUT;
       }
@@ -673,12 +673,12 @@ static int process_password(int p, char *password)
 
   if (!parray[p].slotstat.is_registered)
     pxysend_raw_file(p, FILENAME_MESS_UNREGISTERED);
-  if(Debug) Logit("About to resort");
+  if (Debug) Logit("About to resort");
   player_resort();
-  if(Debug) Logit("About to write login");
+  if (Debug) Logit("About to write login");
   player_write_loginout(p, P_LOGIN);
   parray[p].slotstat.is_online = 1;
-  if(Debug) Logit("Made it to announce");
+  if (Debug) Logit("Made it to announce");
   sprintf(tmptext, "{%s [%3.3s%s] has connected.}\n",
       parray[p].pname,
       parray[p].srank,
@@ -711,13 +711,13 @@ static int process_password(int p, char *password)
 
   }
   for (i = 0; i < MAX_NCHANNELS; i++) {
-    if(carray[i].other) continue;
+    if (carray[i].other) continue;
     if (on_channel(i, p)) {
       pcn_out(p, CODE_INFO, FORMAT_CHANNEL_d_TOPIC_sn, i, carray[i].ctitle);
       for (j = 0; j < carray[i].count; j++) {
-        if(carray[i].other) continue;
+        if (carray[i].other) continue;
         p1 = carray[i].members[j];
-	if(p1 == p) continue;
+	if (p1 == p) continue;
 	if (!parray[p1].slotstat.is_online) continue;
 	pcn_out(p1, CODE_INFO, FORMAT_n );
 	pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_JOINED_CHANNEL_d_n,
@@ -734,8 +734,8 @@ static int process_password(int p, char *password)
 	carray[CHANNEL_ASHOUT].ctitle);
     for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
       p1 = carray[CHANNEL_ASHOUT].members[j];
-      if(!parray[p1].slotstat.is_online) continue;
-      if(p1 == p) continue;
+      if (!parray[p1].slotstat.is_online) continue;
+      if (p1 == p) continue;
       pcn_out_prompt(p1, CODE_CR1|CODE_INFO,
           FORMAT_s_HAS_JOINED_THE_ADMIN_CHANNEL_n,
 	  parray[p].pname);
@@ -743,9 +743,9 @@ static int process_password(int p, char *password)
   }
 
   num_logins++;
-  if(Debug) Logit("Doing messages...");
+  if (Debug) Logit("Doing messages...");
   messnum = player_num_messages(p);
-  if(Debug) Logit("Done with messages...");
+  if (Debug) Logit("Done with messages...");
   if (messnum) {
     pcn_out(p, CODE_INFO, FORMAT_YOU_HAVE_d_MESSAGES_TYPE_qMESSAGESq_TO_DISPLAY_THEMn, 
 	messnum);
@@ -764,7 +764,7 @@ static int process_password(int p, char *password)
   parray[p].lastHost = parray[p].thisHost;
   parray[p].protostate = STAT_WAITING;
   pcn_out_prompt(p, CODE_MVERSION, FORMAT_NO_NAME_GO_SERVER_NNGS_VERSION_sn, version_string);
-  if(!parray[p].slotstat.is_registered) parray[p].water = 0;
+  if (!parray[p].slotstat.is_registered) parray[p].water = 0;
   return 0;
 }
 
@@ -775,7 +775,7 @@ static int process_prompt(int p, char *command)
 
   command = eatwhite(command);
   if (!*command) {
-    if(!parray[p].client) pprintf(p, "%s", parray[p].prompt);
+    if (!parray[p].client) pprintf(p, "%s", parray[p].prompt);
     else pprintf_prompt(p, "\n");
     return COM_OK;
   }
@@ -890,7 +890,7 @@ int process_input(int fd, char *com_string)
       retval = process_prompt(p, com_string);
       break;
   }
-  if(msg) {
+  if (msg) {
     Logit("Command from Fd=%d %s player! : Slot %s", fd, msg, player_dumpslot(p));
   }
   commanding_player = -1;
@@ -910,12 +910,12 @@ void process_new_connection(int fd, unsigned int fromHost)
   }
   p = player_new();
 
-  parray[p].pstatus = PSTATUS_LOGIN;  /* Set status to LOGIN */
-  parray[p].socket = fd;            /* track the FD */
+  parray[p].pstatus = PSTATUS_LOGIN;
+  parray[p].socket = fd;
   parray[p].slotstat.is_connected = 1;
   parray[p].slotstat.is_online = 0;
-  parray[p].logon_time = globclock.time;   /* Set the login time */
-  parray[p].thisHost = fromHost;    /* set the host FROM field */
+  parray[p].logon_time = globclock.time;
+  parray[p].thisHost = fromHost;
   parray[p].pass_tries = 0;         /* Clear number of password attempts */
   pxysend_raw_file(p, FILENAME_MESS_LOGIN); /* Send the login file */
   pprintf(p, "Login: ");            /* Give them a prompt */
@@ -944,7 +944,7 @@ void process_disconnection(int fd)
 
   if (parray[p].slotstat.is_online) {
     for (i = 0; i < carray[CHANNEL_LOGON].count; i++) {
-      if(parray[p].silent_login) break;
+      if (parray[p].silent_login) break;
       p1 = carray[CHANNEL_LOGON].members[i];
       if (!parray[p1].slotstat.is_online) continue; 
       if (p1 == p) continue; 
@@ -1004,7 +1004,7 @@ int process_incomplete(int fd, char *com_string)
   }
   if (last_char == '\3') {	/* ctrl-c */
     if (parray[p].pstatus == PSTATUS_PROMPT) {
-      if(!parray[p].client) pprintf(p, "\n%s", parray[p].prompt);
+      if (!parray[p].client) pprintf(p, "\n%s", parray[p].prompt);
       else pprintf(p, "\n1 %d\n",parray[p].protostate);
       return COM_FLUSHINPUT;
     } else {
@@ -1024,7 +1024,7 @@ int process_heartbeat(int *fdp)
   int p;
   static int last_idle_check;
   static int resu = 0;
-  int now = globclock.time;
+  time_t now = globclock.time;
   static struct stat ratingsbuf1, ratingsbuf2;
 #ifdef NNGSRATED
   rdbm_t rdb;
@@ -1038,7 +1038,7 @@ int process_heartbeat(int *fdp)
     return COM_OK;
 
     /* Check for timed out connections */
-  if(last_idle_check > 60) {  /* Now only check every minute for idle */
+  if (last_idle_check > 60) {  /* Now only check every minute for idle */
     for (p = 0; p < parray_top; p++) {
       if (!parray[p].slotstat.is_inuse) continue;
       if (!parray[p].slotstat.is_connected) continue;
@@ -1083,7 +1083,7 @@ int process_heartbeat(int *fdp)
       last_results = now;
       stat(NRATINGS_FILE, &ratingsbuf2);
       resu = ratingsbuf2.st_mtime - ratingsbuf1.st_mtime;
-      if(resu > 0) {
+      if (resu > 0) {
         stat(NRATINGS_FILE, &ratingsbuf1);  /* re-init the stat buf */
         stat(NRATINGS_FILE, &ratingsbuf2);  /* re-init the stat buf */
         Logit("Time to re-read the ratings file.  :)");

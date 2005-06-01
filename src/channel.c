@@ -174,25 +174,25 @@ int channel_remove(int ch, int p)
     carray[ch].members[i] = carray[ch].members[i + 1];
   carray[ch].count -= 1;
   parray[p].nochannels -= 1;
-  if(carray[ch].count == 0) {
+  if (carray[ch].count == 0) {
     carray[ch].locked = 0;
     carray[ch].hidden = 0;
   }
-  if(parray[p].nochannels < 0) parray[p].nochannels = 0;
+  if (parray[p].nochannels < 0) parray[p].nochannels = 0;
   return 0;
 }
 
 int channel_add(int ch, int p)
 {
-  if((ch == 0) && (parray[p].adminLevel < ADMIN_MASTER)) {
+  if ((ch == 0) && (parray[p].adminLevel < ADMIN_MASTER)) {
     return 3;
   }
   if (carray[ch].count >= MAX_CHANNEL_MEMBERS) return 1;
   if (on_channel(ch, p)) return 1;
-  if((carray[ch].locked) && (parray[p].adminLevel < ADMIN_MASTER)) {
+  if ((carray[ch].locked) && (parray[p].adminLevel < ADMIN_MASTER)) {
     return 4;
   }
-  if((carray[ch].hidden) && (parray[p].adminLevel < ADMIN_MASTER)) {
+  if ((carray[ch].hidden) && (parray[p].adminLevel < ADMIN_MASTER)) {
     return 5;
   }
   if ((parray[p].nochannels == MAX_INCHANNELS) && (parray[p].adminLevel < ADMIN_MASTER)) {
@@ -311,7 +311,7 @@ int Ochannel_remove(int ch, int p)
   for (i = found; i < OnumOn[ch] - 1; i++)
     Ochannels[ch][i] = Ochannels[ch][i + 1];
   OnumOn[ch] = OnumOn[ch] - 1;
-  if(OnumOn[ch] < 0) OnumOn[ch] = 0;
+  if (OnumOn[ch] < 0) OnumOn[ch] = 0;
   return 0;
 }
 

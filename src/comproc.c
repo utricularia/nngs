@@ -203,7 +203,7 @@ NNGS admins\n\n--",
           pname, fullname, email, passwd,
           dotQuad(parray[p].thisHost));
   /* Mail a copy to geek for testing / verification.  */
-  if(geek_email) {
+  if (geek_email) {
     if ((idx = mail_string_to_address(geek_email, tmp, text)) < 0)
       Logit("mail_string_to_address(\"%s\", ...) returned %d", geek_email, idx);
   }
@@ -338,7 +338,7 @@ int com_note(int p, struct parameter * param)
   time_t tt = globclock.time;
 
   fp = xyfopen(FILENAME_NOTEFILE,"a");
-  if(!fp) {
+  if (!fp) {
     pcn_out(p, CODE_ERROR, FORMAT_ERROR_NOTE_NOT_SAVEDn);
     return COM_OK;
   }
@@ -375,7 +375,7 @@ int in_list(const char *listname, const char *member)
   if (!fp) return 0;
 
   while ((cp=fgets(listmember,sizeof listmember,fp))) {
-    if((len =strlen(listmember)) <= 1) continue;
+    if ((len =strlen(listmember)) <= 1) continue;
     listmember[len-1] = 0;
     if (!strcasecmp(member, listmember)) break;
     }
@@ -509,7 +509,7 @@ already in the list */
   fp1 = xyfopen(FILENAME_LIST_s, "w", listname);
   fp2 = xyfopen(FILENAME_LIST_s_OLD, "r", listname);
   while((cp=fgets(lmember, sizeof lmember, fp2))) {
-    if((len=strlen(cp)) < 1) {
+    if ((len=strlen(cp)) < 1) {
       Logit("Cant make copy \"%s\"", filename() );
       break;
     }
@@ -541,7 +541,7 @@ int com_showlist(int p, struct parameter * param)
     if (!fp) return COM_OK;
 
     for(lines=1; fgets(buff, sizeof buff, fp); lines++) {
-      if(sscanf(buff, "%s %d\n", member, &rights) == 2) {
+      if (sscanf(buff, "%s %d\n", member, &rights) == 2) {
         Logit("Bad format in \"%s\", line%d", filename(), lines );
         fclose(fp);
         return COM_OK;
@@ -587,17 +587,17 @@ int com_showlist(int p, struct parameter * param)
       return COM_OK;
     }
     while((cp=fgets(linebuff, sizeof linebuff, fp2))) {
-      if((len = strlen(linebuff)) < 1) continue; 
+      if ((len = strlen(linebuff)) < 1) continue; 
       linebuff[len-1] = '\0';
       multicol_store_sorted( m, linebuff );
       count++;
     }
     fclose(fp2);
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     pprintf( p, "-- The %s list: %d names --", listname, count );
     multicol_pprint( m, p, 78, 2 );
     multicol_end( m );
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
   return COM_OK;
 }
@@ -625,9 +625,9 @@ int com_best(int p, struct parameter * param)
 
   i = low = high = 0;
 
-  if(param[0].type == TYPE_WORD) {
+  if (param[0].type == TYPE_WORD) {
     i = sscanf(param[0].val.word, "%d-%d", &low, &high);
-    if(i == 1) high = low;
+    if (i == 1) high = low;
     type = 19;
   }
   else if (param[0].type == TYPE_INT)
@@ -636,32 +636,32 @@ int com_best(int p, struct parameter * param)
 
   if (param[1].type == TYPE_INT)
     low = high = param[1].val.integer;
-  else if(param[1].type == TYPE_WORD) {
+  else if (param[1].type == TYPE_WORD) {
     i = sscanf(param[1].val.word, "%d-%d", &low, &high);
-    if(i == 1) high = low;
+    if (i == 1) high = low;
   }
   else {
-    if((type == 9) && (high == 0)) high = num_9;
-    else if((type == 19) && (high == 0)) high = num_19;
+    if ((type == 9) && (high == 0)) high = num_9;
+    else if ((type == 19) && (high == 0)) high = num_19;
   }
 
-  if(low) low--;
-  if(low < 0) low = 0;
-  if(low > high) { i = high; high = low; low = i;}
-  if(high <= 0) high = 1;
-  if(type == 9) {
-    if(high > num_9) high = num_9;
-    if(low > high) low = 0;
+  if (low) low--;
+  if (low < 0) low = 0;
+  if (low > high) { i = high; high = low; low = i;}
+  if (high <= 0) high = 1;
+  if (type == 9) {
+    if (high > num_9) high = num_9;
+    if (low > high) low = 0;
   }
   else {
-    if(high > num_19) high = num_19;
-    if(low > high) low = 0;
+    if (high > num_19) high = num_19;
+    if (low > high) low = 0;
   }
 
   pcn_out(p,CODE_INFO, FORMAT_POSITION_NAME_W_L_DATE_LAST_PLAYEDn);
   pcn_out(p,CODE_INFO, FORMAT_n);
   for(i = low; i < high; i++) {
-    if(type == 9)
+    if (type == 9)
       LadderPlayer = PlayerAt(Ladder9, i);
     else
       LadderPlayer = PlayerAt(Ladder19, i);
@@ -690,7 +690,7 @@ int com_join(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_MUST_REGISTER_TO_PLAY_ON_THE_LADDER_);
     return COM_OK;
   }
-  if(parray[p].game >= 0) {
+  if (parray[p].game >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_CANNOT_JOIN_A_LADDER_WHILE_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -702,8 +702,8 @@ int com_join(int p, struct parameter * param)
     return COM_OK;
   }
   if (param[0].val.string) {
-    if(!strcmp(param[0].val.string, "ladder9")) {
-      if((PlayerNamed(Ladder9, parray[p].pname))) {
+    if (!strcmp(param[0].val.string, "ladder9")) {
+      if ((PlayerNamed(Ladder9, parray[p].pname))) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_9X9_LADDER_);
         return COM_OK;
       }
@@ -711,7 +711,7 @@ int com_join(int p, struct parameter * param)
       LadderPlayer = PlayerNamed(Ladder9, parray[p].pname);
       PlayerUpdTime(Ladder9, LadderPlayer->idx, now);
       fp = xyfopen(FILENAME_LADDER9, "w");
-      if(!fp) {
+      if (!fp) {
         pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_);
         return COM_OK;
       }
@@ -722,8 +722,8 @@ int com_join(int p, struct parameter * param)
       player_resort();
       return COM_OK;
     }
-    else if(!strcmp(param[0].val.string, "ladder19")) {
-      if((PlayerNamed(Ladder19, parray[p].pname)) ) {
+    else if (!strcmp(param[0].val.string, "ladder19")) {
+      if ((PlayerNamed(Ladder19, parray[p].pname)) ) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_19X19_LADDER_);
         return COM_OK;
       }
@@ -731,7 +731,7 @@ int com_join(int p, struct parameter * param)
       LadderPlayer = PlayerNamed(Ladder19, parray[p].pname);
       PlayerUpdTime(Ladder19, LadderPlayer->idx, now);
       fp = xyfopen(FILENAME_LADDER9, "w");
-      if(!fp) {
+      if (!fp) {
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_);
         return COM_OK;
       }
@@ -756,7 +756,7 @@ int com_drop(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if(parray[p].game >= 0) {
+  if (parray[p].game >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_CANNOT_DROP_A_LADDER_WHILE_PLAYING_A_GAME_ );
     return COM_OK;
   }
@@ -765,22 +765,22 @@ int com_drop(int p, struct parameter * param)
   /* no args -> show all ladders */
     pcn_out(p,CODE_INFO, FORMAT_YOU_ARE_IN_LADDERS_n);
     LadderPlayer = PlayerNamed(Ladder9, parray[p].pname);
-    if(LadderPlayer)
+    if (LadderPlayer)
       pcn_out(p, CODE_INFO, FORMAT_LADDER9_POSITION_dn, (LadderPlayer->idx) + 1);
     LadderPlayer = PlayerNamed(Ladder19, parray[p].pname);
-    if(LadderPlayer)
+    if (LadderPlayer)
       pcn_out(p, CODE_INFO, FORMAT_LADDER19_POSITION_d, (LadderPlayer->idx) + 1);
     return COM_OK;
   }
   if (param[0].val.string) {
-    if(!strcmp(param[0].val.string, "ladder9")) {
-      if((LadderPlayer = PlayerNamed(Ladder9, parray[p].pname)) == NULL) {
+    if (!strcmp(param[0].val.string, "ladder9")) {
+      if (!(LadderPlayer = PlayerNamed(Ladder9, parray[p].pname))) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_A_MEMBER_OF_THE_9X9_LADDER_);
         return COM_OK;
       }
       PlayerKillAt(Ladder9, LadderPlayer->idx);
       fp = xyfopen(FILENAME_LADDER9, "w");
-      if(!fp) {
+      if (!fp) {
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         return COM_OK;
       }
@@ -790,14 +790,14 @@ int com_drop(int p, struct parameter * param)
       player_resort();
       return COM_OK;
     }
-    if(!strcmp(param[0].val.string, "ladder19")) {
-      if((LadderPlayer = PlayerNamed(Ladder19, parray[p].pname)) == NULL) {
+    if (!strcmp(param[0].val.string, "ladder19")) {
+      if (!(LadderPlayer = PlayerNamed(Ladder19, parray[p].pname))) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_A_MEMBER_OF_THE_19X19_LADDER_);
         return COM_OK;
       }
       PlayerKillAt(Ladder19, LadderPlayer->idx);
       fp = xyfopen(FILENAME_LADDER19, "w");
-      if(!fp) {
+      if (!fp) {
         Logit("Error opening \"%s\" for write!!!", ladder19_file);
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         return COM_OK;
@@ -819,11 +819,11 @@ int com_clntvrfy(int p, struct parameter * param)
   int len, ii;
 
   if (param[0].type == 0) { return COM_BADPARAMETERS; }
-  if((strlen(param[0].val.string)) < 2) { return COM_BADPARAMETERS; }
+  if ((strlen(param[0].val.string)) < 2) { return COM_BADPARAMETERS; }
 
   atmp = getword(param[0].val.string);
 
-  if(param[0].val.string) {
+  if (param[0].val.string) {
     /* AvK: %c ??
     sprintf(tmp, "%s%c\n", SendCode(p, CODE_CLIVRFY), param[0].val.string[0]);
     */
@@ -832,7 +832,7 @@ int com_clntvrfy(int p, struct parameter * param)
     len = strlen(atmp);
     atmp = param[0].val.string + len;
     for(ii=0;*atmp;ii++) {
-      if(*atmp == '%') { tmp[ii++] = '%';}
+      if (*atmp == '%') { tmp[ii++] = '%';}
       tmp[ii++] = *atmp;
       atmp++;
     }
@@ -854,14 +854,6 @@ int com_shout(int p, struct parameter * param)
 {
   int p1, i;
 
-#define WANT_OLD_VERSION 0
-#if WANT_OLD_VERSION
-  int len, clen = 0;
-  char szBuf[1024];
-  char szBufc[1024];
-  char tmp[256];
-#endif /* WANT_OLD_VERSION */
-
 #ifdef UNREGS_CANNOT_SHOUT
   if (!parray[p].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_SHOUT_COMMAND_);
@@ -872,7 +864,7 @@ int com_shout(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if(carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
+  if (carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_SHOUTS_ARE_TURNED_OFF_RIGHT_NOW_);
     return COM_OK;
   }
@@ -961,7 +953,7 @@ int com_ashout(int p, struct parameter * param)
 
   for (i = 0; i < carray[CHANNEL_ASHOUT].count; i++) {
     p1 = carray[CHANNEL_ASHOUT].members[i];
-    if(p1 == p) continue;
+    if (p1 == p) continue;
     if (player_censored(p1, p)) continue;
     if (!parray[p1].slotstat.is_online) continue;
     pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
@@ -989,7 +981,7 @@ int com_gshout(int p, struct parameter * param)
   if (parray[p].gmuzzled) {
     return COM_OK;
   }
-  if(carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
+  if (carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_SHOUTS_ARE_TURNED_OFF_RIGHT_NOW_);
     return COM_OK;
   }
@@ -1099,12 +1091,12 @@ int com_emote(int p, struct parameter * param)
     args[0] = 0;
   }
 
-  if(!strcmp(param[0].val.word, "balloon")) {
-    if(!parray[p].water) {
+  if (!strcmp(param[0].val.word, "balloon")) {
+    if (!parray[p].water) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_OUT_OF_WATER_BALLOONS_GO_WIN_SOME_GAMES_);
       return COM_OK;
     } else {
-      if(parray[p].adminLevel < ADMIN_ADMIN) {
+      if (parray[p].adminLevel < ADMIN_ADMIN) {
         parray[p].water--;
       }
     }
@@ -1112,7 +1104,7 @@ int com_emote(int p, struct parameter * param)
 
   tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p1].client);
 
-  if(tmp) {
+  if (tmp) {
     pcn_out(p1, CODE_EMOTE, FORMAT_s, parray[p1].client ? "" : "\n");
     pcn_out_prompt(p1, CODE_EMOTE, FORMAT_s_n, tmp);
     tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p].client);
@@ -1166,7 +1158,7 @@ int com_pme(int p, struct parameter * param)
   tmp = eatwhite(param[1].val.string);
 
   pcn_out_prompt(p1, CODE_CR1|CODE_EMOTE, FORMAT_s_s_n, parray[p].pname, tmp);
-  if(parray[p].last_pzz != p1) {
+  if (parray[p].last_pzz != p1) {
     parray[p].last_pzz = p1;
     pcn_out(p, CODE_INFO, FORMAT_SETTING_YOUR_s_TO_s, param[0].val.word, parray[p1].pname);
   } else {
@@ -1190,24 +1182,24 @@ int com_invite(int p, struct parameter * param)
   }
 
   if (param[1].type == TYPE_NULL) {
-    if(parray[p].last_channel < 0) {
+    if (parray[p].last_channel < 0) {
       return COM_BADPARAMETERS;
     } else {
       ch = parray[p].last_channel;
     }
   } else {
-    if(param[1].val.integer < 0 || param[1].val.integer > MAX_NCHANNELS) {
+    if (param[1].val.integer < 0 || param[1].val.integer > MAX_NCHANNELS) {
       return COM_BADPARAMETERS;
     } else {
       ch = param[1].val.integer;
     }
   }
 
-  if(!on_channel(ch, p)) {
+  if (!on_channel(ch, p)) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_ON_CHANNEL_dn, ch);
     return COM_OK;
   }
-  if(on_channel(ch, p1)) {
+  if (on_channel(ch, p1)) {
     pcn_out(p, CODE_ERROR, FORMAT_s_IS_ALREADY_ON_CHANNEL_dn, parray[p1].pname, ch);
     return COM_OK;
   }
@@ -1223,7 +1215,7 @@ int com_me(int p, struct parameter * param)
   int ch, i, p1;
   char buf[MAX_STRING_LENGTH];
 
-  if(parray[p].last_channel < 0) {
+  if (parray[p].last_channel < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_PREVIOUS_CHANNEL_);
     return COM_OK;
   }
@@ -1239,7 +1231,7 @@ int com_me(int p, struct parameter * param)
     p1 = carray[ch].members[i];
     if (!parray[p1].slotstat.is_online) continue;
     if (player_censored(p1, p)) continue;
-    if(p1 == p || (parray[p1].last_channel != ch)) {
+    if (p1 == p || (parray[p1].last_channel != ch)) {
       pcn_out(p1, CODE_CR1|CODE_INFO, FORMAT_d_s, ch, buf);
     }
     else {
@@ -1264,7 +1256,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       return COM_OK;
     }
 
-    if((parray[p1].i_robot) && (parray[p].i_robot)) {
+    if ((parray[p1].i_robot) && (parray[p].i_robot)) {
       return COM_OK;
     }
 
@@ -1283,7 +1275,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
       return COM_OK;
     }
-    if((parray[p].bmuzzled)) {
+    if ((parray[p].bmuzzled)) {
       pcn_out(p, CODE_ERROR, FORMAT_BEEP_OOPS_);
       return COM_OK;
     }
@@ -1297,9 +1289,9 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
   switch (why) {
   case TELL_TELL:
   default:
-    if(parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
+    if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
     pcn_out_prompt(p1, CODE_CR1|CODE_TELL, FORMAT_s_sn, parray[p].pname, msg);
-    if(parray[p1].last_tell != p) parray[p1].last_tell_from = p;
+    if (parray[p1].last_tell != p) parray[p1].last_tell_from = p;
     break;
   case TELL_SAY:
     pcn_out_prompt(p1, CODE_SAY, FORMAT_s_sn, parray[p].pname, msg);
@@ -1308,14 +1300,14 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
     pcn_out_prompt(p1, CODE_KIBITZ, FORMAT_sn, msg);
     break;
   case TELL_BEEP:
-    if(parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
+    if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
     pcn_out_prompt(p1, CODE_CR1|CODE_INFO, FORMAT_s_IS_BEEPING_YOU_n, parray[p].pname);
     break;
   case TELL_CHANNEL:
-    if(parray[p1].client) {
+    if (parray[p1].client) {
       pcn_out_prompt(p1, CODE_YELL, FORMAT_d_s_sn,
             ch, parray[p].pname, msg);
-    } else if(parray[p1].last_channel == ch) {
+    } else if (parray[p1].last_channel == ch) {
         pprintf_prompt(p1, "\n<%s> %s\n", parray[p].pname, msg);
     } else {
         pprintf_prompt(p1, "\n<%s/%d> %s\n", parray[p].pname, ch, msg);
@@ -1333,7 +1325,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       sprintf(tmp," who has been idle %d minutes", ((player_idle(p1)%3600)/60));
     } else *tmp = 0;
 
-    if(parray[p1].game >= 0 && (parray[p1].game != parray[p].game)) {
+    if (parray[p1].game >= 0 && (parray[p1].game != parray[p].game)) {
       strcpy(tmp, " (who is playing a game)");
     }
     break;
@@ -1341,11 +1333,11 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
 
   switch (why) {
   case TELL_TELL:
-    if(parray[p].last_tell != p1) {
+    if (parray[p].last_tell != p1) {
       pcn_out(p, CODE_INFO, FORMAT_SETTING_YOUR_s_TO_s, ".", parray[p1].pname);
       parray[p].last_tell = p1;
     }
-    if(*tmp) pcn_out(p, CODE_DOT, FORMAT_ss, ",", tmp);
+    if (*tmp) pcn_out(p, CODE_DOT, FORMAT_ss, ",", tmp);
     break;
   case TELL_BEEP:
     pcn_out(p, CODE_INFO, FORMAT_BEEPED_s_S_CONSOLEs_, parray[p1].pname, tmp);
@@ -1363,7 +1355,7 @@ static int do_beep(int p, int p1)
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
     return COM_OK;
   }
-  if((parray[p].bmuzzled)) {
+  if ((parray[p].bmuzzled)) {
     pcn_out(p, CODE_ERROR, FORMAT_BEEP_OOPS_);
     return COM_OK;
   }
@@ -1373,7 +1365,7 @@ static int do_beep(int p, int p1)
     return COM_OK;
   }
 
-  if(parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
+  if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
   pcn_out_prompt(p1, CODE_CR1|CODE_INFO, FORMAT_s_IS_BEEPING_YOU_n, parray[p].pname);
   if (parray[p1].busy[0]) {
     sprintf(tmp,"beeped %s's console who %s (idle: %s)", parray[p1].pname, parray[p1].busy, hms(player_idle(p1), 1, 0, 0));
@@ -1405,7 +1397,7 @@ static int chtell(int p, int ch, char *msg)
     pcn_out(p, CODE_ERROR, FORMAT_THE_MAXIMUM_CHANNEL_NUMBER_IS_d_, MAX_NCHANNELS - 1);
     return COM_OK;
   }
-  if((carray[ch].dNd == 1) && (!on_channel(ch, p))) {
+  if ((carray[ch].dNd == 1) && (!on_channel(ch, p))) {
     pcn_out(p, CODE_ERROR, FORMAT_THE_USERS_OF_CHANNEL_d_WOULD_PREFER_YOU_TO_BE_IN_THAT_CHANNEL_BEFOREn, ch);
     pcn_out(p, CODE_ERROR, FORMAT_SPEAKING_IN_IT_SEE_qHELP_CHANNELq );
     return COM_OK;
@@ -1418,7 +1410,7 @@ static int chtell(int p, int ch, char *msg)
     if (!parray[p1].i_tell) continue;
     do_tell(p, p1, msg, TELL_CHANNEL, ch);
   }
-  if(ch != parray[p].last_channel) {
+  if (ch != parray[p].last_channel) {
     pcn_out(p,CODE_INFO, FORMAT_SETTING_YOUR_TO_CHANNEL_dn, ch);
     parray[p].last_channel = ch;
   } else {
@@ -1446,15 +1438,15 @@ int com_kibitz(int p, struct parameter * param)
   }
   if (param[0].type == TYPE_NULL) return COM_BADPARAMETERS;
   if (param[0].type == TYPE_INT) {
-    if(param[0].val.integer == 0) return COM_BADPARAMETERS;
+    if (param[0].val.integer == 0) return COM_BADPARAMETERS;
     g = param[0].val.integer - 1;
     for (i = 0; i < parray[p].num_observe; i++) {
-      if(g == parray[p].observe_list[i]) {
+      if (g == parray[p].observe_list[i]) {
         count = 1;
         continue;
       }
     }
-    if((!count) && (g != parray[p].game)) {
+    if ((!count) && (g != parray[p].game)) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_OR_OBSERVING_THAT_GAME_);
       return COM_OK;
     }
@@ -1478,9 +1470,9 @@ int com_kibitz(int p, struct parameter * param)
     if (!parray[p1].slotstat.is_online) continue;
     if (p1 == p) continue;
     if (player_is_observe(p1, g)) {
-      if(player_censored(p1, p)) continue;
-      if(parray[p1].client) {
-        if(parray[p1].bell) {
+      if (player_censored(p1, p)) continue;
+      if (parray[p1].client) {
+        if (parray[p1].bell) {
           pcn_out(p1, CODE_BEEP, FORMAT_nn);
         }
       }
@@ -1494,11 +1486,11 @@ int com_kibitz(int p, struct parameter * param)
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
     }
 #ifdef PAIR
-    if(paired(g)) {
+    if (paired(g)) {
       otherg = garray[g].pairwith;
       if (player_is_observe(p1, otherg)) {
-        if(player_censored(p1, p)) continue;
-        if(parray[p1].bell) {
+        if (player_censored(p1, p)) continue;
+        if (parray[p1].bell) {
           pcn_out(p1, CODE_BEEP,FORMAT_nn);
         }
         pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
@@ -1513,7 +1505,7 @@ int com_kibitz(int p, struct parameter * param)
     }
 #endif
   }
-  if(garray[g].Teach2 == 1) {
+  if (garray[g].Teach2 == 1) {
     p1 = garray[g].white.pnum;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
@@ -1524,7 +1516,7 @@ int com_kibitz(int p, struct parameter * param)
                    g + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
   }
-  if((garray[g].Teach == 1) || (garray[g].Teach2 == 1)) {
+  if ((garray[g].Teach == 1) || (garray[g].Teach2 == 1)) {
     p1 = garray[g].black.pnum;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
@@ -1543,7 +1535,7 @@ int com_kibitz(int p, struct parameter * param)
                 tmp2);
   add_kib(&garray[g], movenum(garray[g].GoGame), tmp3);
 #ifdef PAIR
-  if(paired(g)) {
+  if (paired(g)) {
     otherg = garray[g].pairwith;
     add_kib(&garray[otherg], movenum(garray[otherg].GoGame), tmp3);
   }
@@ -1617,13 +1609,13 @@ int com_tell(int p, struct parameter * param)
   case 'p':
   case '.':
   case '^':
-    if( parray[p].last_tell != p1) {
+    if ( parray[p].last_tell != p1) {
       pcn_out(p, CODE_INFO, FORMAT_SETTING_YOUR_s_TO_s, ".", parray[p1].pname);
       parray[p].last_tell = p1;
     }
     break;
   case ',':
-    if( parray[p].last_channel != p1) {
+    if ( parray[p].last_channel != p1) {
       pcn_out(p, CODE_INFO, FORMAT_YOUR_IS_CHANNEL_d_, p1);
       parray[p].last_channel = p1;
     }
@@ -1712,7 +1704,7 @@ int com_stats(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_RANK_s_dn, parray[p1].ranked, parray[p1].orating);
   pcn_out(p, CODE_INFO, FORMAT_WINS_dn, parray[p1].gowins);
   pcn_out(p, CODE_INFO, FORMAT_LOSSES_dn, parray[p1].golose);
-  if(!parray[p1].slotstat.is_online) {
+  if (!parray[p1].slotstat.is_online) {
     tt = player_lastdisconnect(p1);
     pcn_out(p, CODE_INFO, FORMAT_LAST_ACCESS_GMT_NOT_ON_sn,
                 tt ? strgtime(&tt) : "Never connected.");
@@ -1722,10 +1714,10 @@ int com_stats(int p, struct parameter * param)
   else {
     pcn_out(p,CODE_INFO,  FORMAT_IDLE_TIME_ON_SERVER_sn,
                 hms(player_idle(p1), 1, 1, 0));
-    if(parray[p1].game >= 0)
+    if (parray[p1].game >= 0)
       pcn_out(p,CODE_INFO,  FORMAT_PLAYING_IN_GAME_d_I_n,
                 (parray[p1].game) + 1);
-    else if(parray[p1].num_observe > 0)
+    else if (parray[p1].num_observe > 0)
       pcn_out(p,CODE_INFO,  FORMAT_OBSERVING_GAME_dn,
                 (parray[p1].observe_list[0]) + 1);
   }
@@ -1737,25 +1729,25 @@ int com_stats(int p, struct parameter * param)
           (parray[p1].email[0] ? parray[p1].email : "UNREGISTERED"),
 	    dotQuad(parray[p1].slotstat.is_online ? parray[p1].thisHost : parray[p1].lastHost));
   }
-  else if(parray[p].adminLevel >= ADMIN_ADMIN && !parray[p1].slotstat.is_online) {
+  else if (parray[p].adminLevel >= ADMIN_ADMIN && !parray[p1].slotstat.is_online) {
     pcn_out(p,CODE_INFO,  FORMAT_ADDRESS_s_LAST_CON_FROM_s_n,
           parray[p1].email,
           dotQuad(parray[p1].lastHost));
   }
   else pcn_out(p,CODE_INFO,  FORMAT_ADDRESS_sn,
           (parray[p1].email[0] ? parray[p1].email : "UNREGISTERED"));
-  if(parray[p1].slotstat.is_registered)
+  if (parray[p1].slotstat.is_registered)
   pcn_out(p,CODE_INFO, FORMAT_REG_DATE_sn, parray[p1].RegDate);
-  if((LadderPlayer = PlayerNamed(Ladder9, parray[p1].pname))) {
-    if(LadderPlayer->idx == 0) {
+  if ((LadderPlayer = PlayerNamed(Ladder9, parray[p1].pname))) {
+    if (LadderPlayer->idx == 0) {
       pcn_out(p,CODE_INFO, FORMAT_LADDER9_POSITION_NUMBER_ONEn);
     } else {
       pcn_out(p,CODE_INFO,  FORMAT_LADDER9_POSITION_dn,
                   (LadderPlayer->idx) +1);
     }
   }
-  if((LadderPlayer = PlayerNamed(Ladder19, parray[p1].pname)) ) {
-    if(LadderPlayer->idx == 0) {
+  if ((LadderPlayer = PlayerNamed(Ladder19, parray[p1].pname)) ) {
+    if (LadderPlayer->idx == 0) {
       pcn_out(p,CODE_INFO, FORMAT_LADDER19_POSITION_NUMBER_ONEn);
     } else {
       pcn_out(p,CODE_INFO,  FORMAT_LADDER19_POSITION_dn,
@@ -1776,7 +1768,7 @@ int com_stats(int p, struct parameter * param)
     pcn_out(p,CODE_INFO,  FORMAT_UNREG_s_IS_NOT_A_REGISTERED_PLAYER_,
                 parray[p1].pname);
   } else {
-    if(parray[p1].rank) {
+    if (parray[p1].rank) {
       pcn_out(p,CODE_INFO, FORMAT_RANK_INFO_sn, parray[p1].rank);
     }
     pcn_out(p,CODE_INFO,  FORMAT_GAMES_AS_B_d_GAMES_AS_W_dn,
@@ -1821,7 +1813,7 @@ int com_stats(int p, struct parameter * param)
     }
   }
 #endif
-  if(p == p1) {
+  if (p == p1) {
     pcn_out(p, CODE_CR1|CODE_INFO, FORMAT_SEE_ALSO_qVARIABLES_sq, parray[p1].pname);
   }
   player_forget(p1);
@@ -1844,7 +1836,7 @@ int com_variables(int p, struct parameter * param)
     p1 = p;
     player_fix(p1);
   }
-  if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   pprintf(p, "Variable settings of %s:\n", parray[p1].pname);
   pprintf(p, "\
 go shouts (gshout)       = %-3.3s       kibitz (kibitz)              = %-3.3s\n\
@@ -1897,11 +1889,11 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
     }
   }
   if (count) pprintf( p, "\n" );
-  if(parray[p1].last_channel >= 0) {
+  if (parray[p1].last_channel >= 0) {
     pprintf(p, "Last Channel: (;) %d\n",
                 parray[p1].last_channel);
   }
-  if((parray[p1].last_tell >= 0) && ((p == p1)
+  if ((parray[p1].last_tell >= 0) && ((p == p1)
      || (parray[p].adminLevel >= ADMIN_ADMIN))) {
     pprintf(p, "Last Tell: (.) %s\n",
                 parray[parray[p1].last_tell].pname);
@@ -1916,7 +1908,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
     }
   }
 
-  if(parray[p].adminLevel >= ADMIN_ADMIN) {
+  if (parray[p].adminLevel >= ADMIN_ADMIN) {
     pprintf(p, "Socket: %d p: %d\n", parray[p1].socket, p1);
   }
 
@@ -1957,7 +1949,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
     default:             pprintf(p, "Unknown\n"); break; }
   }
 
-  if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
 
   player_forget(p1);
   return COM_OK;
@@ -2033,14 +2025,14 @@ int com_uptime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_BYTES_SENT_dn, byte_count);
 
   LPlayer = PlayerAt(Ladder9, 0);
-  if(LPlayer)
+  if (LPlayer)
   pcn_out(p, CODE_INFO, FORMAT_d_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n, 
               num_9, LPlayer->szName);
   else
   pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_9X9_LADDER_STRUCTURE_n);
 
   LPlayer = PlayerAt(Ladder19, 0);
-  if(LPlayer)
+  if (LPlayer)
   pcn_out(p, CODE_INFO, FORMAT_d_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n, 
               num_19, LPlayer->szName);
   else
@@ -2129,12 +2121,12 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
 {
   if (!parray[p].slotstat.is_online) return 0;
 
-  if((from < 1) && (sel_bits == 0xff)) {
+  if ((from < 1) && (sel_bits == 0xff)) {
     return 1;
   }
 
-  if((sel_bits == 0xff) && (from > 0)) {
-    if((parray[p].orating >= from) &&
+  if ((sel_bits == 0xff) && (from > 0)) {
+    if ((parray[p].orating >= from) &&
        (parray[p].orating <= to))
       return 1;
   }
@@ -2147,7 +2139,7 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
     if (sel_bits & WHO_OPEN) if ((!parray[p].open) || (parray[p].game >= 0))
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if(!parray[p].rated) return 0;
+    if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
     if (sel_bits & WHO_UNRATED) if (parray[p].rated) return 0;
     if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
     if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
@@ -2158,7 +2150,7 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
     if (sel_bits & WHO_OPEN) if ((!parray[p].open) || (parray[p].game >= 0))
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if(!parray[p].rated) return 0;
+    if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
     if (sel_bits & WHO_UNRATED) if (parray[p].rated) return 0;
     if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
     if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
@@ -2223,7 +2215,7 @@ int com_awho(int p, struct parameter * param)
         }
     }
   }
-  if(!sel_bits) sel_bits = 0xff;
+  if (!sel_bits) sel_bits = 0xff;
   num_who = count = 0;
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!who_ok(sortarray[p1], sel_bits, 0, 0)) continue;
@@ -2267,7 +2259,7 @@ static void a_who(int p, int cnt, int *plist)
     pos19 = (LadderPlayer19) ? LadderPlayer19->idx + 1 : 0;
     flags[0] = parray[p1].i_shout ? ' ' : 'S';
     flags[1] = (parray[p1].i_login && parray[p1].i_game) ? ' ' : 'Q';
-    if((parray[p1].game >= 0) &&
+    if ((parray[p1].game >= 0) &&
        (garray[parray[p1].game].Ladder19 || garray[parray[p1].game].Ladder9)) {
       flags[2] = '*';
 #ifdef PAIR
@@ -2282,13 +2274,13 @@ static void a_who(int p, int cnt, int *plist)
       flags[2] = ' ';
     }
     flags[3] = 0;
-    if(parray[p1].num_observe > 0)
+    if (parray[p1].num_observe > 0)
       sprintf(otemp, "%2d", parray[p1].observe_list[0] + 1);
     else strcpy(otemp, "--" );
-    if(parray[p1].game >= 0)
+    if (parray[p1].game >= 0)
       sprintf(gtemp, "%2d", parray[p1].game + 1);
     else strcpy(gtemp, "--" );
-    if(parray[p1].rank && parray[p1].rank[0])
+    if (parray[p1].rank && parray[p1].rank[0])
       strcpy(rtemp, parray[p1].rank);
     else strcpy(rtemp, "None");
     sprintf(line, "%s %s %s %-10s %3.3s%s %3d %3d %3s  %-38.38s",
@@ -2315,7 +2307,7 @@ static void who_terse(int p, int num, int *plist, int type)
   pcn_out(p, CODE_WHO, FORMAT_INFO_NAME_IDLE_RANK_INFO_NAME_IDLE_RANKn);
   for (i = 0; i < num; i++) {
     p1 = plist[i];
-/*    if((parray[p1].invisable) && (parray[p].adminLevel < ADMIN_ADMIN)) continue; */
+/*    if ((parray[p1].invisable) && (parray[p].adminLevel < ADMIN_ADMIN)) continue; */
     flags[0] = ' ';
     flags[1] = (parray[p1].i_shout) ? ((parray[p1].i_login) ? ' ' : 'Q') : 'S';
     if (!parray[p1].open) {
@@ -2326,10 +2318,10 @@ static void who_terse(int p, int num, int *plist, int type)
       flags[2] = ' ';
     }
     flags[3] = 0;
-    if(parray[p1].num_observe > 0)
+    if (parray[p1].num_observe > 0)
       sprintf(otemp, "%2d", parray[p1].observe_list[0] + 1);
     else strcpy(otemp, "--" );
-    if(parray[p1].game >= 0)
+    if (parray[p1].game >= 0)
       sprintf(gtemp, "%2d", parray[p1].game + 1);
     else strcpy(gtemp, "--" );
 
@@ -2346,7 +2338,7 @@ static void who_terse(int p, int num, int *plist, int type)
 #endif
     left=(left)?0:1;
     }
-  if(!left) pcn_out(p,CODE_NONE,FORMAT_sn,"                                  ");
+  if (!left) pcn_out(p,CODE_NONE,FORMAT_sn,"                                  ");
   pcn_out(p, CODE_WHO, FORMAT_d_PLAYERS_d_TOTAL_GAMES_, player_count(), game_count());
 
 }
@@ -2425,9 +2417,9 @@ int com_who(int p, struct parameter * param)
   from = (from * 100);
   to = (to * 100);
 
-  if(from == to) to += 99;
+  if (from == to) to += 99;
   num_who = count = 0;
-  if(!sel_bits) sel_bits = 0xff;
+  if (!sel_bits) sel_bits = 0xff;
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!who_ok(sortarray[p1], sel_bits, from, to)) continue;
     plist[num_who++] = sortarray[p1];
@@ -2557,7 +2549,7 @@ int com_channel(int p, struct parameter * param)
       if (!channel_remove(i, p))
 	pcn_out(p,CODE_INFO, FORMAT_CHANNEL_d_TURNED_OFF_n, i);
       for (j = 0; j < carray[i].count; j++) {
-	if(carray[i].members[j] == p) continue;
+	if (carray[i].members[j] == p) continue;
 	pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_LEFT_CHANNEL_d_n,
 		       parray[p].pname, i);
       }
@@ -2574,7 +2566,7 @@ int com_channel(int p, struct parameter * param)
         parray[p].last_channel = i;
         pcn_out(p,CODE_INFO, FORMAT_SETTING_YOUR_TO_CHANNEL_dn, i);
         for (j = 0; j < carray[i].count; j++) {
-          if(carray[i].members[j] == p) continue;
+          if (carray[i].members[j] == p) continue;
           pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_JOINED_CHANNEL_d_n,
                      parray[p].pname, i);
         }
@@ -2605,13 +2597,13 @@ int com_unlock(int p, struct parameter * param)
 {
   int i, j;
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
+  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
     for (j = 0; j < carray[i].count; j++) {
       pprintf_prompt(carray[i].members[j], "%s has unlocked channel %d\n", parray[p].pname, i);
     }
@@ -2625,13 +2617,13 @@ int com_lock(int p, struct parameter * param)
 {
   int i, j;
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
+  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
     for (j = 0; j < carray[i].count; j++) {
       pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_LOCKED_CHANNEL_dn,
       parray[p].pname, i);
@@ -2646,21 +2638,21 @@ int com_dnd(int p, struct parameter * param)
 {
   int i, j;
 
-  if((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
-    if(carray[i].dNd == 0) {
+  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
+    if (carray[i].dNd == 0) {
       for (j = 0; j < carray[i].count; j++) {
         pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_DO_NOT_DISTURBED_CHANNEL_dn,
         parray[p].pname, i);
       }
       carray[i].dNd = 1;
     }
-    else if(carray[i].dNd == 1) {
+    else if (carray[i].dNd == 1) {
       for (j = 0; j < carray[i].count; j++) {
         pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_REMOVED_THE_DO_NOT_DISTURB_ON_CHANNEL_dn,
         parray[p].pname, i);
@@ -2677,17 +2669,17 @@ int com_ctitle(int p, struct parameter * param)
   int i, j;
   char szBuf[1024];
 
-  if((param[0].val.integer >= MAX_NCHANNELS)
+  if ((param[0].val.integer >= MAX_NCHANNELS)
     || (param[0].val.integer < 0)) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if(strlen(param[1].val.string) > 200) return COM_OK;
+  if (strlen(param[1].val.string) > 200) return COM_OK;
 
   sprintf(szBuf, "[%s] %s", parray[p].pname, param[1].val.string);
-  if(on_channel(i, p)) {
+  if (on_channel(i, p)) {
     free(carray[i].ctitle);
     carray[i].ctitle = mystrdup(szBuf);
     for (j = 0; j < carray[i].count; j++) {
@@ -2730,7 +2722,7 @@ int com_inchannel(int p, struct parameter * param)
     return COM_OK;
   }
   for (i = 0; i < MAX_NCHANNELS; i++) {
-    if((carray[i].hidden == 1) && (parray[p].adminLevel < ADMIN_ADMIN)) continue;
+    if ((carray[i].hidden == 1) && (parray[p].adminLevel < ADMIN_ADMIN)) continue;
     if (carray[i].count && ((c1 < 0) || (i == c1))) {
       pcn_out(p,CODE_INFO, FORMAT_CHANNEL_d_sss_sn, i,
                   carray[i].locked ? "L" : "-",
@@ -2853,8 +2845,8 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
 
   mine = pending_find(p, p1, pendtype);
   hers = pending_find(p1, p, pendtype);
-  if(mine) mode |= 1;
-  if(hers) mode |= 2;
+  if (mine) mode |= 1;
+  if (hers) mode |= 2;
   val = param[1].val.string;
 
   switch (*val) {
@@ -3196,14 +3188,14 @@ int com_teach(int p, struct parameter * param)
 {
   int t;
 
-  if(parray[p].game >= 0) {
+  if (parray[p].game >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_PLAYING_A_GAME_);
     return COM_OK;
   }
 
-  if(param[0].val.integer <= 0) t = COM_FAILED;
+  if (param[0].val.integer <= 0) t = COM_FAILED;
   else t = create_new_gomatch(p, p, param[0].val.integer, 1, 1, 1, RULES_NET, GAMETYPE_GO);
-  if(t == COM_FAILED) return COM_FAILED;
+  if (t == COM_FAILED) return COM_FAILED;
   garray[parray[p].game].Teach = 1;
   garray[parray[p].game].rated = 0;
   return COM_OK;
@@ -3222,7 +3214,7 @@ int create_new_gomatch(int wp, int bp,
   int bpos, wpos;
 
   if (g < 0) return COM_FAILED;
-  if(size >= NUMLINES) return COM_FAILED;
+  if (size >= NUMLINES) return COM_FAILED;
 
   garray[g].GoGame = initminkgame(size,size, rules);
   garray[g].gstatus = GSTATUS_ACTIVE;
@@ -3261,22 +3253,22 @@ int create_new_gomatch(int wp, int bp,
     break;
   }
 
-  if((strcmp(parray[wp].srank, parray[bp].srank)) == 0)
+  if ((strcmp(parray[wp].srank, parray[bp].srank)) == 0)
     garray[g].komi = 5.5;
-  if(rules == RULES_ING) garray[g].komi = 8.0;
-  if(start_time == 0) {
+  if (rules == RULES_ING) garray[g].komi = 8.0;
+  if (start_time == 0) {
     garray[g].ts.time_type = TIMETYPE_UNTIMED;
     start_time = 480;
     byo_time = 480;
   }
   else {
     start_time = start_time * 60;			/* To Seconds */
-    if(rules == RULES_NET || type == GAMETYPE_TNETGO) byo_time = byo_time * 60;
+    if (rules == RULES_NET || type == GAMETYPE_TNETGO) byo_time = byo_time * 60;
     else byo_time = (start_time) / 6;
     garray[g].ts.time_type = TIMETYPE_TIMED;
   }
   garray[g].Teach = teaching;
-  if(rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g].type = GAMETYPE_GO;
+  if (rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g].type = GAMETYPE_GO;
   else garray[g].type = GAMETYPE_GOEGO;
 #ifdef USING_PRIVATE_GAMES
   garray[g].Private = parray[wp].Private || parray[bp].Private;
@@ -3301,12 +3293,12 @@ int create_new_gomatch(int wp, int bp,
   garray[g].lastDectick = garray[g].starttick;
   garray[g].clockStopped = 0;
   garray[g].rules = rules;
-  if(!garray[g].Teach)
+  if (!garray[g].Teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_MATCH_d_WITH_s_IN_d_ACCEPTED_n,
           g + 1,
           parray[bp].pname,
           start_time / 60);
-  if(!garray[g].Teach)
+  if (!garray[g].Teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_CREATING_MATCH_d_WITH_s_n,
           g + 1,
           parray[bp].pname);
@@ -3325,9 +3317,9 @@ int create_new_gomatch(int wp, int bp,
         parray[bp].pname,
 	TICS2SECS(garray[g].black.ticksleft),
 	garray[g].black.byostones);
-  if(!garray[g].Teach) {
-    if(parray[wp].client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
-    if(parray[bp].client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
+  if (!garray[g].Teach) {
+    if (parray[wp].client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
+    if (parray[bp].client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
     }
   Logit("%s", outStr);
   sprintf(outStr, "{Match %d: %s [%3.3s%s] vs. %s [%3.3s%s] }\n",
@@ -3351,17 +3343,17 @@ int create_new_gomatch(int wp, int bp,
   parray[bp].opponent = wp;
   parray[bp].side = PLAYER_BLACK;
   send_go_boards(g, 0);
-  if(garray[g].Teach == 1) return COM_OKN;
-  if(size == 19) {
-    if((LadderPlayer=PlayerNamed(Ladder19,parray[bp].pname))) {
+  if (garray[g].Teach == 1) return COM_OKN;
+  if (size == 19) {
+    if ((LadderPlayer=PlayerNamed(Ladder19,parray[bp].pname))) {
       bpos = LadderPlayer->idx;
     }
     else return COM_OKN;
-    if((LadderPlayer=PlayerNamed(Ladder19,parray[wp].pname))) {
+    if ((LadderPlayer=PlayerNamed(Ladder19,parray[wp].pname))) {
       wpos = LadderPlayer->idx;
     }
     else return COM_OKN;
-    if(wpos < bpos) {
+    if (wpos < bpos) {
       garray[g].Ladder_Possible = 1;
       pcn_out(wp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER19_RATED_GAME_n);
       pcn_out(wp, CODE_INFO, FORMAT_TYPE_LADDER_BEFORE_YOUR_FIRST_MOVE_TO_MAKE_IT_LADDER_RATED_n);
@@ -3369,16 +3361,16 @@ int create_new_gomatch(int wp, int bp,
       pcn_out(bp, CODE_INFO, FORMAT_TYPE_LADDER_BEFORE_YOUR_FIRST_MOVE_TO_MAKE_IT_LADDER_RATED_n);
     }
   }
-  else if(size == 9) {
-    if((LadderPlayer=PlayerNamed(Ladder9,parray[bp].pname))) {
+  else if (size == 9) {
+    if ((LadderPlayer=PlayerNamed(Ladder9,parray[bp].pname))) {
       bpos = LadderPlayer->idx;
     }
     else return COM_OKN;
-    if((LadderPlayer=PlayerNamed(Ladder9,parray[wp].pname))) {
+    if ((LadderPlayer=PlayerNamed(Ladder9,parray[wp].pname))) {
       wpos = LadderPlayer->idx;
     }
     else return COM_OKN;
-    if(wpos < bpos) {
+    if (wpos < bpos) {
       garray[g].Ladder_Possible = 1;
       pcn_out(wp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER9_RATED_GAME_n );
       pcn_out(wp, CODE_INFO, FORMAT_TYPE_LADDER_BEFORE_YOUR_FIRST_MOVE_TO_MAKE_IT_RATED_n );
@@ -3432,7 +3424,7 @@ int com_accept(int p, struct parameter * param)
   }
 
   cnt = pending_count(p1, p, type);
-  if(cnt <= 0) {
+  if (cnt <= 0) {
     switch(mode) {
     case 0: /* seq absent */
     case 1: /* seq nr */
@@ -3450,7 +3442,7 @@ int com_accept(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if(cnt> 1) {
+  if (cnt> 1) {
     switch(mode) {
     case 0: /* seq absent */
       pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_MORE_THAN_ONE_OFFER_TO_ACCEPT_n );
@@ -3458,7 +3450,7 @@ int com_accept(int p, struct parameter * param)
 
       return COM_OK;
     case 1: /* seq nr */
-      if( seq < cnt) break;
+      if ( seq < cnt) break;
       pcn_out(p, CODE_ERROR, FORMAT_OUT_OF_RANGE_USE_qPENDINGq_TO_SEE_THE_LIST_OF_OFFERS_);
       return COM_OK;
     }
@@ -3520,14 +3512,14 @@ int com_decline(int p, struct parameter * param)
   }
 
   cnt = pending_count(p1, p, type);
-  if(cnt <= 0) {
+  if (cnt <= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_NO_PENDING_OFFERS_FROM_OTHER_PLAYERS_ );
     return COM_OK;
     }
 
   switch(mode) {
   case 0: /* implicit */
-    if(cnt > 1) {
+    if (cnt > 1) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_MORE_THAN_ONE_PENDING_OFFER_n );
       pcn_out(p, CODE_ERROR, FORMAT_PLEASE_SPECIFY_WHICH_ONE_YOU_WISH_TO_DECLINE_n );
       pcn_out(p, CODE_ERROR, FORMAT_PENDING_WILL_GIVE_YOU_THE_LIST_ );
@@ -3535,7 +3527,7 @@ int com_decline(int p, struct parameter * param)
       }
     break;
   case 1: /* seq */
-      if(seq < 0 || seq >= cnt) {
+      if (seq < 0 || seq >= cnt) {
         pcn_out(p, CODE_ERROR, FORMAT_INVALID_OFFER_NUMBER_MUST_BE_BETWEEN_1_AND_d_,
         cnt);
         return COM_OK;
@@ -3547,7 +3539,7 @@ int com_decline(int p, struct parameter * param)
   case 0: /* implicit */
   case 1: /* seq */
     for(idx=0,ptr=pending_find(p1,p,type);ptr;idx++,ptr=pending_next(ptr,p1,p,type)) {
-      if(idx != seq) continue;
+      if (idx != seq) continue;
       player_pending_delete(ptr); break;
     }
     cnt=1;
@@ -3599,19 +3591,19 @@ int com_withdraw(int p, struct parameter * param)
   }
 
   cnt = pending_count(p, p1, type);
-  if(cnt <= 0) {
+  if (cnt <= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_NO_PENDING_OFFERS_TO_OTHER_PLAYERS_ );
     return COM_OK;
   }
 
-  if(cnt > 1) switch (mode) {
+  if (cnt > 1) switch (mode) {
   case 0:
     pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_MORE_THAN_ONE_PENDING_OFFER_n );
     pcn_out(p, CODE_ERROR, FORMAT_PLEASE_SPECIFY_WHICH_ONE_YOU_WISH_TO_WITHDRAW_n );
     pcn_out(p, CODE_ERROR, FORMAT_PENDING_WILL_GIVE_YOU_THE_LIST_ );
     return COM_OK;
   case 1:
-    if(seq < 0 || seq >= cnt) {
+    if (seq < 0 || seq >= cnt) {
       pcn_out(p, CODE_ERROR, FORMAT_INVALID_OFFER_NUMBER_MUST_BE_BETWEEN_1_AND_d_, cnt);
       return COM_OK;
     }
@@ -3621,7 +3613,7 @@ int com_withdraw(int p, struct parameter * param)
   case 0: /* implicit */
   case 1: /* seq */
     for(idx=0,ptr=pending_find(p,p1,type);ptr;idx++,ptr=pending_next(ptr,p,p1,type)) {
-      if(idx != seq) continue;
+      if (idx != seq) continue;
       player_pending_delete(ptr); break;
     }
     cnt=1;
@@ -3643,27 +3635,27 @@ int com_pending(int p, struct parameter * param)
   struct pending * ptr;
   UNUSED(param);
 
-  if(parray[p].outgoing)
+  if (parray[p].outgoing)
     pcn_out(p,CODE_INFO, FORMAT_OFFERS_TO_OTHER_PLAYERS_n);
   for(cnt=0,ptr=pending_find(p,-1,-1);ptr;ptr=pending_next(ptr,p,-1,-1)) {
     cnt++;
     pprintf(p, "   ");
     player_pend_print(p, ptr);
   }
-  if(cnt==0) {
+  if (cnt==0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_ARE_NO_OFFERS_PENDING_TO_OTHER_PLAYERS_n );
     parray[p].outgoing = 0;
   }
 
 
-  if(parray[p].incoming)
+  if (parray[p].incoming)
     pcn_out(p,CODE_INFO, FORMAT_OFFERS_FROM_OTHER_PLAYERS_n);
   for(cnt=0,ptr=pending_find(-1,p,-1);ptr;ptr=pending_next(ptr,-1,p,-1)) {
     cnt++;
     pprintf(p, "%2d: ", cnt);
     player_pend_print(p, ptr);
   }
-  if(cnt==0) {
+  if (cnt==0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_ARE_NO_OFFERS_PENDING_FROM_OTHER_PLAYERS_n );
     parray[p].incoming = 0;
   }
@@ -3682,7 +3674,7 @@ int com_watching(int p, struct parameter * param)
   if (parray[p].num_observe) {
     pcn_out(p,CODE_INFO, FORMAT_GAMES_CURRENTLY_BEING_OBSERVED_);
     for (idx = 0; idx < parray[p].num_observe; idx++) {
-      if(first) {
+      if (first) {
         pprintf(p, "%3d", 1 + (parray[p].observe_list[idx]));
         first = 0;
       } else {
@@ -3724,7 +3716,7 @@ int com_score(int p, struct parameter * param)
 
     countscore(garray[g].GoGame, statstring, &wterr, &bterr, &wocc, &bocc);
     getcaps(garray[g].GoGame, &wc, &bc);
-    if(garray[g].komi > 0) {
+    if (garray[g].komi > 0) {
       wscore = wterr + wocc + garray[g].komi;
       bscore = bterr + bocc;
     } else {
@@ -3733,7 +3725,7 @@ int com_score(int p, struct parameter * param)
     }
     pcn_out(p, CODE_INFO, FORMAT_CHINESE_WHITE_f_BLACK_fn, wscore, bscore);
 
-    if(garray[g].komi > 0) {
+    if (garray[g].komi > 0) {
       wscore = wterr + bc + garray[g].komi;
       bscore = bterr + wc;
     } else {
@@ -3755,7 +3747,7 @@ int com_score(int p, struct parameter * param)
 
     countscore(garray[g].GoGame, statstring, &wterr, &bterr, &wocc, &bocc);
     getcaps(garray[g].GoGame, &wc, &bc);
-    if(garray[g].komi > 0) {
+    if (garray[g].komi > 0) {
       wscore = wterr + wocc + garray[g].komi;
       bscore = bterr + bocc;
     } else {
@@ -3764,7 +3756,7 @@ int com_score(int p, struct parameter * param)
     }
     pcn_out(p, CODE_INFO, FORMAT_CHINESE_WHITE_f_BLACK_fn, wscore, bscore);
 
-    if(garray[g].komi > 0) {
+    if (garray[g].komi > 0) {
       wscore = wterr + bc + garray[g].komi;
       bscore = bterr + wc;
     } else {
@@ -3784,18 +3776,18 @@ int com_refresh(int p, struct parameter * param)
   if (param[0].type == TYPE_NULL) {
     if (parray[p].game >= 0) {
       if (garray[parray[p].game].gotype >= GAMETYPE_GO) {
-        if((!parray[p].client) || (parray[p].i_verbose))
+        if ((!parray[p].client) || (parray[p].i_verbose))
           send_go_board_to(parray[p].game, p);
-        if(parray[p].client) pcommand(p, "moves %d", (parray[p].game) + 1);
+        if (parray[p].client) pcommand(p, "moves %d", (parray[p].game) + 1);
       }
     } else {			/* Do observing in here */
       if (parray[p].num_observe) {
 	for (idx = 0; idx < parray[p].num_observe; idx++) {
           gnum = parray[p].observe_list[idx];
           if (garray[gnum].gotype >= GAMETYPE_GO) {
-            if((!parray[p].client) || (parray[p].i_verbose))
+            if ((!parray[p].client) || (parray[p].i_verbose))
               send_go_board_to(gnum, p);
-	    if(parray[p].client)
+	    if (parray[p].client)
               pcommand(p, "moves %d", gnum + 1);
           }
 	}
@@ -3809,8 +3801,8 @@ int com_refresh(int p, struct parameter * param)
     } else if ((gnum >= garray_top) || (garray[gnum].gstatus != GSTATUS_ACTIVE)) {
       pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_GAME_n);
     } else {
-        if((!parray[p].client) || (parray[p].i_verbose)) send_go_board_to(gnum, p);
-	if(parray[p].client) pcommand(p, "moves %d", gnum +1);
+        if ((!parray[p].client) || (parray[p].i_verbose)) send_go_board_to(gnum, p);
+	if (parray[p].client) pcommand(p, "moves %d", gnum +1);
     }
   } else {
     return COM_BADPARAMETERS;
@@ -3846,7 +3838,7 @@ int com_ranked(int p, struct parameter * param)
   char temp[10], trnk;
 
   len = strlen(param[0].val.string);
-  if((len > 3) || (len < 2)) {
+  if ((len > 3) || (len < 2)) {
     pcn_out(p, CODE_ERROR, FORMAT_INVALID_RANK_VALID_RANKS_ARE_30K_1K_1D_6D_);
     return COM_OK;
   }
@@ -3870,25 +3862,25 @@ int com_ranked(int p, struct parameter * param)
     default: break;
   }
   len=sscanf(temp, "%d%c", &level, &trnk);
-  if(len==2) {
+  if (len==2) {
     switch(trnk) {
     case 'p':
-      if(level < 1 || level > 20) len = -1; /* :-) */
+      if (level < 1 || level > 20) len = -1; /* :-) */
       break;
     case 'd':
-      if(level < 1 || level > 6) len = -1; 
+      if (level < 1 || level > 6) len = -1; 
       break;
     case 'k':
-      if(level > 30 || level < 1) len = -1;
+      if (level > 30 || level < 1) len = -1;
       break;
     default: len = -1;
     }
   }
-  if(len!=2) {
+  if (len!=2) {
     pcn_out(p, CODE_ERROR, FORMAT_INVALID_RANK_VALID_RANKS_ARE_30K_1K_1D_6D_);
     return COM_OK;
   }
-  if(!strcmp(parray[p].ranked, "NR")) {
+  if (!strcmp(parray[p].ranked, "NR")) {
     parray[p].orating = 0;
   } else {
     rat=parse_rank(level, trnk);
@@ -4056,17 +4048,17 @@ int com_adhelp(int p, struct parameter * param)
     count = search_index(filenames, sizeof filenames, NULL, FILENAME_AHELP_l_index, parray[p].language);
     if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     for (pos=0,ii = 0; ii < count; ii++) {
-      if(pos) do { line[pos++] = ' '; } while(pos % 8) ;
+      if (pos) do { line[pos++] = ' '; } while(pos % 8) ;
       len = strlen(cp);
       memcpy(line+pos,cp, len+1); /* includes \0 */
       cp += len + 1;
       pos += len;
-      if(pos >64) {
+      if (pos >64) {
 	pprintf(p, "%s\n", line);
 	pos=0; line[pos] = 0;
       }
     }
-    if(pos) pprintf(p, "%s\n", line);
+    if (pos) pprintf(p, "%s\n", line);
     if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
@@ -4117,17 +4109,17 @@ int com_help(int p, struct parameter * param)
     count = search_index(filenames, sizeof filenames, NULL, FILENAME_HELP_l_index, parray[p].language);
     if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     for (pos=0,ii = 0; ii < count; ii++) {
-      if(pos) do { line[pos++] = ' '; } while(pos % 8) ;
+      if (pos) do { line[pos++] = ' '; } while(pos % 8) ;
       len = strlen(cp);
       memcpy(line+pos,cp, len+1); /* includes \0 */
       cp += len + 1;
       pos += len;
-      if(pos >64) {
+      if (pos >64) {
 	pprintf(p, "%s\n", line);
 	pos=0; line[pos] = 0;
       }
     }
-    if(pos) pprintf(p, "%s\n", line);
+    if (pos) pprintf(p, "%s\n", line);
 
     pprintf(p, "[Type \"help overview\" for a list of %s general information files.]\n", server_name);
     if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
@@ -4167,9 +4159,9 @@ int com_infor(int p, struct parameter * param)
 {
   UNUSED(param);
 
-  if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   xpsend_command(p, "ls -C %s", NULL, FILENAME_INFO);
-  if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   return COM_OK;
 }
 
@@ -4192,15 +4184,11 @@ int com_mailmess(int p, struct parameter * param)
   char fname[MAX_FILENAME_SIZE];
   UNUSED(param);
 
-  if(!player_num_messages(p)) {
+  if (!player_num_messages(p)) {
     pcn_out(p,CODE_INFO, FORMAT_YOU_HAVE_NO_MESSAGES_TO_MAIL_n);
     return COM_OK;
   }
-#if 0
-  sprintf(fname, "%s/player_data/%c/%s.%s", stats_dir, parray[p].login[0], parray[p].login, stats_messages);
-#else
   xyfilename(fname, FILENAME_PLAYER_cs_MESSAGES, parray[p].login );
-#endif
 
   pmail_file(p, "NNGS Messages", fname);
   pcn_out(p, CODE_INFO, FORMAT_YOUR_MESSAGES_WERE_SENT_TO_sn, parray[p].email);
@@ -4216,9 +4204,9 @@ int com_mailhelp(int p, struct parameter * param)
   UNUSED(param);
 
   if (param[0].type == TYPE_NULL) {
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     xpsend_command(p, "ls -C %s", NULL, FILENAME_HELP);
-    if(parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
 
@@ -4242,7 +4230,7 @@ int com_mailme(int p, struct parameter * param)
   char *arg;
   char fname[MAX_FILENAME_SIZE];
 
-  if((strcmp(param[0].val.word, "me")) != 0)
+  if ((strcmp(param[0].val.word, "me")) != 0)
     return COM_BADPARAMETERS;
 
   arg = getword(eatwhite(param[1].val.string));
@@ -4254,7 +4242,7 @@ int com_mailme(int p, struct parameter * param)
   i = xyfilename(fname, FILENAME_CGAMES_cs, arg );
 
   i = pmail_file(p, arg, fname);
-  if(i == 0) {
+  if (i == 0) {
     pcn_out(p,CODE_INFO, FORMAT_s_MAILED_TO_s_, arg, parray[p].email);
   }
   else {
@@ -4273,7 +4261,7 @@ int com_handles(int p, struct parameter * param)
   if (count > 0) {
     display_directory(p, buffer, count);
   }
-  if(count == 0) pprintf(p, "\n");
+  if (count == 0) pprintf(p, "\n");
   return COM_OKN;
 }
 
@@ -4351,9 +4339,9 @@ int com_spair(int p, struct parameter * param)
 
   for(idx=0; idx < 3; idx++) {
     for(p1=idx+1; p1 < 4; p1++) {
-      if(pp4[idx] == pp4[p1]) break; }}
+      if (pp4[idx] == pp4[p1]) break; }}
 
-  if(p1 < 4) {
+  if (p1 < 4) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_MUST_LIST_4_UNIQUE_PLAYER_NAMES_TO_PLAY_PAIR_GO_);
     return COM_OK;
   }
@@ -4380,7 +4368,7 @@ int com_spair(int p, struct parameter * param)
     pb=pp4[idx^1];
     pc=pp4[idx^2];
     pcn_out(pa,CODE_INFO, FORMAT_WELCOME_TO_NNGS_PAIR_GO_n);
-    if(idx < 2) {	/* White players */
+    if (idx < 2) {	/* White players */
       pcn_out(pa, CODE_INFO, FORMAT_YOU_AND_s_ARE_THE_WHITE_TEAM_n, parray[pb].pname);
       pcn_out(pa, CODE_INFO, FORMAT_FIRST_CREATE_A_MATCH_AGAINST_YOUR_OPPONENT_s_n, parray[pc].pname);
       pcn_out(pa, CODE_INFO, FORMAT_TYPE_MATCH_s_W_SIZE_TIME_BYO_TIMEn, parray[pc].pname);
@@ -4413,7 +4401,7 @@ int com_nrating(int p, struct parameter * param)
   else
     do_copy(name, param[0].val.word, sizeof name);
 
-  if ((db = rdbm_open(NRATINGS_FILE,0)) == NULL)
+  if (!(db = rdbm_open(NRATINGS_FILE,0)))
   {
     pcn_out(p, CODE_ERROR, FORMAT_AN_UNLUCKY_CHANCE_OCCUREDn);
     return COM_OK;
@@ -4421,13 +4409,13 @@ int com_nrating(int p, struct parameter * param)
   if (!rdbm_fetch(db, name, &rp))
     pcn_out(p, CODE_ERROR, FORMAT_NO_RATING_INFORMATION_FOR_sn, name);
   else {
-    if((rp.high-rp.low) < 0.25f) {
+    if ((rp.high-rp.low) < 0.25f) {
       strcpy(ratstr, "Highest confidence");
-    } else if((rp.high-rp.low) < 0.50f) {
+    } else if ((rp.high-rp.low) < 0.50f) {
       strcpy(ratstr, "Very high confidence");
-    } else if((rp.high-rp.low) < 0.75f) {
+    } else if ((rp.high-rp.low) < 0.75f) {
       strcpy(ratstr, "High confidence");
-    } else if((rp.high-rp.low) < 1.00f) {
+    } else if ((rp.high-rp.low) < 1.00f) {
       strcpy(ratstr, "Low confidence");
     } else {
       strcpy(ratstr, "Very low confidence");
@@ -4462,7 +4450,7 @@ int com_rating(int p, struct parameter * param)
   else do_copy(neeldle, param[0].val.word, sizeof neeldle);
 
   fp = xyfopen(FILENAME_RATINGS, "r");
-  if(!fp)
+  if (!fp)
   {
     pcn_out(p, CODE_ERROR, FORMAT_AN_UNKNOWN_ERROR_OCCURED_OPENING_THE_RATINGS_FILE_n);
     fprintf(stderr, "An unknown error occured opening the ratings file '%s'.\n", ratings_file);
@@ -4471,7 +4459,7 @@ int com_rating(int p, struct parameter * param)
 
   while((fscanf(fp, "%s %s %d %d", name, rank, &rating, &numgam)) == 4)
   {
-    if(!strcasecmp(name, neeldle))
+    if (!strcasecmp(name, neeldle))
     {
       pcn_out(p,CODE_INFO,FORMAT_s_s_d_RATED_GAMES_dn,
                 name, rank, rating, numgam);
@@ -4480,14 +4468,14 @@ int com_rating(int p, struct parameter * param)
   }
   fclose(fp);
   fp = xyfopen(FILENAME_RATINGS, "r");
-  if(!fp) {
+  if (!fp) {
     pcn_out(p, CODE_ERROR, FORMAT_AN_UNKNOWN_ERROR_OCCUREDn);
     return COM_OK;
   }
 
   while (fgets(line, sizeof line, fp))
   {
-    if(sscanf(line, "%s %f %s %f %f/%f %d-%d %d-%d %d-%d",
+    if (sscanf(line, "%s %f %s %f %f/%f %d-%d %d-%d %d-%d",
                      name, &numeric_rank,
                      rank, &confidence,
                      &range_high, &range_low,
@@ -4495,7 +4483,7 @@ int com_rating(int p, struct parameter * param)
                      &rated_wins_vs_rated, &rated_losses_vs_rated,
                      &high_confidence_wins, &high_confidence_losses) == 12)
     {
-      if(!strcasecmp(name, neeldle))
+      if (!strcasecmp(name, neeldle))
       {
         found = 1;
         pcn_out(p, CODE_INFO, FORMAT_CONFIDENCE_f_PERCENTn, confidence * 100);
@@ -4508,7 +4496,7 @@ int com_rating(int p, struct parameter * param)
         break;
       }
     }
-    else if(sscanf(line, "%s %s %s %f %s %d-%d %d-%d %d-%d",
+    else if (sscanf(line, "%s %s %s %f %s %d-%d %d-%d %d-%d",
                      name, junk1,
                      rank, &confidence,
                      junk2,
@@ -4516,7 +4504,7 @@ int com_rating(int p, struct parameter * param)
                      &rated_wins_vs_rated, &rated_losses_vs_rated,
                      &high_confidence_wins, &high_confidence_losses) == 11)
     {
-      if(!strcasecmp(name, neeldle)) {
+      if (!strcasecmp(name, neeldle)) {
         found = 1;
         pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_RATEDn, name);
         pcn_out(p, CODE_INFO, FORMAT_ALL_RATED_WINS_dn, all_rated_wins);
@@ -4530,7 +4518,7 @@ int com_rating(int p, struct parameter * param)
     }
   } /* end while() loop */
   fclose(fp);
-  if(!found) pcn_out(p,CODE_INFO, FORMAT_NO_RATING_INFORMATION_FOR_sn, neeldle);
+  if (!found) pcn_out(p,CODE_INFO, FORMAT_NO_RATING_INFORMATION_FOR_sn, neeldle);
   return COM_OK;
 }
 #endif
@@ -4542,7 +4530,7 @@ int com_translate(int p, struct parameter * param)
   char buf[BUFSIZE];
   FILE *ptr;
 
-  if(!safestring(param[0].val.word)) {
+  if (!safestring(param[0].val.word)) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOUR_QUERY_CONTAINS_INVALID_CHARACTERS_);
     return COM_OK;
   }
@@ -4573,11 +4561,11 @@ int com_find(int p, struct parameter * param)
 
   bldsearchdata(param[0].val.string);
 
-  if((fp = xyfopen(FILENAME_FIND, "r")) != NULL) {
+  if ((fp = xyfopen(FILENAME_FIND, "r")) != NULL) {
     while (fgets(buf, sizeof buf, fp)) {
       i = strlen(buf);
       buf[i - 1] = '\0';
-      if(blank(buf)) continue;
+      if (blank(buf)) continue;
       psr = search(buf);
 
         if (psr) {
@@ -4610,13 +4598,13 @@ int com_notify(int p, struct parameter * param)
       return COM_OK;
     }
   }
-  else if(param[0].type == TYPE_WORD) {
-    if(parray[p].num_notify >= MAX_NOTIFY) {
+  else if (param[0].type == TYPE_WORD) {
+    if (parray[p].num_notify >= MAX_NOTIFY) {
       pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOUR_NOTIFY_LIST_IS_ALREADY_FULL_n);
       return COM_OK;
     }
     p1 = player_find_sloppy(param[0].val.word);
-    if(p1<0) return COM_OK;
+    if (p1<0) return COM_OK;
     for (i = 0; i < parray[p].num_notify; i++) {
       if (!strcasecmp(parray[p].notifyList[i], parray[p1].pname)) {
         pcn_out(p, CODE_ERROR, FORMAT_YOUR_NOTIFY_LIST_ALREADY_INCLUDES_s_n, parray[p1].pname);
@@ -4624,7 +4612,7 @@ int com_notify(int p, struct parameter * param)
         return COM_OK;
       }
     }
-    if(p1 == p) {
+    if (p1 == p) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_NOTIFY_YOURSELF_n);
       player_forget(p1);
       return COM_OK;
@@ -4653,7 +4641,7 @@ int com_unnotify(int p, struct parameter * param)
                 parray[p].notifyList[i]);
       free(parray[p].notifyList[i]);
       parray[p].notifyList[i] = NULL;
-      if(i == (parray[p].num_notify) - 1) {
+      if (i == (parray[p].num_notify) - 1) {
         parray[p].num_notify--;
       }
       unc++;
@@ -4662,7 +4650,7 @@ int com_unnotify(int p, struct parameter * param)
   if (unc) {
     for (i = 0; i < parray[p].num_notify; i++) {
       if (!parray[p].notifyList[i]) {
-        if(parray[p].notifyList[(parray[p].num_notify) - 1]) {
+        if (parray[p].notifyList[(parray[p].num_notify) - 1]) {
           parray[p].notifyList[i] = parray[p].notifyList[(parray[p].num_notify) - 1];
           i = i - 1;
           parray[p].num_notify = parray[p].num_notify - 1;
@@ -4720,7 +4708,7 @@ int player_notified(int p, int p1)
 
 #if 0
   /* possible bug: p has just arrived! */
-  if(!parray[p].pname[0])  return 0;
+  if (!parray[p].pname[0])  return 0;
 #endif
 
   for (i = 0; i < parray[p].num_notify; i++) {

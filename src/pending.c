@@ -86,7 +86,7 @@ static struct pending * pending_alloc(void)
   struct pending * ptr;
 
   ptr= pendfree;
-  if(!ptr) return NULL;
+  if (!ptr) return NULL;
   pending_cut(ptr);
   pendcnt.avail--;
   pendcnt.valid++;
@@ -97,12 +97,12 @@ static struct pending * pending_alloc(void)
 
 static void pending_free(struct pending * ptr)
 {
-  if(!ptr) return;
-  if(pendtail == &ptr->nxt) pendtail = NULL;
+  if (!ptr) return;
+  if (pendtail == &ptr->nxt) pendtail = NULL;
   pending_cut(ptr);
   pending_ins(&pendfree,ptr);
   pendcnt.avail++;
-  if(ptr->valid) pendcnt.valid++;
+  if (ptr->valid) pendcnt.valid++;
   ptr->valid = 0;
 }
 	/* cut ptr out of linked list. */
@@ -110,11 +110,11 @@ static void pending_cut(struct pending * ptr)
 {
   struct pending * nxt;
 
-  if(!ptr) return;
+  if (!ptr) return;
   nxt = ptr->nxt;
-  if(nxt==ptr) nxt= NULL;
-  if(ptr->hnd) *(ptr->hnd) = nxt;
-  if(nxt) nxt->hnd = ptr->hnd;
+  if (nxt==ptr) nxt= NULL;
+  if (ptr->hnd) *(ptr->hnd) = nxt;
+  if (nxt) nxt->hnd = ptr->hnd;
 #if 1
   ptr->hnd=NULL;
   ptr->nxt=NULL;
@@ -124,11 +124,11 @@ static void pending_cut(struct pending * ptr)
 	/* insert ins before *hnd */
 static void pending_ins(struct pending **hnd, struct pending * ins)
 {
-  if(!ins) return;
+  if (!ins) return;
   ins->nxt = *hnd;
   ins->hnd= hnd;
   *hnd = ins;
-  if(ins->nxt) {
+  if (ins->nxt) {
     hnd = &ins->nxt;
     ins = ins->nxt;
     ins->hnd= hnd;
@@ -138,16 +138,11 @@ static void pending_ins(struct pending **hnd, struct pending * ins)
 	/* append at tail */
 static void pending_add(struct pending * ins)
 {
-  if(!ins) return;
-  if(!pendtail) pendtail = &pendlist;
+  if (!ins) return;
+  if (!pendtail) pendtail = &pendlist;
 
   while (*pendtail) pendtail = &(*pendtail)->nxt;
-#if 0
-  ins->hnd = pendtail;
-  *pendtail = ins;
-#else
   pending_ins(pendtail,ins);
-#endif
   while (*pendtail) pendtail = &(*pendtail)->nxt;
 }
 
@@ -157,7 +152,7 @@ struct pending *pending_new(int from, int to, int type)
   struct pending *ptr;
 
   ptr= pending_alloc();
-  if(ptr) {
+  if (ptr) {
     ptr->seq=0;
     ptr->whofrom = from;ptr->whoto = to;ptr->type = type;
     pending_add(ptr);
@@ -178,7 +173,7 @@ Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,ptr,pending_dmp() );
 void pending_delete(struct pending *ptr)
 {
   if (!ptr) return;
-  if(ptr->valid) pendcnt.valid--;
+  if (ptr->valid) pendcnt.valid--;
   ptr->valid=0;
 #if 0
   pending_free(ptr);
@@ -197,7 +192,7 @@ struct pending *pending_find(int from, int to, int type)
   struct pending *nxt;
 
   for (ptr=pendlist; ptr; ptr=nxt) {
-    if(ptr->nxt==ptr) ptr->nxt=NULL;
+    if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt = ptr->nxt;
     if (!ptr->valid) {
       pending_free(ptr);
@@ -210,7 +205,7 @@ struct pending *pending_find(int from, int to, int type)
     break;
   }
 #if DEBUG_PENDING
-if(ptr)
+if (ptr)
 	Logit("Pending_find(%d,%d,%d):= %p:{%d,%d,%d}",from,to,type
 	,ptr,ptr->whofrom,ptr->whoto,ptr->type);
 else
@@ -224,10 +219,10 @@ struct pending * pending_next(struct pending *ptr, int from, int to, int type)
   unsigned seq=0;
   struct pending *nxt;
 
-  if(!ptr) return NULL;
+  if (!ptr) return NULL;
   seq=ptr->seq;
   for (ptr=ptr->nxt; ptr ; ptr=nxt) {
-    if(ptr->nxt==ptr) ptr->nxt=NULL;
+    if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt = ptr->nxt;
     if (!ptr->valid) {
       pending_free(ptr);
@@ -240,7 +235,7 @@ struct pending * pending_next(struct pending *ptr, int from, int to, int type)
     break;
   }
 #if DEBUG_PENDING
-if(ptr)
+if (ptr)
 	Logit("Pending_next(%d,%d,%d):= %p:{%d,%d,%d}",from,to,type
 	,ptr,ptr->whofrom,ptr->whoto,ptr->type);
 else
@@ -255,7 +250,7 @@ int pending_count(int from, int to, int type)
   int count=0;
 
   for (ptr=pendlist; ptr; ptr=nxt) {
-    if(ptr->nxt==ptr) ptr->nxt=NULL;
+    if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt=ptr->nxt;
     if (!ptr->valid) {
       pending_free(ptr);

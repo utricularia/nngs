@@ -45,7 +45,7 @@ int com_adrop(int p, struct parameter* param)
 
   LadderPlayer = PlayerNamed(lnum, name);
 
-  if (LadderPlayer == NULL) {
+  if (!LadderPlayer) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_LADDER_PLAYER);
     return COM_OK;
   }
@@ -137,7 +137,7 @@ int com_anews(int p, struct parameter* param)
   FILE *fp;
   char junk[MAX_LINE_SIZE];
   char *junkp;
-  time_t crtime;
+  int crtime;
   char count[10];
   int flag, len;
 
@@ -155,7 +155,7 @@ int com_anews(int p, struct parameter* param)
     while ((junkp=fgets(junk, sizeof junk, fp))) {
       if ((len = strlen(junk))<=1) continue;
       junk[len-1]=0;
-      sscanf(junkp, "%d %s", (int *) &crtime, count);
+      sscanf(junkp, "%d %s", &crtime, count);
       junkp=nextword(junkp); 
       junkp=nextword(junkp);
       if (((param[0].type==TYPE_WORD) && (!strcmp(param[0].val.word,"all")))) {
@@ -471,14 +471,14 @@ void ShutDown()
 
 void ShutHeartBeat()
 {
-  int t = globclock.time;
+  time_t now = globclock.time;
   int p1;
   int timeLeft;
   int crossing = 0;
 
   if (!shutdownTime) return;
   if (!lastTimeLeft) lastTimeLeft = shutdownTime;
-  timeLeft = shutdownTime - (t - shutdownStartTime);
+  timeLeft = shutdownTime - (now - shutdownStartTime);
   if ((lastTimeLeft > 3600) && (timeLeft <= 3600))
     crossing = 1;
   if ((lastTimeLeft > 2400) && (timeLeft <= 2400))
@@ -891,7 +891,6 @@ int com_asetsilent(int p, struct parameter* param)
 }
 
 
-#if 1
 int com_asethandle(int p, struct parameter* param)
 {
   char *oldplayer = param[0].val.word;
@@ -949,7 +948,6 @@ int com_asethandle(int p, struct parameter* param)
   player_clear(p1);
   return COM_OK;
 }
-#endif
 
 
 int com_asetadmin(int p, struct parameter* param)

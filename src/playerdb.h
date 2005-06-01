@@ -94,16 +94,19 @@
  *
  * Whenever a new slot is needed, it is basically allocated from the
  * top. The original server allocated the lowest *unconnected* slot.
+ * The "application code" is responsible for unlocking the slot after
+ * use.
  *
- * To mimic this behavior, some shuffling is done to move the unconnected
- * slots up. This is less costly then disk-i/o, anyway.
+ * To mimic the old behavior, some shuffling is done to move the unconnected
+ * slots up. This is less costly than disk-i/o, anyway.
  *
  * Most of the 'slotstate' has been decomposed into separate (bit)fields.
- * This is easier to read, and easier to maintain, IMHO, then relying on
+ * This is easier to read, and easier to maintain, IMHO, than relying on
  * an aggregate (pstatus), which is there for other reasons.
  *
  * The fixcount-stuff is useless, currently. It could come into use
- * if we became multithreading. It does help to detect logical flaws.
+ * if we became multithreading. It does help to detect logical flaws
+ * ("lock leaks").
  */
 struct player_ {
   int socket;

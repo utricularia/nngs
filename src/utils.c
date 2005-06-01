@@ -292,7 +292,7 @@ int Logit(const char *format,...)
 	*/
   if (in_logit++) {
      /* fprintf(stderr, "In_logit(recursion(%d)) '%s'\n",in_logit, fname); */
-  } else if ((fp = xfopen(fname, "a")) == NULL) {
+  } else if (!(fp = xfopen(fname, "a"))) {
      int err;
      err=errno;
      fprintf(stderr, "Error opening logfile '%s': %d(%s)\n"
@@ -869,7 +869,7 @@ char * mystrdup(const char *str)
   char *tmp;
   size_t len;
 
-  if (str == NULL) {
+  if (!str) {
     Logit("Attempt to strdup a NULL string");
     return NULL;
   }

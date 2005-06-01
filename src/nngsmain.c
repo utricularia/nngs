@@ -126,6 +126,7 @@ static void BrokenPipe(int sig)
   static time_t lasttime=0;
   static unsigned count=0;
 
+	/* Obsolete: reinstall signal handler. Won't harm */
   signal(SIGPIPE, BrokenPipe);
   count++;
   if (globclock.time - lasttime > 10) {
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
 
   num_9 = 0;
   fp = xyfopen(FILENAME_LADDER9, "r");
-  if(fp) {
+  if (fp) {
     num_9 = PlayerLoad(fp, Ladder9);
     Logit("%d players loaded from file %s", num_9, filename() );
     fclose(fp);
@@ -199,7 +200,7 @@ int main(int argc, char *argv[])
 
   num_19 = 0;
   fp = xyfopen(FILENAME_LADDER19, "r");
-  if(fp) {
+  if (fp) {
     num_19 = PlayerLoad(fp, Ladder19);
     Logit("%d players loaded from file %s", num_19, filename() );
     fclose(fp);

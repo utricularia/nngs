@@ -684,7 +684,7 @@ static int  serviceRead(int fd)  {
   int  readAmt;
   struct netstruct  *conn = &netarray[fd];
 
-  if(conn->used > sizeof conn->inBuf) conn->used = sizeof conn->inBuf -1;
+  if (conn->used > sizeof conn->inBuf) conn->used = sizeof conn->inBuf -1;
   assert(conn->state == netState_connected);
   assert(conn->used < sizeof conn->inBuf);
   readAmt = read(fd, conn->inBuf + conn->used, sizeof conn->inBuf - conn->used);
@@ -741,13 +741,13 @@ int  net_send(int fd, const char *src, int bufLen)  {
 void  net_close(int fd)  {
   struct netstruct  *conn = &netarray[fd];
 
-  if(fd < 0) return;
+  if (fd < 0) return;
   if (conn->state == netState_empty)
     return;
   if (conn->state == netState_connected
     && conn->outEnd > 0)
     write(fd, conn->outBuf, conn->outEnd);
-  if(Debug) Logit("Disconnecting fd %d ---", fd);
+  if (Debug) Logit("Disconnecting fd %d ---", fd);
   free(conn->outBuf);
   conn->outBuf = NULL;
   conn->state = netState_empty;
@@ -784,7 +784,7 @@ void  net_echoOff(int fd)  {
 
 int net_isalive(int fd) {
 
-  if(fd < 0) return 0;
+  if (fd < 0) return 0;
   switch(netarray[fd].state) {
   default:
   case netState_empty: return 0;

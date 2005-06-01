@@ -101,12 +101,6 @@ int LadderNew(int n)
   return _LadderNew(idx, n);
 }
 
-#ifdef WANT_UNUSED
-static int PlayerCnt(int idx)
-{
-  return db[idx].n;
-}
-#endif /* WANT_UNUSED */
 
 const struct player *PlayerAt(int idx, int i)
 {
@@ -116,6 +110,7 @@ const struct player *PlayerAt(int idx, int i)
   return 0;
 }
 
+
 void PlayerUpdTime(int idx, int i, time_t t)
 {
   if (i >= 0 && i < db[idx].n) {
@@ -123,14 +118,6 @@ void PlayerUpdTime(int idx, int i, time_t t)
   }
 }
 
-#ifdef WANT_UNUSED
-static void PlayerUpdData(int idx, int i, void *pv)
-{
-  if (i >= 0 && i < db[idx].n) {
-    db[idx].byPosn[i]->pvUser = pv;
-  }
-}
-#endif /* WANT_UNUSED */
 
 void PlayerAddWin(int idx, int i)
 {
@@ -281,12 +268,12 @@ int PlayerLoad(FILE *pf, int idx)
 
   if (fgets(linebuff, sizeof linebuff, pf)) { 
     int i = 0, dummy, nWins, nLosses;
-    if(0>= sscanf(linebuff, "Max: %d", &max)) return -1;
+    if (0>= sscanf(linebuff, "Max: %d", &max)) return -1;
 
     LadderDel(idx);
     _LadderNew(idx, max);
     while (fgets(linebuff, sizeof linebuff, pf)) {
-      if(0 >= sscanf(linebuff, "%d \"%[^\"]\" %lu %d %d", 
+      if (0 >= sscanf(linebuff, "%d \"%[^\"]\" %lu %d %d", 
 		  &dummy, name, &tLast, &nWins, &nLosses) ) break;
       PlayerNew(idx, name);
       PlayerUpdTime(idx, i, tLast);
