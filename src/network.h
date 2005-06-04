@@ -39,10 +39,10 @@
 extern int net_fd_count;
 
 /*
- * net_throttle is the maximum amount of outbound data that can be queued
+ * NET_THROTTLE is the maximum amount of outbound data that can be queued
  *   up before the system stops accepting more input from a connection.
  */
-#define  net_throttle  (4 * 1024)
+#define  NET_THROTTLE (4*1024)
 
 /*
  * This is the default size for an output buffer.  Buffers may grow past
@@ -50,7 +50,7 @@ extern int net_fd_count;
  *   All output buffers will be at least this length, so making this
  *   excessively large will cost memory.
  */
-#define  net_defaultOutBufLen  (4 * 1024)
+#define  NET_OUTBUFSZ (4*1024)
 
 /*
  * The maximum number of ports that you can have listening for incoming
@@ -96,7 +96,7 @@ extern int  net_send(int, const char *, int);
   } while(0)
 
 /*
- * net_close will flush an fd and then close it.
+ * net_close  { flush fd; close it; cleanup netslot }
  */
 extern void  net_close(int);
 /*
@@ -107,6 +107,10 @@ extern void  net_closeAll(void);
 extern int  net_connectedHost(int);
 extern void  net_echoOn(int);
 extern void  net_echoOff(int);
-int net_isalive(int);
+/*
+ * net_isalive() returns 1 if fd refers to an (active) client fd
+ * , 0 otherwise
+ */
+int  net_isalive(int);
 
 #endif	/* NETWORK_H */

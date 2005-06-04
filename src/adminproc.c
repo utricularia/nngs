@@ -1014,7 +1014,7 @@ int com_asetwater(int p, struct parameter* param)
 
 int com_nuke(int p, struct parameter* param)
 {
-  int p1, pk, fd, j;
+  int p1, pk, j;
 
   stolower(param[0].val.word);
   pk = player_find_part_login(param[0].val.word);
@@ -1033,8 +1033,7 @@ int com_nuke(int p, struct parameter* param)
       parray[p].pname,
       parray[pk].pname);
   }
-  fd = parray[pk].socket;
-  process_disconnection(fd);
+  process_disconnection(parray[pk].socket);
   return COM_OK;
 }
 
@@ -1221,13 +1220,12 @@ int com_aban(int p, struct parameter* param)
       bot = parray[p1].thisHost;
       rc = range_check(bot,bot);
       if (!rc) continue;
-      rc = parray[p1].socket;
       cpprintf(p, CODE_INFO, "Disconnecting %s fd=%d %s\n"
-        , parray[p1].login, rc, dotQuad(bot));
+        , parray[p1].login,  parray[p1].socket, dotQuad(bot));
       Logit("Aban ! %s fd=%d %s"
         , parray[p1].login, rc, dotQuad(bot));
       if (p1 == p) continue;
-      process_disconnection(rc);
+      process_disconnection(parray[p1].socket);
       cnt++;
     }
     rc = 0;

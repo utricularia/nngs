@@ -562,12 +562,10 @@ static void process_login(int p, char *login)
 
 static void boot_out (int p,int p1)
 {
-  int fd;
 
   pprintf (p, "\n **** %s is already logged in - kicking other copy out. ****\n", parray[p].pname);
   pprintf (p1, "**** %s has arrived - you can't both be logged in. ****\n", parray[p].pname);
-  fd = parray[p1].socket;
-  process_disconnection(fd);
+  process_disconnection(parray[p1].socket);
   /* This may cause some dirty data for p1 to be lost !!!
    * Damage is limited, however, since parray is flushed on logons.
    */
@@ -904,7 +902,7 @@ void process_new_connection(int fd, unsigned int fromHost)
   p = range_check(fromHost,fromHost);
   if (p) {
     Logit("Revoked connection from %s :%d.", 
-    dotQuad(parray[p].thisHost), p);
+      dotQuad(parray[p].thisHost), p);
     net_close(fd);
     return;
   }

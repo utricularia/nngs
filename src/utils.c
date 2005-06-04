@@ -251,7 +251,7 @@ int pcommand(int p, const char *comstr, ...)
   retval = process_input(fd, tmp);
   if (retval == COM_LOGOUT) {
     process_disconnection(fd);
-    net_close(fd);
+    /* net_close(fd); */
   }
   return retval;
 }
