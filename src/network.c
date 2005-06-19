@@ -130,21 +130,19 @@ struct netstruct {
   int netstate;
   int telnetState;
   unsigned int fromHost; /* IP-adress in host byte order */
+  unsigned is_full :1;
+  unsigned is_throttled :1;
   
-  /* Input buffering */
-  unsigned in_used; /* The amount of data in the inBuf. */
+  	/* Output buffering reallocates its buffer when needed */
+  unsigned  out_size;  /* allocated size */
+  unsigned  out_used;  /* How many bytes waiting to be written? */
+  char *out_buff; /* our send buffer, or NULL if none yet */
+
+  	/* Input buffering uses a fixed size buffer */
+  unsigned in_used; /* The amount of data in the in_buff. */
   unsigned in_end;  /* The end of the first command in the buffer. */
   unsigned parse_dst, parse_src;
-  unsigned is_full;
-  unsigned is_throttled;
-
-  /*
-   * For output buffering, we use a circular buffer.  
-   */
-  int  out_size;
-  int  out_used;  /* How many bytes waiting to be written? */
-  char *outBuf;                 /* our send buffer, or NULL if none yet */
-  char  inBuf[MAX_STRING_LENGTH];
+  char  in_buff[MAX_STRING_LENGTH];
 } ;
 
 
@@ -183,9 +181,9 @@ static unsigned char ayt[] = "[Responding to AYT: Yes, I'm here.]\n";
  * Forward declarations
  **********************************************************************/
 
-static int  newConnection(int fd);
-static int  serviceWrite(int fd);
-static int  serviceRead(int fd);
+static int  do_accept(int fd);
+static int  do_write(int fd);
+static int  do_read(int fd);
 static int  clearCmd(int fd);
 static int  checkForCmd(int fd);
 static void  fd_init(int fd);
@@ -233,7 +231,7 @@ int net_init(int port)
       netarray[i].netstate = NETSTATE_EMPTY;
       netarray[i].in_end = 0;
       netarray[i].out_used = 0;
-      netarray[i].outBuf = NULL;
+      netarray[i].out_buff = NULL;
       netarray[i].in_used = 0;
       netarray[i].in_end = 0;
       netarray[i].parse_dst = 0;
@@ -245,7 +243,6 @@ int net_init(int port)
     net_fd_top = 0;
     FD_ZERO(&readSet);
     FD_ZERO(&writeSet);
-
   }
 
   assert(listen_count < LISTEN_COUNT); /* Bogus */
@@ -319,7 +316,7 @@ int net_init(int port)
  */
 void  net_select(int timeout)
 {
-  int  fd, numConns;
+  int  fd, selected;
   fd_set  tmp_read, tmp_write;
   struct timeval  timer;
   /*
@@ -347,8 +344,8 @@ void  net_select(int timeout)
     TIME0;
     flushWrites();
     TIME1("flushWrites()", 0.005);
-    numConns = select(net_fd_top+1, &tmp_read, &tmp_write, NULL, &timer);
-    if (numConns == -1)  {
+    selected = select(net_fd_top+1, &tmp_read, &tmp_write, NULL, &timer);
+    if (selected == -1)  {
       switch(errno) {
       case EBADF:
         Logit("EBADF error from select ---");
@@ -384,8 +381,8 @@ void  net_select(int timeout)
     }
     for (fd = 0;  fd < net_fd_top+1;  fd++)  {
       if (netarray[fd].in_end)  {
-        buglog(("%3d: Command \"%s\" left in buf", i, netarray[fd].inBuf));
-        if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
+        buglog(("%3d: Command \"%s\" left in buf", i, netarray[fd].in_buff));
+        if (process_input(fd, netarray[fd].in_buff) == COM_LOGOUT)  {
           process_disconnection(fd);
           continue;
         }
@@ -401,8 +398,8 @@ void  net_select(int timeout)
         switch (netarray[fd].netstate) {
         case NETSTATE_LISTENING: /* A new inbound connection. */
           TIME0;
-          newConn = newConnection(fd);
-          TIME1("newConnection()", 0.001);
+          newConn = do_accept(fd);
+          TIME1("Do_accept()", 0.001);
           buglog(("%d: New conn", newConn));
           if (newConn >= 0)  {
             TIME0;
@@ -413,14 +410,14 @@ void  net_select(int timeout)
         case NETSTATE_CONNECTED: /* New incoming data. */
           buglog(("%d: Ready for read", fd));
           assert(!netarray[fd].is_full);
-          if (serviceRead(fd) == -1)  {
+          if (do_read(fd) == -1)  {
             buglog(("%d: Closed", fd));
             netarray[fd].netstate = NETSTATE_DISCONNECTED;
             process_disconnection(fd);
             continue;
           }
           if (netarray[fd].in_end)  {
-            if (process_input(fd, netarray[fd].inBuf) == COM_LOGOUT)  {
+            if (process_input(fd, netarray[fd].in_buff) == COM_LOGOUT)  {
               process_disconnection(fd);
               continue;
             }
@@ -440,9 +437,9 @@ void  net_select(int timeout)
       } /* fd_isset */
 /* [PEM]: Testing... */
 /* No new connection, nothing to read, try to flush output. */
-      if ((netarray[fd].netstate == NETSTATE_CONNECTED) &&
-         (netarray[fd].out_used > 0)) {
-        if (serviceWrite(fd) < 0) {
+      if (netarray[fd].netstate == NETSTATE_CONNECTED
+         && netarray[fd].out_used > 0) {
+        if (do_write(fd) < 0) {
           netarray[fd].netstate = NETSTATE_DISCONNECTED;
           process_disconnection(fd);
           continue;
@@ -453,7 +450,7 @@ void  net_select(int timeout)
 }
 
 
-static int  newConnection(int listenFd)
+static int  do_accept(int listenFd)
 {
   int  newFd;
   struct sockaddr_in  addr;
@@ -492,7 +489,7 @@ static void  fd_init(int fd)
 
   netarray[fd].out_size = NET_OUTBUFSZ;
   netarray[fd].out_used = 0;
-  netarray[fd].outBuf = malloc(NET_OUTBUFSZ);
+  netarray[fd].out_buff = malloc(NET_OUTBUFSZ);
   if (fd > net_fd_top) net_fd_top = fd;
   FD_SET(fd, &readSet);
 }
@@ -528,7 +525,7 @@ static void  flushWrites(void)
   for (fd = 0;  fd < COUNTOF(netarray);  fd++)  {
     if (netarray[fd].netstate != NETSTATE_CONNECTED) continue;
     if (netarray[fd].out_used <= 0) continue;
-    if (serviceWrite(fd) < 0)  {
+    if (do_write(fd) < 0)  {
       buglog(("%3d: Write failed.", fd));
       netarray[fd].out_used = 0;
     }
@@ -536,18 +533,18 @@ static void  flushWrites(void)
 }
 
 
-static int  serviceWrite(int fd)
+static int  do_write(int fd)
 {
-  int  writeAmt;
+  int  written;
   struct netstruct  *conn = &netarray[fd];
 
   assert(conn->netstate == NETSTATE_CONNECTED);
   assert(conn->out_used > 0);
-  writeAmt = write(fd, conn->outBuf, conn->out_used);
-  if (writeAmt < 0) {
+  written = write(fd, conn->out_buff, conn->out_used);
+  if (written < 0) {
     switch (errno) {
     case EAGAIN:
-      writeAmt = 0;
+      written = 0;
       break;
     case EPIPE:
     default:
@@ -555,7 +552,7 @@ static int  serviceWrite(int fd)
     }
   }
  
-  if (writeAmt == conn->out_used)  {
+  if (written == conn->out_used)  {
     conn->out_used = 0;
     FD_CLR(fd, &writeSet);
     if (conn->is_throttled)  {
@@ -564,19 +561,19 @@ static int  serviceWrite(int fd)
     }
   } else  {
 #if 1
-    Logit("serviceWrite(): Could write only %d of %d bytes to fd %d.",
-      writeAmt, conn->out_used, fd);
+    Logit("do_write(): Wrote only %d of %d bytes to fd %d.",
+      written, conn->out_used, fd);
 #endif
     /*
      * This memmove is costly, but on ra (where NNGS runs) the TCP/IP
      *   sockets have 60K buffers so this should only happen when netlag
      *   is completely choking you, in which case it will happen like once
-     *   and then never again since your writeAmt will be 0 until the netlag
+     *   and then never again since your written will be 0 until the netlag
      *   ends.  I pity the fool who has netlag this bad and keep playing!
      */
-    if (writeAmt > 0)
-      memmove(conn->outBuf, conn->outBuf + writeAmt, conn->out_used - writeAmt);
-    conn->out_used -= writeAmt;
+    if (written > 0 && written < conn->out_used)
+      memmove(conn->out_buff, conn->out_buff+written, conn->out_used-written);
+    conn->out_used -= written;
     if (!conn->is_throttled)  {
       conn->is_throttled = 1;
       FD_CLR(fd, &readSet);
@@ -594,13 +591,12 @@ static int  clearCmd(int fd)
   assert(conn->in_end);
   assert(conn->in_end <= conn->in_used);
   if (conn->in_end < conn->in_used)
-    memmove(conn->inBuf, conn->inBuf + conn->in_end, conn->in_used - conn->in_end);
+    memmove(conn->in_buff, conn->in_buff + conn->in_end, conn->in_used - conn->in_end);
   conn->parse_dst -= conn->in_end;
   conn->parse_src -= conn->in_end;
   conn->in_used -= conn->in_end;
   conn->in_end = 0;
-  if (checkForCmd(fd) == -1)
-    return -1;
+  if (checkForCmd(fd) == -1) return -1;
   if (conn->is_full)  {
     conn->is_full = 0;
     if (!conn->is_throttled)  FD_SET(fd, &readSet);
@@ -616,48 +612,62 @@ static int  checkForCmd(int fd)
   unsigned char uc;
   char  *dst, *src;
 
-  dst = conn->inBuf + conn->parse_dst;
-  src = conn->inBuf + conn->parse_src;
+  dst = conn->in_buff + conn->parse_dst;
+  src = conn->in_buff + conn->parse_src;
   for (idx = conn->parse_src;  idx < conn->in_used;  ++idx, ++src) {
     uc = *(unsigned char*) src;
     switch (conn->telnetState) {
     case 0:                     /* Haven't skipped over any control chars or
                                    telnet commands */
-      if (uc == IAC) {
+      switch (uc) {
+      case IAC:
         conn->telnetState = 1;
-      } else if ((uc == '\n') || (uc == '\r') || ( uc == '\004')) {
+        break;
+      case '\n': case '\r': case '\004':
         *dst = '\0';
-        ++idx;
-        while ((idx < conn->in_used) &&
-       ((conn->inBuf[idx] == '\n') || (conn->inBuf[idx] == '\r')))
-          ++idx;
+        for( ++idx; idx < conn->in_used; idx++) {
+          if (conn->in_buff[idx] == '\n') continue;
+          if (conn->in_buff[idx] == '\r') continue;
+          break;
+        }
         conn->in_end = idx;
         conn->telnetState = 0;
         conn->parse_src = idx;
         conn->parse_dst = idx;
         return 0;
-      } else if (!isprint(uc) && uc <= 127) {/* no idea what this means */
+      default:
+        if (!isprint(uc) && uc <= 127) /* Skip controls, keep high ascii */
         conn->telnetState = 0;
-      } else  {
-        *(dst++) = uc;
+        else *(dst++) = uc;
+        break;
       }
       break;
     case 1:                /* got telnet IAC */
       *src = '\n';
-      if (uc == IP)  {
+      switch(uc) {
+      case IAC:		/* double IAC := quoted IAC */
+        *(dst++) = uc;
+        conn->telnetState = 0;
+        break;
+      case IP:
         return -1;            /* ^C = logout */
-      } else if (uc == DO)  {
+      case DO:
         conn->telnetState = 4;
-      } else if ((uc == WILL) || (uc == DONT) || (uc == WONT))  {
+        break;
+      case WILL: case DONT: case WONT:
         conn->telnetState = 3;   /* this is cheesy, but we aren't using em */
-      } else if (uc == AYT) {
+        break;
+      case AYT:
         net_send(fd, (char*) ayt, sizeof ayt -1);
         conn->telnetState = 0;
-      } else if (uc == EL) {    /* erase line */
-        dst = &conn->inBuf[0];
+        break;
+      case EL:			/* erase line */
+        dst = &conn->in_buff[0];
         conn->telnetState = 0;
-      } else  {                  /* dunno what it is, so ignore it */
+        break;
+      default:                  /* dunno what it is, so ignore it */
         conn->telnetState = 0;
+        break;
       }
       break;
     case 3:                     /* some telnet junk we're ignoring */
@@ -674,29 +684,29 @@ static int  checkForCmd(int fd)
       assert(0);
     }
   }
-  conn->parse_src = src - conn->inBuf;
-  conn->parse_dst = dst - conn->inBuf;
-  if (conn->in_used == sizeof conn->inBuf)  {
-    conn->inBuf[sizeof conn->inBuf - 1] = '\0';
-    conn->in_end = sizeof conn->inBuf;
+  conn->parse_src = src - conn->in_buff;
+  conn->parse_dst = dst - conn->in_buff;
+  if (conn->in_used == sizeof conn->in_buff)  {
+    conn->in_buff[sizeof conn->in_buff - 1] = '\0';
+    conn->in_end = sizeof conn->in_buff;
   }
   return 0;
 }
 
 
-static int  serviceRead(int fd)
+static int  do_read(int fd)
 {
   int  readAmt;
   struct netstruct  *conn = &netarray[fd];
 
-  if (conn->in_used > sizeof conn->inBuf) conn->in_used = sizeof conn->inBuf -1;
+  if (conn->in_used > sizeof conn->in_buff) conn->in_used = sizeof conn->in_buff -1;
   assert(conn->netstate == NETSTATE_CONNECTED);
-  assert(conn->in_used < sizeof conn->inBuf);
-  readAmt = read(fd, conn->inBuf + conn->in_used, sizeof conn->inBuf - conn->in_used);
+  assert(conn->in_used < sizeof conn->in_buff);
+  readAmt = read(fd, conn->in_buff + conn->in_used, sizeof conn->in_buff - conn->in_used);
   if (readAmt == 0)  {
     return -1;
   }
-  buglog(("    serviceRead(%d) read %d bytes\n", readAmt));
+  buglog(("    do_read(%d) read %d bytes\n", readAmt));
   if (readAmt < 0)  {
     switch (errno) {
     case  EAGAIN: return 0;
@@ -706,8 +716,7 @@ static int  serviceRead(int fd)
     }
   }
   conn->in_used += readAmt;
-  if (!conn->in_end)
-    return checkForCmd(fd);
+  if (!conn->in_end) return checkForCmd(fd);
   return 0;
 }
 
@@ -726,17 +735,17 @@ int  net_send(int fd, const char *src, int bufLen)
   /* telnetify the output. */
   for (i = 0;  i < bufLen;  ++i)  {
     if (*src == '\n')		/* Network EOL is CRLF. */
-      net->outBuf[net->out_used++] = '\r';
-    net->outBuf[net->out_used++] = *(src++);
+      net->out_buff[net->out_used++] = '\r';
+    net->out_buff[net->out_used++] = *(src++);
 
     if (net->out_used + 2 >= net->out_size)  {
-      net->outBuf = realloc(net->outBuf, net->out_size *= 2);
+      net->out_buff = realloc(net->out_buff, net->out_size *= 2);
     }
   }
   if (net->out_used > 0) {
     FD_SET(fd, &writeSet);
 #if WRITE_AT_ONCE
-    serviceWrite(fd);		/* Try to get rid of it at once. */
+    do_write(fd);		/* Try to get rid of it at once. */
 #endif
   }
   return 0;
@@ -751,12 +760,12 @@ void  net_close(int fd)
   if (conn->netstate == NETSTATE_EMPTY) return;
   if (conn->netstate == NETSTATE_CONNECTED
     && conn->out_used > 0)
-    write(fd, conn->outBuf, conn->out_used);
+    write(fd, conn->out_buff, conn->out_used);
   if (Debug) Logit("Disconnecting fd %d ---", fd);
-  if (conn->outBuf) free(conn->outBuf);
-  conn->outBuf = NULL;
-  conn->in_end = 0;
+  if (conn->out_buff) free(conn->out_buff);
+  conn->out_buff = NULL;
   conn->out_used = 0;
+  conn->in_end = 0;
   close(fd);
   conn->netstate = NETSTATE_DISCONNECTED;
   fd_cleanup(fd);

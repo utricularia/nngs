@@ -28,9 +28,10 @@
 #define WANT_DUMP_RANGETREE 1
 #endif
   /*
-   * rangetree-tructure for exclusion of ip-adresses
-   * basic operations are just add-range, remove-range
-   * check-if-in-range.
+   * rangetree-structure for exclusion of ip-adresses
+   * basic operations are add-range, remove-range
+   * check-if-in-range. Ranges are split/merged when needed, eg
+   * [1-9][11-19] + [10] <<-->> [1-19]
    * There is an attempt to keep the binary tree balanced
    * by applying obvious and cheap rotations on-the-fly.
    */
@@ -82,7 +83,12 @@ int range_check(unsigned bot, unsigned top)
   return cnt;
 }
 
-
+	/* Iterate through the tree. (rather clumsily ...)
+	** on entry, pb and pt point to the values found on the previous call
+	** , on return thay point to the new range
+	** ranges are returned in increasing order.
+	** on the first call, set (*pb > *pt) to start things up.
+	*/
 int range_iter(unsigned *pb, unsigned *pt)
 {
   unsigned val;
@@ -107,12 +113,12 @@ fprintf(stderr,"[Range_iter(%X,%X)]", pb ? *pb: 0,pt ? *pt: 0);
 #if WANT_DUMP_RANGETREE >1
     fprintf(stderr,"[%x,%x]", np->bot, np->top);
 #endif
-    if (val < np->bot) { /* can go down */
+    if (val < np->bot) { /* need to descend */
       best = np;
       np = np->prv;
       continue;
       }
-    else if (val > np->top) { /* still need to go up */
+    else if (val > np->top) { /* or ascend */
       np = np->nxt; continue;
       }
     else  {  /* found old value ... */
@@ -157,7 +163,11 @@ int range_add(unsigned bot, unsigned top)
   return (cnt) ? -cnt :1;
 }
 
-
+	/* Remove range [bot,top] ,inclusive from the tree.
+	** All exceptions are handled, causing nodes to be removed
+	** reduced, fragmented, etc.
+	** The tree might be rebalanced on the fly.
+	*/
 int range_remove(unsigned bot, unsigned top)
 {
   struct range *yield, *pp, *p2;
@@ -166,9 +176,17 @@ int range_remove(unsigned bot, unsigned top)
 #if WANT_DUMP_RANGETREE
   fprintf(stderr,"[Range_remove(%X,%X)]", bot,top);
 #endif
+	/* extract the piece of the three that will be affected */
   yield = range_harvest(bot, top);
   if (!yield) return 0;
 
+	/* consume the snipped subtree node by node.
+	** Filter each node in it. For simpicity, the
+	** original node is always deleted, the relevant sections
+	** are copied into 0,1 or 2 new nodes.
+	** The new nodes (if any) are reinserted into the
+	** real tree.
+	*/
   yield->hnd = &yield;
   for(ins=del=0; (pp = node_harvest(yield)); del++  ) {
     if (pp->top > top ) { /* keep upper side: adjust bot */
@@ -199,6 +217,11 @@ static void range_dump0(FILE *fp, struct range *np)
   if (np->nxt) range_dump0(fp, np->nxt);
 }
 /****************************** node manip */
+	/* find point (handle) in tree where val should be.
+	** If 'val' currently exists, the return (*hnd) points to it,
+	** if not found, (*hnd) points to the place where it should be.
+	** While walking the tree, we attempt to do some trivial rotations.
+	*/
 static struct range **range_hnd(struct range **hnd, unsigned val)
 {
   struct range *pp, *pl,*pr;
@@ -270,12 +293,21 @@ static void node_del(struct range *np)
   }
 }
 
+	/* Harvest one node from a tree.
+	** We attempt to eat the leaves last, but we don't want to
+	** rebalance, etc.
+	** So we find a node with only one child (or no child at all),
+	** replace it by that child, and return the node.
+	** (all this is intended to avoid a sorted order when a tree is
+	** harvested until empty)
+	*/ 
 static struct range *node_harvest(struct range *np)
 {
   struct range **hnd;
 
   if (!np) return NULL;
 
+	/* skip nodes with two children */
   while (np->prv && np->nxt) {
     np = (rand() &1) ? np->prv : np->nxt;
   }
@@ -297,6 +329,10 @@ return np;
 }
 
 /****************************** helpers */
+	/* Harvest al nodes which overlap some of the [bot,top] range
+	** The nodes are removed from the original tree, and
+	** returned as (a pointer to) a new tree.
+	*/
 static struct range * range_harvest(unsigned bot, unsigned top)
 {
 struct range *yield,**hnd,*pp;

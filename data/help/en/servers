@@ -2,8 +2,8 @@
 REFERENCE: Game Servers
 
 The Internet game servers are places accesssible by telnet where you can
-play innumerable players, both human and machine, from all over the world. 
-You can connect to one of the servers with the command: 
+play innumerable players, both human and machine, from all over the world.
+You can connect to one of the servers with the command:
 
                   telnet <host machine's address> <port number>
 
@@ -16,6 +16,7 @@ BADUK/GO/WEIQI SERVERS
           China:  cws.weiqi.net 9696                 (202.98.15.15 9696)
                   weiqi.haplink.com.cn 8888
           Japan:  wing.gr.jp 1515                    (210.158.192.40 1515)
+          Korea:  kgs.kiseido.com (requires java, uses different protocol)
 
 THE FOLLOWING APPEAR TO BE DEFUNCT
         Germany:  grizu.uni-regensburg.de 9696       (132.199.208.131 9696)
