@@ -26,16 +26,16 @@
 #define CHANNEL_H
 
 /* Set the number of channels (100+6 is plenty) */
-/* AvK: NCHANNELS==normal channels, OCHANNELS=other */
+/* AvK: NCHANNELS==normal channels, OCHANNELS=special */
 #define MAX_NCHANNELS 100
 #define MAX_OCHANNELS 106
 #define MAX_CHANNELS 106
 
-/* Set the number of "other" channels, like shout, etc */
+/* Set the number of "special" channels, like shout, etc */
 
 #define YELL_STACK_SIZE 20
 
-/* define the different "other" channel types */
+/* define the different "special" channel types */
 #define CHANNEL_ASHOUT 100  /* Admin shouts, for admins only */
 #define CHANNEL_SHOUT  101  /* Regular shouts */
 #define CHANNEL_GSHOUT 102  /* GoBot shouts */
@@ -44,10 +44,10 @@
 #define CHANNEL_GAME   105  /* Game announcments */
 
 struct channel {
-	int other;    /* If this channel is an "other" channel */
-	int locked;   /* If the channel is locked to further people */
-	int hidden;   /* If the people inside are hidden from view */
-	int dNd;      /* If the people inside do not want outside yells. */
+	unsigned is_special:1;	/* If this channel is an "special" channel */
+	unsigned is_locked:1;	/* If the channel is locked to further people */
+	unsigned is_hidden:1;	/* If the people inside are hidden from view */
+	unsigned is_private:1;	/* If the people inside do not want outside yells. */
 	char *ctitle;   /* The Channel title */
 	char *Yell_Stack[YELL_STACK_SIZE]; /* Last channel yells */
 	int Num_Yell;         /* Number of yells on stack */

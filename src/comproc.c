@@ -256,7 +256,7 @@ int com_news(int p, struct parameter * param)
   char count[10];
   int flag, len;
 
-  if (((param[0].type==TYPE_NULL) || (!strcmp(param[0].val.word,"all")))) {
+  if (param[0].type==TYPE_NULL || !strcmp(param[0].val.word,"all")) {
 
 /* no params - then just display index over news */
 
@@ -272,11 +272,11 @@ int com_news(int p, struct parameter * param)
       sscanf(junkp, "%d %s", (int*) &crtime, count);
       junkp=nextword(junkp);
       junkp=nextword(junkp);
-      if (((param[0].type==TYPE_WORD) && (!strcmp(param[0].val.word,"all")))) {
+      if (param[0].type==TYPE_WORD && !strcmp(param[0].val.word,"all")) {
         pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
         flag=1;
       } else {
-        if ((crtime - player_lastconnect(p))>0) {
+        if (crtime - player_lastconnect(p) > 0) {
           pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
 	flag=1;
 	}
@@ -427,7 +427,7 @@ int com_addlist(int p, struct parameter * param)
     break;
   }
 
-  if ((rights < 2) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (rights < 2 && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_ALLOWED_TO_EDIT_THIS_LIST_n);
     return COM_OK;
     }
@@ -481,7 +481,7 @@ int com_sublist(int p, struct parameter * param)
   case -2:
     return COM_OK;
   }
-  if ((rights < 2) && (parray[p].adminLevel < ADMIN_MASTER)) {
+  if (rights < 2 && parray[p].adminLevel < ADMIN_MASTER) {
      pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_ALLOWED_TO_EDIT_THIS_LIST_n);
 	return COM_OK;
       }
@@ -564,7 +564,7 @@ int com_showlist(int p, struct parameter * param)
   case -2:
     return COM_OK;
   }
-  if ((rights < 1) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (rights < 1 && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_ALLOWED_TO_SEE_THIS_LIST_);
     return COM_OK;
     }
@@ -641,8 +641,8 @@ int com_best(int p, struct parameter * param)
     if (i == 1) high = low;
   }
   else {
-    if ((type == 9) && (high == 0)) high = num_9;
-    else if ((type == 19) && (high == 0)) high = num_19;
+    if (type == 9 && high == 0) high = num_9;
+    else if (type == 19 && high == 0) high = num_19;
   }
 
   if (low) low--;
@@ -703,7 +703,7 @@ int com_join(int p, struct parameter * param)
   }
   if (param[0].val.string) {
     if (!strcmp(param[0].val.string, "ladder9")) {
-      if ((PlayerNamed(Ladder9, parray[p].pname))) {
+      if (PlayerNamed(Ladder9, parray[p].pname)) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_9X9_LADDER_);
         return COM_OK;
       }
@@ -723,7 +723,7 @@ int com_join(int p, struct parameter * param)
       return COM_OK;
     }
     else if (!strcmp(param[0].val.string, "ladder19")) {
-      if ((PlayerNamed(Ladder19, parray[p].pname)) ) {
+      if (PlayerNamed(Ladder19, parray[p].pname) ) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_19X19_LADDER_);
         return COM_OK;
       }
@@ -819,7 +819,7 @@ int com_clntvrfy(int p, struct parameter * param)
   int len, ii;
 
   if (param[0].type == 0) { return COM_BADPARAMETERS; }
-  if ((strlen(param[0].val.string)) < 2) { return COM_BADPARAMETERS; }
+  if (strlen(param[0].val.string) < 2) { return COM_BADPARAMETERS; }
 
   atmp = getword(param[0].val.string);
 
@@ -864,7 +864,7 @@ int com_shout(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
+  if (carray[CHANNEL_SHOUT].is_locked && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_SHOUTS_ARE_TURNED_OFF_RIGHT_NOW_);
     return COM_OK;
   }
@@ -981,7 +981,7 @@ int com_gshout(int p, struct parameter * param)
   if (parray[p].gmuzzled) {
     return COM_OK;
   }
-  if (carray[CHANNEL_SHOUT].locked && parray[p].adminLevel < ADMIN_ADMIN) {
+  if (carray[CHANNEL_SHOUT].is_locked && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_SHOUTS_ARE_TURNED_OFF_RIGHT_NOW_);
     return COM_OK;
   }
@@ -1249,18 +1249,18 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
   switch(why) {
   case TELL_TELL:
   case TELL_KIBITZ:
-    if ((!parray[p1].i_tell) && (!parray[p].slotstat.is_registered)) {
+    if (!parray[p1].i_tell && !parray[p].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_ISN_T_LISTENING_TO_UNREGISTERED_TELLS_,
         parray[p1].pname);
   case TELL_SAY: /* AvK: always listen to opponent */
       return COM_OK;
     }
 
-    if ((parray[p1].i_robot) && (parray[p].i_robot)) {
+    if (parray[p1].i_robot && parray[p].i_robot) {
       return COM_OK;
     }
 
-    if ((player_censored(p1, p)) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+    if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
       pcn_out(p,CODE_ERROR, FORMAT_PLAYER_qsq_IS_CENSORING_YOU_, parray[p1].pname);
       return COM_OK;
     }
@@ -1271,11 +1271,11 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
     }
     break;
   case TELL_BEEP:
-    if ((player_censored(p1, p)) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+    if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
       pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
       return COM_OK;
     }
-    if ((parray[p].bmuzzled)) {
+    if (parray[p].bmuzzled) {
       pcn_out(p, CODE_ERROR, FORMAT_BEEP_OOPS_);
       return COM_OK;
     }
@@ -1351,11 +1351,11 @@ static int do_beep(int p, int p1)
 {
   char tmp[MAX_LINE_SIZE];
 
-  if ((player_censored(p1, p)) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
     return COM_OK;
   }
-  if ((parray[p].bmuzzled)) {
+  if (parray[p].bmuzzled) {
     pcn_out(p, CODE_ERROR, FORMAT_BEEP_OOPS_);
     return COM_OK;
   }
@@ -1385,7 +1385,7 @@ static int chtell(int p, int ch, char *msg)
   int p1, i;
   char text[MAX_STRING_LENGTH];
 
-  if ((ch == 0) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (ch == 0 && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_INVALID_CHANNEL_NUMBER_);
     return COM_OK;
   }
@@ -1397,7 +1397,7 @@ static int chtell(int p, int ch, char *msg)
     pcn_out(p, CODE_ERROR, FORMAT_THE_MAXIMUM_CHANNEL_NUMBER_IS_d_, MAX_NCHANNELS - 1);
     return COM_OK;
   }
-  if ((carray[ch].dNd == 1) && (!on_channel(ch, p))) {
+  if (carray[ch].is_private && !on_channel(ch, p)) {
     pcn_out(p, CODE_ERROR, FORMAT_THE_USERS_OF_CHANNEL_d_WOULD_PREFER_YOU_TO_BE_IN_THAT_CHANNEL_BEFOREn, ch);
     pcn_out(p, CODE_ERROR, FORMAT_SPEAKING_IN_IT_SEE_qHELP_CHANNELq );
     return COM_OK;
@@ -1432,7 +1432,7 @@ int com_kibitz(int p, struct parameter * param)
   if (parray[p].muzzled) {
     return COM_OK;
   }
-  if ((parray[p].num_observe == 0) && (parray[p].game) < 0) {
+  if (parray[p].num_observe == 0 && parray[p].game < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_OR_OBSERVING_A_GAME_);
     return COM_OK;
   }
@@ -1446,7 +1446,7 @@ int com_kibitz(int p, struct parameter * param)
         continue;
       }
     }
-    if ((!count) && (g != parray[p].game)) {
+    if (!count && g != parray[p].game) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_OR_OBSERVING_THAT_GAME_);
       return COM_OK;
     }
@@ -1516,7 +1516,7 @@ int com_kibitz(int p, struct parameter * param)
                    g + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
   }
-  if ((garray[g].Teach == 1) || (garray[g].Teach2 == 1)) {
+  if (garray[g].Teach == 1 || garray[g].Teach2 == 1) {
     p1 = garray[g].black.pnum;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
@@ -1722,9 +1722,9 @@ int com_stats(int p, struct parameter * param)
                 (parray[p1].observe_list[0]) + 1);
   }
 
-  if (((parray[p].adminLevel >= ADMIN_ADMIN)
-      || (!parray[p1].slotstat.is_registered )) &&
-       (parray[p1].slotstat.is_online)) {
+  if ((parray[p].adminLevel >= ADMIN_ADMIN
+    || !parray[p1].slotstat.is_registered) &&
+       parray[p1].slotstat.is_online) {
     pcn_out(p,CODE_INFO,  FORMAT_ADDRESS_s_s_n,
           (parray[p1].email[0] ? parray[p1].email : "UNREGISTERED"),
 	    dotQuad(parray[p1].slotstat.is_online ? parray[p1].thisHost : parray[p1].lastHost));
@@ -1775,7 +1775,8 @@ int com_stats(int p, struct parameter * param)
                    parray[p1].gonum_black,
                    parray[p1].gonum_white);
   }
-  if ((parray[p1].adminLevel >= ADMIN_ADMIN) && (parray[p].adminLevel >= ADMIN_ADMIN)) {
+  if (parray[p1].adminLevel >= ADMIN_ADMIN
+    && parray[p].adminLevel >= ADMIN_ADMIN) {
     pcn_out(p,CODE_INFO, FORMAT_ADMIN_LEVEL_ADMINISTRATOR_n);
   }
 
@@ -1893,12 +1894,12 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
     pprintf(p, "Last Channel: (;) %d\n",
                 parray[p1].last_channel);
   }
-  if ((parray[p1].last_tell >= 0) && ((p == p1)
-     || (parray[p].adminLevel >= ADMIN_ADMIN))) {
+  if (parray[p1].last_tell >= 0
+    && (p == p1 || parray[p].adminLevel >= ADMIN_ADMIN)) {
     pprintf(p, "Last Tell: (.) %s\n",
                 parray[parray[p1].last_tell].pname);
   }
-  if (alias_count(parray[p1].alias_list) && (p == p1)) {
+  if (alias_count(parray[p1].alias_list) && p == p1) {
     char *c, *a;
 
     pprintf(p, "Aliases:\n");
@@ -2121,22 +2122,17 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
 {
   if (!parray[p].slotstat.is_online) return 0;
 
-  if ((from < 1) && (sel_bits == 0xff)) {
+  if (from < 1 && sel_bits == 0xff) {
     return 1;
   }
 
-  if ((sel_bits == 0xff) && (from > 0)) {
-    if ((parray[p].orating >= from) &&
-       (parray[p].orating <= to))
-      return 1;
+  if (sel_bits == 0xff && from > 0) {
+    if (parray[p].orating >= from && parray[p].orating <= to) return 1;
   }
 
   if (from > 0) {
-    if (parray[p].orating < from
-       || parray[p].orating > to) {
-      return 0;
-    }
-    if (sel_bits & WHO_OPEN) if ((!parray[p].open) || (parray[p].game >= 0))
+    if (parray[p].orating < from || parray[p].orating > to) return 0;
+    if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
     if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
@@ -2147,7 +2143,7 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
     if (sel_bits & WHO_UNREGISTERED) if (parray[p].slotstat.is_registered) return 0;
   }
   else {
-    if (sel_bits & WHO_OPEN) if ((!parray[p].open) || (parray[p].game >= 0))
+    if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
     if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
@@ -2259,14 +2255,14 @@ static void a_who(int p, int cnt, int *plist)
     pos19 = (LadderPlayer19) ? LadderPlayer19->idx + 1 : 0;
     flags[0] = parray[p1].i_shout ? ' ' : 'S';
     flags[1] = (parray[p1].i_login && parray[p1].i_game) ? ' ' : 'Q';
-    if ((parray[p1].game >= 0) &&
-       (garray[parray[p1].game].Ladder19 || garray[parray[p1].game].Ladder9)) {
+    if (parray[p1].game >= 0
+      && (garray[parray[p1].game].Ladder19 || garray[parray[p1].game].Ladder9)) {
       flags[2] = '*';
 #ifdef PAIR
-    } else if ((parray[p1].game >= 0) && (paired(parray[p1].game))) {
+    } else if (parray[p1].game >= 0 && paired(parray[p1].game)) {
       flags[2] = '@';
 #endif
-    } else if ((!parray[p1].open) && (parray[p1].game < 0)) {
+    } else if (!parray[p1].open && parray[p1].game < 0) {
       flags[2] = 'X';
     } else if (parray[p1].looking && (parray[p1].game < 0)) {
       flags[2] = '!';
@@ -2307,7 +2303,7 @@ static void who_terse(int p, int num, int *plist, int type)
   pcn_out(p, CODE_WHO, FORMAT_INFO_NAME_IDLE_RANK_INFO_NAME_IDLE_RANKn);
   for (i = 0; i < num; i++) {
     p1 = plist[i];
-/*    if ((parray[p1].invisable) && (parray[p].adminLevel < ADMIN_ADMIN)) continue; */
+/*    if (parray[p1].invisable && parray[p].adminLevel < ADMIN_ADMIN) continue; */
     flags[0] = ' ';
     flags[1] = (parray[p1].i_shout) ? ((parray[p1].i_login) ? ' ' : 'Q') : 'S';
     if (!parray[p1].open) {
@@ -2434,7 +2430,7 @@ int com_who(int p, struct parameter * param)
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!who_ok(sortarray[p1], sel_bits, (from * 100) - 100, (to * 100) - 100))
       continue;
-    if ((count >= startpoint) && (count <= stoppoint)) {
+    if (count >= startpoint && count <= stoppoint) {
       plist[num_who++] = sortarray[p1];
     }
     count++;
@@ -2533,7 +2529,7 @@ int com_channel(int p, struct parameter * param)
     pcommand(p, "inchannel");
   } else {
     i = param[0].val.integer;
-    if ((i == 0) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+    if (i == 0 && parray[p].adminLevel < ADMIN_ADMIN) {
       pcn_out(p, CODE_ERROR, FORMAT_INVALID_CHANNEL_NUMBER_);
       return COM_OK;
     }
@@ -2597,17 +2593,17 @@ int com_unlock(int p, struct parameter * param)
 {
   int i, j;
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
+  if (on_channel(i, p) || parray[p].adminLevel >= ADMIN_ADMIN) {
     for (j = 0; j < carray[i].count; j++) {
-      pprintf_prompt(carray[i].members[j], "%s has unlocked channel %d\n", parray[p].pname, i);
+      pprintf_prompt(carray[i].members[j], "%s has unis_locked channel %d\n", parray[p].pname, i);
     }
-    carray[i].locked = 0;
+    carray[i].is_locked = 0;
   }
   return COM_OK;
 }
@@ -2617,18 +2613,18 @@ int com_lock(int p, struct parameter * param)
 {
   int i, j;
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
+  if (on_channel(i, p) || parray[p].adminLevel >= ADMIN_ADMIN) {
     for (j = 0; j < carray[i].count; j++) {
       pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_LOCKED_CHANNEL_dn,
       parray[p].pname, i);
     }
-    carray[i].locked = 1;
+    carray[i].is_locked = 1;
   }
   return COM_OK;
 }
@@ -2638,26 +2634,26 @@ int com_dnd(int p, struct parameter * param)
 {
   int i, j;
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  if ((on_channel(i, p)) || (parray[p].adminLevel >= ADMIN_ADMIN)) {
-    if (carray[i].dNd == 0) {
+  if (on_channel(i, p) || parray[p].adminLevel >= ADMIN_ADMIN) {
+    if (!carray[i].is_private) {
       for (j = 0; j < carray[i].count; j++) {
         pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_DO_NOT_DISTURBED_CHANNEL_dn,
         parray[p].pname, i);
       }
-      carray[i].dNd = 1;
+      carray[i].is_private = 1;
     }
-    else if (carray[i].dNd == 1) {
+    else if (carray[i].is_private) {
       for (j = 0; j < carray[i].count; j++) {
         pcn_out_prompt(carray[i].members[j], CODE_INFO, FORMAT_s_HAS_REMOVED_THE_DO_NOT_DISTURB_ON_CHANNEL_dn,
         parray[p].pname, i);
       }
-      carray[i].dNd = 0;
+      carray[i].is_private = 0;
     }
   }
   return COM_OK;
@@ -2669,8 +2665,8 @@ int com_ctitle(int p, struct parameter * param)
   int i, j;
   char szBuf[1024];
 
-  if ((param[0].val.integer >= MAX_NCHANNELS)
-    || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS
+    || param[0].val.integer < 0) {
     return COM_OK;
   }
 
@@ -2710,24 +2706,24 @@ int com_inchannel(int p, struct parameter * param)
   } else {			/* Two parameters */
     c1 = param[0].val.integer;
     c2 = param[2].val.integer;
-    if ((c1 < 0) || (c2 < 0)) {
+    if (c1 < 0 || c2 < 0) {
       pcn_out(p, CODE_ERROR, FORMAT_THE_LOWEST_CHANNEL_NUMBER_IS_1_);
       return COM_OK;
     }
     pcn_out(p, CODE_ERROR, FORMAT_TWO_PARAMETER_INCHANNEL_IS_NOT_IMPLEMENTED_ );
     return COM_OK;
   }
-  if ((c1 >= MAX_NCHANNELS) || (c2 >= MAX_NCHANNELS)) {
+  if (c1 >= MAX_NCHANNELS || c2 >= MAX_NCHANNELS) {
     pcn_out(p, CODE_ERROR, FORMAT_THE_MAXIMUM_CHANNEL_NUMBER_IS_d_, MAX_NCHANNELS - 1);
     return COM_OK;
   }
   for (i = 0; i < MAX_NCHANNELS; i++) {
-    if ((carray[i].hidden == 1) && (parray[p].adminLevel < ADMIN_ADMIN)) continue;
-    if (carray[i].count && ((c1 < 0) || (i == c1))) {
+    if (carray[i].is_hidden && parray[p].adminLevel < ADMIN_ADMIN) continue;
+    if (carray[i].count && (c1 < 0 || i == c1)) {
       pcn_out(p,CODE_INFO, FORMAT_CHANNEL_d_sss_sn, i,
-                  carray[i].locked ? "L" : "-",
-                  carray[i].hidden ? "H" : "",
-                  carray[i].dNd ? "D" : "",
+                  carray[i].is_locked ? "L" : "-",
+                  carray[i].is_hidden ? "H" : "",
+                  carray[i].is_private ? "D" : "",
                   carray[i].ctitle );
       pcn_out(p,CODE_INFO, FORMAT_empty );
       for (j = 0; j < carray[i].count; j++) {
@@ -2902,8 +2898,8 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
       && mine->param4 == hers->param4) {
 
     if (size == 0) return COM_BADPARAMETERS;
-    if ((create_new_gomatch(wp, bp,
-        size, start_time, byo_time, 0, rulestype, gametype)) == COM_FAILED) {
+    if (create_new_gomatch(wp, bp,
+        size, start_time, byo_time, 0, rulestype, gametype) == COM_FAILED) {
       pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_A_PROBLEM_CREATING_THE_NEW_MATCH_);
       pcn_out_prompt(p1, CODE_ERROR, FORMAT_THERE_WAS_A_PROBLEM_CREATING_THE_NEW_MATCH_n);
     }
@@ -3253,8 +3249,7 @@ int create_new_gomatch(int wp, int bp,
     break;
   }
 
-  if ((strcmp(parray[wp].srank, parray[bp].srank)) == 0)
-    garray[g].komi = 5.5;
+  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g].komi = 5.5;
   if (rules == RULES_ING) garray[g].komi = 8.0;
   if (start_time == 0) {
     garray[g].ts.time_type = TIMETYPE_UNTIMED;
@@ -3741,7 +3736,7 @@ int com_score(int p, struct parameter * param)
       return COM_OK;
     }
 
-    if ((g >= garray_top) || (garray[g].gstatus != GSTATUS_ACTIVE)) {
+    if (g >= garray_top || garray[g].gstatus != GSTATUS_ACTIVE) {
       return COM_NOSUCHGAME;
     }
 
@@ -3776,7 +3771,7 @@ int com_refresh(int p, struct parameter * param)
   if (param[0].type == TYPE_NULL) {
     if (parray[p].game >= 0) {
       if (garray[parray[p].game].gotype >= GAMETYPE_GO) {
-        if ((!parray[p].client) || (parray[p].i_verbose))
+        if (!parray[p].client || parray[p].i_verbose)
           send_go_board_to(parray[p].game, p);
         if (parray[p].client) pcommand(p, "moves %d", (parray[p].game) + 1);
       }
@@ -3785,7 +3780,7 @@ int com_refresh(int p, struct parameter * param)
 	for (idx = 0; idx < parray[p].num_observe; idx++) {
           gnum = parray[p].observe_list[idx];
           if (garray[gnum].gotype >= GAMETYPE_GO) {
-            if ((!parray[p].client) || (parray[p].i_verbose))
+            if (!parray[p].client || parray[p].i_verbose)
               send_go_board_to(gnum, p);
 	    if (parray[p].client)
               pcommand(p, "moves %d", gnum + 1);
@@ -3798,10 +3793,10 @@ int com_refresh(int p, struct parameter * param)
     gnum = param[0].val.integer - 1;
     if (gnum < 0) {
       pcn_out(p, CODE_ERROR, FORMAT_GAME_NUMBERS_MUST_BE_1_n);
-    } else if ((gnum >= garray_top) || (garray[gnum].gstatus != GSTATUS_ACTIVE)) {
+    } else if (gnum >= garray_top || garray[gnum].gstatus != GSTATUS_ACTIVE) {
       pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_GAME_n);
     } else {
-        if ((!parray[p].client) || (parray[p].i_verbose)) send_go_board_to(gnum, p);
+        if (!parray[p].client || parray[p].i_verbose) send_go_board_to(gnum, p);
 	if (parray[p].client) pcommand(p, "moves %d", gnum +1);
     }
   } else {
@@ -3838,7 +3833,7 @@ int com_ranked(int p, struct parameter * param)
   char temp[10], trnk;
 
   len = strlen(param[0].val.string);
-  if ((len > 3) || (len < 2)) {
+  if (len > 3 || len < 2) {
     pcn_out(p, CODE_ERROR, FORMAT_INVALID_RANK_VALID_RANKS_ARE_30K_1K_1D_6D_);
     return COM_OK;
   }
@@ -3978,7 +3973,7 @@ int com_sendmessage(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_REGISTERED_AND_CANNOT_SEND_MESSAGES_ );
     return COM_OK;
   }
-  if ((param[0].type == TYPE_NULL) || (param[1].type == TYPE_NULL)) {
+  if (param[0].type == TYPE_NULL || param[1].type == TYPE_NULL) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_MESSAGE_SENT_);
     return COM_OK;
   }
@@ -3988,7 +3983,7 @@ int com_sendmessage(int p, struct parameter * param)
     player_forget(p1);
     return COM_OK;
     }
-  if ((player_censored(p1, p)) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_IS_CENSORING_YOU_, parray[p1].pname);
     player_forget(p1);
     return COM_OK;
@@ -4129,7 +4124,7 @@ int com_help(int p, struct parameter * param)
 
     count = search_index(filenames, sizeof filenames, param[0].val.word, FILENAME_HELP_l_index, parray[p].language);
     if (count > 0) {
-      if ((count > 1) && (strcmp(filenames, param[0].val.word))) {
+      if (count > 1 && strcmp(filenames, param[0].val.word)) {
 	cp=filenames;
 	pcn_out(p,CODE_INFO, FORMAT_MATCHES_s, cp);
 	for (ii = 1; ii < count; ii++) {
@@ -4230,7 +4225,7 @@ int com_mailme(int p, struct parameter * param)
   char *arg;
   char fname[MAX_FILENAME_SIZE];
 
-  if ((strcmp(param[0].val.word, "me")) != 0)
+  if (strcmp(param[0].val.word, "me"))
     return COM_BADPARAMETERS;
 
   arg = getword(eatwhite(param[1].val.string));
@@ -4724,8 +4719,9 @@ void player_notify_departure(int p)
 {
   int p1;
   for (p1 = 0; p1 < parray_top; p1++) {
-    if ((parray[p1].notifiedby) &&
-        (!player_notified(p1, p)) && (player_notified(p, p1))) {
+    if (parray[p1].notifiedby
+      && !player_notified(p1, p)
+      && player_notified(p, p1)) {
       if (parray[p1].bell)
         pcn_out(p1, CODE_BEEP, FORMAT_Gn);
       pcn_out_prompt(p1, CODE_INFO, FORMAT_NOTIFICATION_s_HAS_DEPARTED_AND_ISN_T_ON_YOUR_NOTIFY_LIST_n, parray[p].pname);
@@ -4748,7 +4744,7 @@ int player_notify_present(int p)
       }
       count++;
       pprintf(p, " %s", parray[p1].pname);
-      if ((parray[p1].notifiedby) && (!player_notified(p1, p))) {
+      if (parray[p1].notifiedby && !player_notified(p1, p)) {
         if (parray[p1].bell)
           pcn_out(p1, CODE_BEEP, FORMAT_007N);
           pcn_out_prompt(p1, CODE_ERROR, FORMAT_NOTIFICATION_s_HAS_ARRIVED_AND_ISN_T_ON_YOUR_NOTIFY_LIST_n, parray[p].pname);

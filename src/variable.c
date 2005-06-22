@@ -65,8 +65,7 @@ static int set_boolean_var(int *var, const char *val)
     else if (!strcasecmp(val, "on")) v = 1;
     else if (!strcasecmp(val, "true")) v = 1;
   }
-  if ((v == 0) || (v == 1))
-    return (*var = v);
+  if (v == 0 || v == 1) return (*var = v);
   else return -1;
 }
 
@@ -318,7 +317,7 @@ static int set_time(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 0) || (v > 300)) return VAR_BADVAL;
+  if (v < 0 || v > 300) return VAR_BADVAL;
   parray[p].def_time = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_TIME_SET_TO_d_n, v);
   return VAR_OK;
@@ -332,7 +331,7 @@ static int set_language(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 0) || (v >= LANGUAGE_COUNT)) return VAR_BADVAL;
+  if (v < 0 || v >= LANGUAGE_COUNT) return VAR_BADVAL;
   parray[p].language = v;
   pcn_out(p, CODE_INFO, FORMAT_LANGUAGE_SET_TO_d_n, v);
   return VAR_OK;
@@ -346,7 +345,7 @@ static int set_size(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 9) || (v > 19)) return VAR_BADVAL;
+  if (v < 9 || v > 19) return VAR_BADVAL;
   parray[p].def_size = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_SIZE_SET_TO_d_n, v);
   return VAR_OK;
@@ -360,7 +359,7 @@ static int set_channel(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 0) || (v >= MAX_NCHANNELS)) return VAR_BADVAL;
+  if (v < 0 || v >= MAX_NCHANNELS) return VAR_BADVAL;
   parray[p].last_channel = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_CHANNEL_SET_TO_d_n, v);
   return VAR_OK;
@@ -374,7 +373,7 @@ static int set_byo_time(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 0) || (v > 300)) return VAR_BADVAL;
+  if (v < 0 || v > 300) return VAR_BADVAL;
   parray[p].def_byo_time = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_BYO_YOMI_TIME_SET_TO_d_n, v);
   return VAR_OK;
@@ -388,7 +387,7 @@ static int set_byo_stones(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 0) || (v > 100)) return VAR_BADVAL;
+  if (v < 0 || v > 100) return VAR_BADVAL;
   parray[p].def_byo_stones = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_BYO_YOMI_STONES_SET_TO_d_n, v);
   return VAR_OK;
@@ -402,7 +401,7 @@ static int set_height(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 5) || (v > 240)) return VAR_BADVAL;
+  if (v < 5 || v > 240) return VAR_BADVAL;
   parray[p].d_height = v;
   pcn_out(p, CODE_INFO, FORMAT_HEIGHT_SET_TO_d_n, v);
   return VAR_OK;
@@ -416,7 +415,7 @@ static int set_width(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if ((v < 32) || (v > 240)) return VAR_BADVAL;
+  if (v < 32 || v > 240) return VAR_BADVAL;
   parray[p].d_width = v;
   pcn_out(p, CODE_INFO, FORMAT_WIDTH_SET_TO_d_n, v);
   return VAR_OK;

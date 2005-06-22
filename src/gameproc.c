@@ -266,17 +266,16 @@ void game_ended(int g, int winner, int why)
     if (!parray[p].slotstat.is_online) continue;
     if (parray[p].i_game || player_is_observe(p, g))
     pcn_out_prompt(p, CODE_SHOUT, FORMAT_s, outstr);
-    if ((player_is_observe(p, g)) || 
-        (p == pb)   || 
-        (p == pw)) {
+    if (player_is_observe(p, g)
+      || p == pb || p == pw) {
       pcn_out_prompt(p, CODE_INFO, FORMAT_s, outstr);
     }
       player_remove_observe(p, g); 
   }
 
-  if ((winner == pb) && (rate_change == 1)) {
+  if (winner == pb && rate_change == 1) {
     player_resort();
-    if ((garray[g].Ladder9 == 1) || (garray[g].Ladder19 == 1)) {
+    if (garray[g].Ladder9 == 1 || garray[g].Ladder19 == 1) {
       if (garray[g].Ladder9 == 1) {
         Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);
         Ladder_B = PlayerNamed(Ladder9, parray[pb].pname);
@@ -337,8 +336,8 @@ void game_ended(int g, int winner, int why)
       }
     }
   }
-  else if ((winner == pw) && (rate_change == 1)) {
-    if ((garray[g].Ladder9 == 1) || (garray[g].Ladder19 == 1)) {
+  else if (winner == pw && rate_change == 1) {
+    if (garray[g].Ladder9 == 1 || garray[g].Ladder19 == 1) {
       if (garray[g].Ladder9 == 1) {
         Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);
         Ladder_B = PlayerNamed(Ladder9, parray[pb].pname);
@@ -377,7 +376,7 @@ void game_ended(int g, int winner, int why)
   parray[pb].protostate = STAT_WAITING;
   pprintf_prompt(pw, "\n");
   if (!garray[g].Teach) pprintf_prompt(pb, "\n");
-  if ((why == END_RESIGN) || (why == END_FLAG) || (why == END_DONE)) {
+  if (why == END_RESIGN || why == END_FLAG || why == END_DONE) {
     if (!garray[g].Teach) {
       parray[pb].lastColor = PLAYER_BLACK;
       parray[pw].lastColor = PLAYER_WHITE;
@@ -441,8 +440,9 @@ void process_move(int p, char *command)
 
   g = parray[p].game;
 
-  if (((garray[g].Teach == 0) && (garray[g].Teach2 == 0)) && 
-      ((parray[p].side != garray[g].onMove) && (parray[p].protostate != STAT_SCORING))) {
+  if (!garray[g].Teach && !garray[g].Teach2
+     && parray[p].side != garray[g].onMove
+     && parray[p].protostate != STAT_SCORING) {
     pcn_out_prompt(p, CODE_ERROR, FORMAT_IT_IS_NOT_YOUR_MOVE_n);
     return;
   }
@@ -501,7 +501,7 @@ void process_move(int p, char *command)
       /* pass is valid */
       garray[g].num_pass = pass(garray[g].GoGame); 
       /* Check if we need to start scoring.... */
-      if ((garray[g].Teach == 0) && (garray[g].num_pass >= 2)) {
+      if (!garray[g].Teach && garray[g].num_pass >= 2) {
         parray[garray[g].white.pnum].protostate = STAT_SCORING;
         parray[garray[g].black.pnum].protostate = STAT_SCORING;
         pcn_out_prompt(garray[g].white.pnum, CODE_INFO, FORMAT_YOU_CAN_CHECK_YOUR_SCORE_WITH_THE_SCORE_COMMAND_TYPE_DONE_WHEN_FINISHED_n);
@@ -661,7 +661,7 @@ int com_done(int p, struct parameter * param)
 {
   UNUSED(param);
 
-  if ((parray[p].game < 0) || (garray[parray[p].game].gotype < GAMETYPE_GO)) {
+  if (parray[p].game < 0 || garray[parray[p].game].gotype < GAMETYPE_GO) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -722,7 +722,7 @@ int com_pteach(int p, struct parameter * param)
   UNUSED(param);
 
   g1 = parray[p].game;
-  if ((g1 < 0) || (g1 >= garray_top) || (garray[g1].gstatus != GSTATUS_ACTIVE)) {
+  if (g1 < 0 || g1 >= garray_top || garray[g1].gstatus != GSTATUS_ACTIVE) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -756,7 +756,7 @@ int com_ladder(int p, struct parameter * param)
   UNUSED(param);
 
   g1 = parray[p].game;
-  if ((g1 < 0) || (g1 >= garray_top) || (garray[g1].gstatus != GSTATUS_ACTIVE)) {
+  if (g1 < 0 || g1 >= garray_top || garray[g1].gstatus != GSTATUS_ACTIVE) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -826,7 +826,7 @@ int com_komi(int p, struct parameter * param)
   }
 
   g1 = parray[p].game;
-  if ((g1 < 0) || (g1 >= garray_top) || (garray[g1].gstatus != GSTATUS_ACTIVE)) {
+  if (g1 < 0 || g1 >= garray_top || garray[g1].gstatus != GSTATUS_ACTIVE) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -927,10 +927,10 @@ int com_status(int p, struct parameter * param)
   pb = garray[g1].black.pnum;
   pw = garray[g1].white.pnum;
 
-  if ((g1 < 0) || (g1 >= garray_top) || (garray[g1].gstatus != GSTATUS_ACTIVE)) {
+  if (g1 < 0 || g1 >= garray_top || garray[g1].gstatus != GSTATUS_ACTIVE) {
     return COM_NOSUCHGAME;
   }
-  if ((pb != p) && (pw != p) && garray[g1].Private) {
+  if (garray[g1].Private && pb != p && pw != p) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_IS_A_PRIVATE_GAME_);
     return COM_OK;
   }
@@ -958,7 +958,7 @@ int com_status(int p, struct parameter * param)
 		garray[g1].komi,
                 garray[g1].GoGame->handicap);
   if (!until) until = garray[g1].GoGame->height;
-  if ((until - 1) > garray[g1].GoGame->height) return COM_OKN;
+  if (until-1 > garray[g1].GoGame->height) return COM_OKN;
   for(x = 0; x < until; x++) {
     pcn_out(p, CODE_STATUS, FORMAT_d_sn,
 		x,
@@ -988,9 +988,9 @@ int com_undo(int p, struct parameter * param)
   pw = garray[g1].white.pnum;
   pb = garray[g1].black.pnum;
 
-  if ((parray[p].side != garray[g1].onMove) && 
-      (parray[p].protostate != STAT_SCORING)         &&
-      ((garray[g1].Teach2 == 0) && (garray[g1].Teach == 0))) {
+  if (parray[p].side != garray[g1].onMove
+     && parray[p].protostate != STAT_SCORING
+     && !garray[g1].Teach2 && !garray[g1].Teach) {
     pcn_out(p, CODE_ERROR, FORMAT_IT_IS_NOT_YOUR_MOVE_);
     return COM_OK;
   }
@@ -1003,7 +1003,7 @@ int com_undo(int p, struct parameter * param)
    player to move   B1  W1  B2  W2
 */
 
-  if ((paired(g1)) && (gmove == movenum(garray[g2].GoGame))
+  if (paired(g1) && gmove == movenum(garray[g2].GoGame)
       && ((gmove&3)/2) != (garray[g1].pairstate==PAIR2)) {
     pcn_out(p, CODE_ERROR, FORMAT_IT_IS_YOUR_PARTNER_S_MOVE_n);
     return COM_OK;
@@ -1023,12 +1023,12 @@ int com_undo(int p, struct parameter * param)
       garray[g1].onMove = PLAYER_BLACK; 
       return COM_OK; 
     }
-    if (((garray[g1].Teach == 0) && (garray[g1].Teach2 == 0)) && x == 0) x = num;
+    if (!garray[g1].Teach && !garray[g1].Teach2 && x == 0) x = num;
     listmove(garray[g1].GoGame, gmove, buf);
     pcn_out(garray[g1].black.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
-    if (garray[g1].Teach == 0) 
+    if (!garray[g1].Teach) 
       pcn_out(garray[g1].white.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
@@ -1081,11 +1081,10 @@ int com_games(int p, struct parameter * param)
   for (i = 0; i < garray_top; i++) {
     if (garray[i].gstatus != GSTATUS_ACTIVE) continue;
     totalcount++;
-    if ((selected) && (selected != i+1))
-      continue;  /* not selected game number */
+    if (selected && selected != i+1) continue;  /* not selected game number */
     pw = garray[i].white.pnum;
     pb = garray[i].black.pnum;
-    if ((!selected) && s 
+    if (!selected && s 
           && strncmp(s, parray[pw].login, slen)
           && strncmp(s, parray[pb].login, slen))
       continue;  /* player names did not match */
@@ -1141,12 +1140,12 @@ int com_gomoves(int p, struct parameter * param)
   } else {                      /* Must be an integer */
     g1 = param[0].val.integer - 1;
   }
-  if ((g1 < 0) || (g1 >= garray_top) || (garray[g1].gstatus != GSTATUS_ACTIVE)) {
+  if (g1 < 0 || g1 >= garray_top || garray[g1].gstatus != GSTATUS_ACTIVE) {
     return COM_NOSUCHGAME;
   }
   pb = garray[g1].black.pnum;
   pw = garray[g1].white.pnum;
-  if ((pb != p) && (pw != p) && garray[g1].Private) {
+  if (garray[g1].Private && pb != p && pw != p) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_IS_A_PRIVATE_GAME_);
     return COM_OK;
   }
@@ -1179,14 +1178,14 @@ static int do_observe(int p, int obgame)
   int gmove = 0;
   char buf[200];
 
-  if ((garray[obgame].Private) && (parray[p].adminLevel < ADMIN_ADMIN)) {
+  if (garray[obgame].Private && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_INFO, FORMAT_SORRY_GAME_d_IS_A_PRIVATE_GAME_, 
                 obgame + 1);
     return COM_OK;
   }
   pb = garray[obgame].black.pnum;
   pw = garray[obgame].white.pnum;
-  if ((pb == p) || (pw == p)) {
+  if (pb == p || pw == p) {
     pcn_out(p, CODE_INFO, FORMAT_YOU_CANNOT_OBSERVE_A_GAME_THAT_YOU_ARE_PLAYING_);
     return COM_OK;
   }
@@ -1255,12 +1254,11 @@ int com_observe(int p, struct parameter * param)
   } else {			/* Must be an integer */
     obgame = param[0].val.integer - 1;
   }
-  if ((obgame < 0) || 
-     (obgame >= garray_top) || 
-     (garray[obgame].gstatus != GSTATUS_ACTIVE)) {
+  if (obgame < 0 || obgame >= garray_top
+    || garray[obgame].gstatus != GSTATUS_ACTIVE) {
     return COM_NOSUCHGAME;
   }
-  if ((garray[obgame].white.pnum == p) || (garray[obgame].black.pnum == p)) {
+  if (garray[obgame].white.pnum == p || garray[obgame].black.pnum == p) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CANNOT_OBSERVE_A_GAME_THAT_YOU_ARE_PLAYING_);
     return COM_OK;
   }
@@ -1278,9 +1276,8 @@ int com_pair(int p, struct parameter * param)
   theirgame = param[0].val.integer - 1;
   ourgame = parray[p].game;
 
-  if ((ourgame < 0) || 
-      (ourgame >= garray_top) || 
-      (garray[ourgame].gstatus != GSTATUS_ACTIVE)) {
+  if (ourgame < 0 || ourgame >= garray_top
+    || garray[ourgame].gstatus != GSTATUS_ACTIVE) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -1288,9 +1285,8 @@ int com_pair(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_YOUR_GAME_IS_PAIRED_ALREADY_);
     return COM_OK;
   }
-  if ((theirgame < 0) || 
-      (theirgame >= garray_top) || 
-      (garray[theirgame].gstatus != GSTATUS_ACTIVE)) {
+  if (theirgame < 0 || theirgame >= garray_top
+    || garray[theirgame].gstatus != GSTATUS_ACTIVE) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_GAME_);
     return COM_OK;
   }
@@ -1302,9 +1298,9 @@ int com_pair(int p, struct parameter * param)
     return COM_OK;
   }
   
-  if ((p == garray[ourgame].black.pnum)   ||
-     (p == garray[theirgame].white.pnum) ||
-     (p == garray[theirgame].black.pnum)) {
+  if (p == garray[ourgame].black.pnum
+    || p == garray[theirgame].white.pnum
+    || p == garray[theirgame].black.pnum) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ONE_OF_THE_OTHER_PLAYERS_CANNOT_PAIR_);
     return COM_OK;
   }
@@ -1490,11 +1486,13 @@ int com_moves(int p, struct parameter * param)
   } else {			/* Must be an integer */
     g = param[0].val.integer - 1;
   }
-  if ((g < 0) || (g >= garray_top) || 
-      (garray[g].gstatus != GSTATUS_ACTIVE) || (garray[g].gotype < GAMETYPE_GO)) {
+  if (g < 0 || g >= garray_top
+    || garray[g].gstatus != GSTATUS_ACTIVE
+    || garray[g].gotype < GAMETYPE_GO) {
     return COM_NOSUCHGAME;
   }
-  if ((garray[g].white.pnum != p) && (garray[g].black.pnum != p) && garray[g].Private) {
+  if (garray[g].Private
+    && garray[g].white.pnum != p && garray[g].black.pnum != p) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_IS_A_PRIVATE_GAME_);
     return COM_OK;
   }
@@ -1645,7 +1643,7 @@ int com_load(int p, struct parameter * param)
   parray[pb].side = PLAYER_BLACK;
   parray[pb].protostate = STAT_PLAYING_GO;
   parray[pw].protostate = STAT_PLAYING_GO;
-  if ((garray[g].Ladder9) || (garray[g].Ladder19)) {
+  if (garray[g].Ladder9 || garray[g].Ladder19) {
     if (garray[g].size == 19) {
       if ((LadderPlayer=PlayerNamed(Ladder19,parray[pb].pname)) != NULL) {
         bpos = LadderPlayer->idx;
@@ -1666,7 +1664,7 @@ int com_load(int p, struct parameter * param)
       }
       else wpos = -1;
     }
-    if ((wpos < 0) || (bpos < 0) || (wpos > bpos)) {
+    if (wpos < 0 || bpos < 0 || wpos > bpos) {
       garray[g].Ladder9 = 0;
       garray[g].Ladder19 = 0;
     }
@@ -1879,7 +1877,7 @@ int com_time(int p, struct parameter * param)
   default:
     return COM_BADPARAMETERS;
   }
-  if ((g < 0) || (g >= garray_top) || (garray[g].gstatus != GSTATUS_ACTIVE)) {
+  if (g < 0 || g >= garray_top || garray[g].gstatus != GSTATUS_ACTIVE) {
     return COM_NOSUCHGAME;
   }
   game_update_time(g);
@@ -2184,7 +2182,7 @@ void game_update_time(int g)
   }
 
   /* If a teaching game */
-  if ((garray[g].Teach == 1) || (garray[g].Teach2 == 1)) {
+  if (garray[g].Teach == 1 || garray[g].Teach2 == 1) {
     garray[g].black.ticksleft = SECS2TICS(600);
     garray[g].white.ticksleft = SECS2TICS(600);
     garray[g].black.byoperiods = 0;
@@ -2346,7 +2344,7 @@ void game_update_time(int g)
 #endif
 #ifdef PAIR
     if (paired(g)) {
-      if ((garray[g2].black.ticksleft <= 0) && (garray[g2].black.byoperiods == 0)) {
+      if (garray[g2].black.ticksleft <= 0 && garray[g2].black.byoperiods == 0) {
         garray[g2].black.byoperiods = 1;
         garray[g2].black.byostones = garray[g2].ts.byostones - 1;
         garray[g2].black.ticksleft = garray[g2].ts.byoticks;
@@ -2420,7 +2418,7 @@ int com_sresign(int p, struct parameter * param)
     return COM_OK;
   }
   
-  if ((p != pw) && (p != pb)) {
+  if (p != pw && p != pb) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_MUST_BE_ONE_OF_THE_TWO_PLAYERS_TO_SRESIGN_);
     player_forget(pw);
     player_forget(pb);

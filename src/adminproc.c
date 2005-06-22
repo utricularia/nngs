@@ -141,7 +141,7 @@ int com_anews(int p, struct parameter* param)
   char count[10];
   int flag, len;
 
-  if (((param[0].type==0) || (!strcmp(param[0].val.word,"all")))) {
+  if (!param[0].type || !strcmp(param[0].val.word,"all")) {
 
 /* no params - then just display index over news */
    
@@ -158,11 +158,11 @@ int com_anews(int p, struct parameter* param)
       sscanf(junkp, "%d %s", &crtime, count);
       junkp=nextword(junkp); 
       junkp=nextword(junkp);
-      if (((param[0].type==TYPE_WORD) && (!strcmp(param[0].val.word,"all")))) {
+      if (param[0].type==TYPE_WORD && !strcmp(param[0].val.word,"all")) {
         pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
         flag=1;
       } else {
-        if ((crtime - player_lastconnect(p))>0) {
+        if (crtime - player_lastconnect(p) > 0) {
           pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
           flag=1;
 	}
@@ -479,22 +479,14 @@ void ShutHeartBeat()
   if (!shutdownTime) return;
   if (!lastTimeLeft) lastTimeLeft = shutdownTime;
   timeLeft = shutdownTime - (now - shutdownStartTime);
-  if ((lastTimeLeft > 3600) && (timeLeft <= 3600))
-    crossing = 1;
-  if ((lastTimeLeft > 2400) && (timeLeft <= 2400))
-    crossing = 1;
-  if ((lastTimeLeft > 1200) && (timeLeft <= 1200))
-    crossing = 1;
-  if ((lastTimeLeft > 600) && (timeLeft <= 600))
-    crossing = 1;
-  if ((lastTimeLeft > 300) && (timeLeft <= 300))
-    crossing = 1;
-  if ((lastTimeLeft > 120) && (timeLeft <= 120))
-    crossing = 1;
-  if ((lastTimeLeft > 60) && (timeLeft <= 60))
-    crossing = 1;
-  if ((lastTimeLeft > 10) && (timeLeft <= 10))
-    crossing = 1;
+  if (lastTimeLeft > 3600 && timeLeft <= 3600) crossing = 1;
+  if (lastTimeLeft > 2400 && timeLeft <= 2400) crossing = 1;
+  if (lastTimeLeft > 1200 && timeLeft <= 1200) crossing = 1;
+  if (lastTimeLeft > 600 && timeLeft <= 600) crossing = 1;
+  if (lastTimeLeft > 300 && timeLeft <= 300) crossing = 1;
+  if (lastTimeLeft > 120 && timeLeft <= 120) crossing = 1;
+  if (lastTimeLeft > 60 && timeLeft <= 60) crossing = 1;
+  if (lastTimeLeft > 10 && timeLeft <= 10) crossing = 1;
   if (crossing) {
     Logit("   **** Server going down in %d minutes and %d seconds. ****",
 	    timeLeft / 60,
@@ -668,8 +660,8 @@ int com_noshout(int p, struct parameter* param)
   int j,p1;
   UNUSED(param);
 
-  if (carray[CHANNEL_SHOUT].locked) carray[CHANNEL_SHOUT].locked = 0;
-  else  carray[CHANNEL_SHOUT].locked = 1;
+  if (carray[CHANNEL_SHOUT].is_locked) carray[CHANNEL_SHOUT].is_locked = 0;
+  else  carray[CHANNEL_SHOUT].is_locked = 1;
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1=carray[CHANNEL_ASHOUT].members[j];
     if (!parray[p1].slotstat.is_online) continue;
@@ -677,7 +669,7 @@ int com_noshout(int p, struct parameter* param)
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_JUST_TURNED_s_SHOUTS_n, 
       parray[p].pname,
-      carray[CHANNEL_SHOUT].locked ? "off" : "on");
+      carray[CHANNEL_SHOUT].is_locked ? "off" : "on");
   }
   return COM_OK;
 }
@@ -979,11 +971,11 @@ int com_asetadmin(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_ADMIN_LEVEL_OF_s_SET_TO_d_n, 
             parray[p1].pname, parray[p1].adminLevel);
 
-  if ((oldlevel < ADMIN_ADMIN) && (parray[p1].adminLevel >= ADMIN_ADMIN)) {
+  if (oldlevel < ADMIN_ADMIN && parray[p1].adminLevel >= ADMIN_ADMIN) {
     pcommand (p, "+admin %s\n",parray[p1].pname);
   }
 
-  if ((oldlevel >= ADMIN_ADMIN) && (parray[p1].adminLevel < ADMIN_ADMIN)) {
+  if (oldlevel >= ADMIN_ADMIN && parray[p1].adminLevel < ADMIN_ADMIN) {
     pcommand (p, "-admin %s\n",parray[p1].pname);
   }
 
@@ -1042,7 +1034,7 @@ int com_actitle(int p, struct parameter* param)
 {
   int i;
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
@@ -1090,13 +1082,13 @@ int com_hide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  carray[i].hidden = 1;
+  carray[i].is_hidden = 1;
   return COM_OK;
 }
 
@@ -1106,13 +1098,13 @@ int com_unhide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if ((param[0].val.integer >= MAX_NCHANNELS) || (param[0].val.integer < 0)) {
+  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
     return COM_OK;
   }
 
   i = param[0].val.integer;
 
-  carray[i].hidden = 0;
+  carray[i].is_hidden = 0;
   return COM_OK;
 }
 

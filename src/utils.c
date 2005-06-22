@@ -113,8 +113,8 @@ static FILE * pvafopen(int p, int num, const char * mode, va_list ap);
 int iswhitespace(int c)
 {
 #if 0
-  if ((c < ' ') || (c == '\b') || (c == '\n') ||
-      (c == '\t') || (c == ' ')) {	/* white */
+  if (c < ' ' || c == '\b' || c == '\n' ||
+      c == '\t' || c == ' ') {	/* white */
     return 1;
   } else {
     return 0;
@@ -122,7 +122,7 @@ int iswhitespace(int c)
 #else
   /* PEM's whitespace. Note that c may be < 0 for 8-bit chars. */
   /* Another note:  Some code depend on c == '\0' being whitespace. /pem */
-  return (((0 <= c) && (c <= ' ')) || (c == 127));
+  return ((0 <= c && c <= ' ') || c == 127);
 #endif
 }
 
@@ -858,8 +858,7 @@ int printablestring(const char *str)
   if (!str) return 1;
 
   for (; *str; str++) {
-    if ((!isprint((int)*str)) && (*str != '\t') && (*str != '\n'))
-      return 0;
+    if (!isprint((int)*str) && *str != '\t' && *str != '\n') return 0;
   }
   return 1;
 }

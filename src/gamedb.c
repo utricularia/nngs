@@ -327,27 +327,27 @@ void send_go_board_to(int g, int p)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_CAPTURED_BY_dn, statstring[yy], wc);
       else if (yy==2)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_CAPTURED_BY_O_dn, statstring[yy], bc);
-      else if ((yy==4) && (garray[g].GoGame->height > 3))
+      else if (yy==4 && garray[g].GoGame->height > 3)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn,
                 statstring[yy], hms(TICS2SECS(garray[g].white.ticksleft), 1, 1, 0),
                 wbuf );
-      else if ((yy==5) && (garray[g].GoGame->height > 4))
+      else if (yy==5 && garray[g].GoGame->height > 4)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn,
                 statstring[yy], hms(TICS2SECS(garray[g].black.ticksleft), 1, 1, 0),
                 bbuf);
-      else if ((yy==7) && (garray[g].GoGame->height > 6))
+      else if (yy==7 && garray[g].GoGame->height > 6)
 	if (count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_n, statstring[yy]);
  	else
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_sn, statstring[yy], buf + 1);
-      else if ((yy==8) && (garray[g].GoGame->height > 7))
+      else if (yy==8 && garray[g].GoGame->height > 7)
  	if (count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_0_O_WHITE_n, statstring[yy]);
    	else
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_d_s_s_n, statstring[yy],
                       count, (buf[0] == 'B') ? "#" : "O", 
 		      (buf[0] == 'B') ? "Black" : "White");
-      else if ((yy>=10) && (garray[g].GoGame->height > (yy - 1))) {
+      else if (yy>=10 && garray[g].GoGame->height > (yy - 1)) {
 	if (count > 1) {
 	  count--;
           listmove(garray[g].GoGame, count, buf);
@@ -382,12 +382,12 @@ void send_go_boards(int g, int players_only)
         TICS2SECS(garray[g].black.ticksleft),
         garray[g].black.byostones);
 
-  if ((parray[wp].i_verbose) && (garray[g].Teach == 0)) 
+  if (parray[wp].i_verbose && !garray[g].Teach ) 
     send_go_board_to(g, wp);
 
-  else if ((parray[wp].protostate != STAT_SCORING) && (garray[g].Teach == 0))  { 
+  else if (parray[wp].protostate != STAT_SCORING && !garray[g].Teach)  { 
     pcn_out(wp, CODE_MOVE, FORMAT_s,outStr);
-    if ((movenum(garray[g].GoGame) - 1) >= 0) {
+    if (movenum(garray[g].GoGame) - 1 >= 0) {
       pcn_out(wp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g].GoGame) - 1, buf[0], buf + 1); 
     }
@@ -399,7 +399,7 @@ void send_go_boards(int g, int players_only)
 
   else if (parray[bp].protostate != STAT_SCORING) {
     pcn_out(bp, CODE_MOVE, FORMAT_s, outStr);
-    if ((movenum(garray[g].GoGame) - 1) >= 0) {
+    if (movenum(garray[g].GoGame) - 1 >= 0) {
       pcn_out(bp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g].GoGame) - 1, buf[0], buf + 1); 
     }
@@ -776,7 +776,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   Copyright This game was played on the No Name Go Server\n\
   Permission to reproduce this game is given,\n\
   as long as this copyright notice is preserved.]\n");
-  if ((garray[g].Ladder9 == 1) || (garray[g].Ladder19 == 1)) {
+  if (garray[g].Ladder9 == 1 || garray[g].Ladder19 == 1) {
     fprintf(fp, "GN[%s-%s(B) NNGS (LADDER RATED)]\n",
      parray[wp].pname, parray[bp].pname);
 #ifdef PAIR
@@ -920,7 +920,7 @@ int write_g_out(int g, FILE *fp, int maxlines, char *fdate)
   wp = garray[g].white.pnum;
   bp = garray[g].black.pnum;
 
-  if ((!parray[wp].slotstat.is_registered) || (!parray[bp].slotstat.is_registered)) {
+  if (!parray[wp].slotstat.is_registered || !parray[bp].slotstat.is_registered) {
     fclose(fp);
     return 0;
     }
@@ -987,15 +987,15 @@ void game_write_complete(int g, twodstring statstring)
     fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
     write_g_out(g, fp, 23, fdate);
   }
-  if ((garray[g].rated)
-     && (parray[wp].slotstat.is_registered)
-     && (parray[bp].slotstat.is_registered)
-     && (garray[g].Teach != 1)
+  if (garray[g].rated
+     && parray[wp].slotstat.is_registered
+     && parray[bp].slotstat.is_registered
+     && !garray[g].Teach
 #ifdef PAIR
-     && (!paired(g))
+     && !paired(g)
 #endif
-     && (movenum(garray[g].GoGame) >= 20)
-     && (garray[g].GoGame->width == 19)) {
+     && movenum(garray[g].GoGame) >= 20
+     && garray[g].GoGame->width == 19) {
     fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
     write_g_out(g, fp, 23, fdate);
     fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
@@ -1008,15 +1008,15 @@ void game_write_complete(int g, twodstring statstring)
   game_save_complete(g, fp, statstring);
   xylink(FILENAME_CGAMES_bs_s_s, wname, bname, fdate);
 
-  if ((!parray[wp].slotstat.is_registered)
-     || (!parray[bp].slotstat.is_registered)
-     || (!garray[g].rated)
-     || (garray[g].Teach == 1)
+  if (!parray[wp].slotstat.is_registered
+     || !parray[bp].slotstat.is_registered
+     || !garray[g].rated
+     || garray[g].Teach == 1
 #ifdef PAIR
-     || (paired(g))
+     || paired(g)
 #endif
-     || (movenum(garray[g].GoGame) <= 20)
-     || (garray[g].GoGame->width != 19))  return;
+     || movenum(garray[g].GoGame) <= 20
+     || garray[g].GoGame->width != 19)  return;
 
   fp = xyfopen(FILENAME_RESULTS, "a");
   if (!fp) {

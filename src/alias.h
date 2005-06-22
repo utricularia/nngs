@@ -1,7 +1,7 @@
 #ifndef ALIAS_H
 #define ALIAS_H
 
-#include <stdio.h>	/* for the size_t definition */
+/* #include <stdio.h>	for the size_t definition */
 
 /* Creates a alias list. */
 extern struct alias * alias_init(void);

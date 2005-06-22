@@ -51,10 +51,10 @@ void channel_init()
   int i;
 
   for (i = 0; i < MAX_CHANNELS; i++) {
-    carray[i].other = 0;
-    carray[i].locked = 0;
-    carray[i].hidden = 0;
-    carray[i].dNd = 0;
+    carray[i].is_special = 0;
+    carray[i].is_locked = 0;
+    carray[i].is_hidden = 0;
+    carray[i].is_private = 0;
     carray[i].Num_Yell = 0;
     carray[i].members = malloc(MAX_CHANNEL_MEMBERS * sizeof *carray[i].members);
     carray[i].count = 0;
@@ -62,7 +62,7 @@ void channel_init()
     switch(i) {
     case 0:
       carray[i].ctitle = mystrdup("Admins House");
-      carray[i].hidden = 1;
+      carray[i].is_hidden = 1;
       break;
 
     case 5:
@@ -82,7 +82,7 @@ void channel_init()
       break;
 
     case 42:
-      carray[i].dNd = 1;
+      carray[i].is_private = 1;
       carray[i].ctitle = mystrdup("To set the channel title, see \"help ctitle\"");
       break;
 
@@ -115,33 +115,33 @@ void channel_init()
       break;
 
     case CHANNEL_ASHOUT:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("Admin Shout");
-      carray[i].hidden = 1;
+      carray[i].is_hidden = 1;
       break;
 
     case CHANNEL_SHOUT:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("Normal Shouts");
       break;
 
     case CHANNEL_GSHOUT:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("GoBot Shouts");
       break;
 
     case CHANNEL_LOGON:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("Logons");
       break;
 
     case CHANNEL_GAME:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("Games");
       break;
 
     case CHANNEL_LSHOUT:
-      carray[i].other = 1;
+      carray[i].is_special = 1;
       carray[i].ctitle = mystrdup("Ladder Shouts");
       break;
 
@@ -175,8 +175,8 @@ int channel_remove(int ch, int p)
   carray[ch].count -= 1;
   parray[p].nochannels -= 1;
   if (carray[ch].count == 0) {
-    carray[ch].locked = 0;
-    carray[ch].hidden = 0;
+    carray[ch].is_locked = 0;
+    carray[ch].is_hidden = 0;
   }
   if (parray[p].nochannels < 0) parray[p].nochannels = 0;
   return 0;
@@ -184,20 +184,15 @@ int channel_remove(int ch, int p)
 
 int channel_add(int ch, int p)
 {
-  if ((ch == 0) && (parray[p].adminLevel < ADMIN_MASTER)) {
+  if (ch == 0 && parray[p].adminLevel < ADMIN_MASTER) {
     return 3;
   }
   if (carray[ch].count >= MAX_CHANNEL_MEMBERS) return 1;
   if (on_channel(ch, p)) return 1;
-  if ((carray[ch].locked) && (parray[p].adminLevel < ADMIN_MASTER)) {
-    return 4;
-  }
-  if ((carray[ch].hidden) && (parray[p].adminLevel < ADMIN_MASTER)) {
-    return 5;
-  }
-  if ((parray[p].nochannels == MAX_INCHANNELS) && (parray[p].adminLevel < ADMIN_MASTER)) {
-    return 2;
-  }
+  if (carray[ch].is_locked && parray[p].adminLevel < ADMIN_MASTER) return 4;
+  if (carray[ch].is_hidden && parray[p].adminLevel < ADMIN_MASTER) return 5;
+  if (parray[p].nochannels == MAX_INCHANNELS 
+    && parray[p].adminLevel < ADMIN_MASTER) return 2;
   carray[ch].members[carray[ch].count] = p;
   carray[ch].count++;
   parray[p].nochannels++;
@@ -251,9 +246,9 @@ void Ochannel_init()
   int i;
 
   for (i = 0; i < MAX_O_CHANNELS; i++) {
-    Ocarray[i].locked = 0;
-    Ocarray[i].hidden = 0;
-    Ocarray[i].dNd = 0;
+    Ocarray[i].is_locked = 0;
+    Ocarray[i].is_hidden = 0;
+    Ocarray[i].is_private = 0;
     Ocarray[i].Num_Yell = 0;
     Ochannels[i].members = malloc(MAX_CHANNEL_MEMBERS * sizeof *Ochannels[i].members);
     OnumOn[i] = 0;
@@ -261,7 +256,7 @@ void Ochannel_init()
     switch(i) {
       case CASHOUT:
       Ocarray[i].ctitle = mystrdup("Admin Shout");
-      Ocarray[i].hidden = 1;
+      Ocarray[i].is_hidden = 1;
       break;
 
       case CSHOUT:

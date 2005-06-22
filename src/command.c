@@ -709,11 +709,10 @@ static int process_password(int p, char *password)
 
   }
   for (i = 0; i < MAX_NCHANNELS; i++) {
-    if (carray[i].other) continue;
+    if (carray[i].is_special) continue;
     if (on_channel(i, p)) {
       pcn_out(p, CODE_INFO, FORMAT_CHANNEL_d_TOPIC_sn, i, carray[i].ctitle);
       for (j = 0; j < carray[i].count; j++) {
-        if (carray[i].other) continue;
         p1 = carray[i].members[j];
 	if (p1 == p) continue;
 	if (!parray[p1].slotstat.is_online) continue;
@@ -1047,11 +1046,9 @@ int process_heartbeat(int *fdp)
       }
       if (parray[p].adminLevel >= ADMIN_ADMIN) continue;
       if (parray[p].i_robot) continue;	/* [PEM]: Don't timeout robots. */
-      if ((player_idle(p) > MAX_IDLE)  
-        && (parray[p].protostate == STAT_WAITING)
-        && (parray[p].pstatus == PSTATUS_PROMPT) ) {
-        pcommand(p, "quit");
-      }
+      if (player_idle(p) > MAX_IDLE
+        && parray[p].protostate == STAT_WAITING
+        && parray[p].pstatus == PSTATUS_PROMPT) pcommand(p, "quit");
     }
     last_idle_check = 0;
   } else {
