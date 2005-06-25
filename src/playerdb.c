@@ -820,7 +820,7 @@ int player_read(int p)
   } else {
     rdbm_t rdb;
 
-    if ((rdb = rdbm_open(NRATINGS_FILE,0)) != NULL) {
+    if ((rdb = rdbm_open(NRATINGS_FILE,0))) {
       rdbm_player_t rp;
 
       if (rdbm_fetch(rdb, parray[p].pname, &rp)) {

@@ -111,7 +111,7 @@ int multicol_pprint(struct multicol * m, int player, int cols, int space)
   pprintf(player, "\n");
   for (i = 0; i < m->num; i++) {
     temp = strlen(m->strArray[i]);	/* loon: yes, this is pathetic */
-    if (strchr(m->strArray[i], '\033') != NULL)
+    if (strchr(m->strArray[i], '\033'))
       temp -= 8;
     if (temp > maxWidth)
       maxWidth = temp;
@@ -130,7 +130,7 @@ int multicol_pprint(struct multicol * m, int player, int cols, int space)
 	break;
       }
       temp = strlen(m->strArray[theone]);	/* loon: yes, still pathetic */
-      if (strchr(m->strArray[theone], '\033') != NULL)
+      if (strchr(m->strArray[theone], '\033'))
 	temp -= 8;
       len = maxWidth - temp;
       if (i == numPerLine - 1)

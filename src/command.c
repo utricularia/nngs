@@ -1082,7 +1082,7 @@ int process_heartbeat(int *fdp)
         stat(NRATINGS_FILE, &ratingsbuf1);  /* re-init the stat buf */
         stat(NRATINGS_FILE, &ratingsbuf2);  /* re-init the stat buf */
         Logit("Time to re-read the ratings file.  :)");
-        if ((rdb = rdbm_open(NRATINGS_FILE, 0)) != NULL) {
+        if ((rdb = rdbm_open(NRATINGS_FILE, 0))) {
           for (p = 0; p < parray_top; p++) {
             rdbm_player_t rp;
 	    int orat;
@@ -1123,7 +1123,7 @@ int process_heartbeat(int *fdp)
 	    }
           } /* for (p = 0 ; p < parray_top ; p++) */
           rdbm_close(rdb);
-        } /* if ((rdb = rdbm_open()) != NULL) */
+        } /* if ((rdb = rdbm_open()) ) */
       }	/* if (resu > 0) */
     }
   }

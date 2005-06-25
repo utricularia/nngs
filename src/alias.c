@@ -29,7 +29,7 @@ struct alias
   size_t size, count, iter;
 };
 
-size_t alias_count(struct alias * a)
+unsigned alias_count(struct alias * a)
 {
   return a ? a->count : 0;
 }
@@ -62,8 +62,7 @@ alias_index(size_t *ip, const char *cmd, struct alias * a)
 {
   size_t left, right;
 
-  if (!a)
-    return 0;
+  if (!a) return 0;
 
   left = 0;
   right = a->count;
@@ -72,15 +71,9 @@ alias_index(size_t *ip, const char *cmd, struct alias * a)
     size_t i = (left+right)/2;
     int x = strcmp(cmd, a->aliases[i].command);
 
-    if (x < 0)
-      right = i;
-    else if (x > 0)
-      left = i+1;
-    else
-    {
-      *ip = i;
-      return 1;
-    }
+    if (!x) { *ip = i; return 1; }
+    if (x < 0) right = i;
+    else left = i+1;
   }
   *ip = left;			/* Not found, left is the insertion point. */
   return 0;

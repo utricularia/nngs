@@ -1645,21 +1645,21 @@ int com_load(int p, struct parameter * param)
   parray[pw].protostate = STAT_PLAYING_GO;
   if (garray[g].Ladder9 || garray[g].Ladder19) {
     if (garray[g].size == 19) {
-      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pb].pname)) != NULL) {
+      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pb].pname)) ) {
         bpos = LadderPlayer->idx;
       }
       else bpos = -1;
-      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pw].pname)) != NULL) {
+      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pw].pname)) ) {
         wpos = LadderPlayer->idx;
       }
       else wpos = -1;
     }
     else if (garray[g].size == 9) {
-      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pb].pname)) != NULL) {
+      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pb].pname)) ) {
         bpos = LadderPlayer->idx;
       }
       else bpos = -1;
-      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pw].pname)) != NULL) {
+      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pw].pname)) ) {
         wpos = LadderPlayer->idx;
       }
       else wpos = -1;
@@ -1780,7 +1780,7 @@ int com_sgf(int p, struct parameter * param)
     return COM_OK;
   }
   pcn_out(p, CODE_INFO,FORMAT_COMPLETED_GAMES_FOR_s_n, pname);
-  for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
+  for (dp = readdir(dirp); dp ; dp = readdir(dirp)) {
     if (!(strstr(dp->d_name, pname))) continue;
     if (count % 2 == 0) pcn_out(p, CODE_INFO, FORMAT_empty);
     pprintf(p, "%30s", dp->d_name);

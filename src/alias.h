@@ -1,13 +1,12 @@
 #ifndef ALIAS_H
 #define ALIAS_H
 
-/* #include <stdio.h>	for the size_t definition */
 
 /* Creates a alias list. */
 extern struct alias * alias_init(void);
 
 /* Returns the number of aliases in list. */
-extern size_t alias_count(struct alias * p);
+extern unsigned alias_count(struct alias * p);
 
 /* Returns a pointer to the alias of cmd if found, NULL otherwise. */
 extern char *alias_lookup(const char *cmd, struct alias *p);

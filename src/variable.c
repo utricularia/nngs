@@ -481,14 +481,14 @@ static int set_plan(int p, const char *var, const char *val)
   }
   else if (where >= (int)count)
   {				/* Add or remove last. */
-    if (val != NULL)
+    if (val)
       plan_add(val, parray[p].plan_lines); /* Add last. */
     else if ((int)count > 0 && where == (int)count-1)
       plan_rem(where, parray[p].plan_lines); /* Remove last. */
   }
   else				/* 0 <= where < count */
   {				/* Replace or clear line. */
-    if (val != NULL)
+    if (val)
       plan_set(val, where, parray[p].plan_lines); /* Replace line. */
     else if (count > 0)
     {
@@ -516,7 +516,7 @@ static int set_plan(int p, const char *var, const char *val)
   if (which == 0) {		/* shove from top */
     if (parray[p].num_plan >= MAX_PLAN) {	/* free the bottom string's
 						   memory */
-      if (parray[p].planLines[parray[p].num_plan - 1] != NULL)
+      if (parray[p].planLines[parray[p].num_plan - 1])
       {
 	free(parray[p].planLines[parray[p].num_plan - 1]);
 	parray[p].planLines[parray[p].num_plan - 1] = NULL;
@@ -547,7 +547,7 @@ static int set_plan(int p, const char *var, const char *val)
     return VAR_OK;
   }
   which--;
-  if (parray[p].planLines[which] != NULL) {
+  if (parray[p].planLines[which]) {
     free(parray[p].planLines[which]);
     parray[p].planLines[which] = NULL;
   }

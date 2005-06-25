@@ -4532,8 +4532,8 @@ int com_translate(int p, struct parameter * param)
 
   sprintf(cmd, "%s -ta -la %s", intergo_file, param[0].val.word);
 
-  if ((ptr = popen(cmd, "r")) != NULL) {
-    while (fgets(buf, sizeof buf, ptr) != NULL)
+  if ((ptr = popen(cmd, "r")) ) {
+    while (fgets(buf, sizeof buf, ptr) )
       pcn_out(p, CODE_TRANS, FORMAT_s, buf);
     pclose(ptr);
   }
@@ -4556,7 +4556,7 @@ int com_find(int p, struct parameter * param)
 
   bldsearchdata(param[0].val.string);
 
-  if ((fp = xyfopen(FILENAME_FIND, "r")) != NULL) {
+  if ((fp = xyfopen(FILENAME_FIND, "r")) ) {
     while (fgets(buf, sizeof buf, fp)) {
       i = strlen(buf);
       buf[i - 1] = '\0';

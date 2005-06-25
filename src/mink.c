@@ -164,7 +164,7 @@ void savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos)
     if (p < -1) {
       if (g->rules == RULES_NET) {	/* should always be the case */
         n = g->handicap;
-        if (mi != NULL) {
+        if (mi) {
           fprintf(fp, "HA[%d]AB", n);
           star = stars[g->width];
           max = strlen(star) / 2;
@@ -188,7 +188,7 @@ void savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos)
       else fprintf(fp,"%c%c", 'a'-1+ p%Vdiff, 'a' + g->height - p/Vdiff);
       fprintf(fp,"]");
     }
-    if (i < nmvinfos && (kp = mi[i].kibitz) != NULL) {
+    if (i < nmvinfos && (kp = mi[i].kibitz)) {
       fprintf(fp,"C[\n");
         for (; kp; kp = kp->next) {	/* [PEM]: Must quote brackets. */
 	  char *s;
