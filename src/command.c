@@ -414,8 +414,7 @@ static void printusage(int p, const char *command_str)
   parlen = strlen(command_list[command].param_string);
   for (i = 0; i < parlen; i++) {
     ch = command_list[command].param_string[i];
-    if (isupper(ch))
-      ch = tolower(ch);
+    if (isupper(ch)) ch = tolower(ch);
     switch (ch) {
       case 'w':			/* word */
 	pprintf(p, " word");

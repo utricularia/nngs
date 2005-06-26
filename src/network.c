@@ -172,8 +172,8 @@ static fd_set readSet, writeSet;
 /*
  * Telnet stuff
  */
-static unsigned char wont_echo[] = {IAC, WONT, TELOPT_ECHO};
-static unsigned char will_echo[] = {IAC, WILL, TELOPT_ECHO};
+static unsigned char wont_echo[3] = {IAC, WONT, TELOPT_ECHO};
+static unsigned char will_echo[3] = {IAC, WILL, TELOPT_ECHO};
 static unsigned char will_tm[3] = {IAC, WILL, TELOPT_TM};
 static unsigned char will_sga[3] = {IAC, WILL, TELOPT_SGA};
 static unsigned char ayt[] = "[Responding to AYT: Yes, I'm here.]\n";
@@ -199,13 +199,13 @@ int net_fd_count = 0;
  * Functions
  **********************************************************************/
 
-static void set_nonblocking(int s)
+static void set_nonblocking(int fd)
 {
   int flags;
 
-  if ((flags = fcntl(s, F_GETFL, 0)) >= 0) {
+  if ((flags = fcntl(fd, F_GETFL, 0)) >= 0) {
     flags |= O_NONBLOCK;
-    fcntl(s, F_SETFL, flags);
+    fcntl(fd, F_SETFL, flags);
   }
 }
 
@@ -479,13 +479,13 @@ static void  fd_init(int fd)
 
   netarray[fd].netstate = NETSTATE_CONNECTED;
   netarray[fd].telnetState = 0;
+  netarray[fd].is_full = 0;
+  netarray[fd].is_throttled = 0;
 
   netarray[fd].in_used = 0;
   netarray[fd].in_end = 0;
   netarray[fd].parse_src = 0;
   netarray[fd].parse_dst = 0;
-  netarray[fd].is_full = 0;
-  netarray[fd].is_throttled = 0;
 
   netarray[fd].out_size = NET_OUTBUFSZ;
   netarray[fd].out_used = 0;
@@ -552,7 +552,7 @@ static int  do_write(int fd)
     }
   }
  
-  if (written == conn->out_used)  {
+  if (written == (int)conn->out_used)  {
     conn->out_used = 0;
     FD_CLR(fd, &writeSet);
     if (conn->is_throttled)  {
@@ -571,7 +571,7 @@ static int  do_write(int fd)
      *   and then never again since your written will be 0 until the netlag
      *   ends.  I pity the fool who has netlag this bad and keep playing!
      */
-    if (written > 0 && written < conn->out_used)
+    if (written > 0 && written < (int) conn->out_used)
       memmove(conn->out_buff, conn->out_buff+written, conn->out_used-written);
     conn->out_used -= written;
     if (!conn->is_throttled)  {
@@ -649,7 +649,7 @@ static int  checkForCmd(int fd)
         *(dst++) = uc;
         conn->telnetState = 0;
         break;
-      case IP:
+      case IP:		/* Interrupt Process */
         return -1;            /* ^C = logout */
       case DO:
         conn->telnetState = 4;
@@ -665,22 +665,36 @@ static int  checkForCmd(int fd)
         dst = &conn->in_buff[0];
         conn->telnetState = 0;
         break;
+      case GA:			/* Go Ahead */
+      case EC:			/* Erase Character */
+      case AO:			/* Abort Output */
+      case BREAK:		/* Break on copper wire */
+      case DM:			/* Data Mark */
+      case NOP:			/* Nop */
+      case SE:			/* Subnegotiation End */
+      case EOR:			/* End Of Record */
+      case ABORT:		/* Abort Process */
+      case SUSP:		/* Suspend Process */
+      case xEOF:		/* End Of File (but keep connection open) */
       default:                  /* dunno what it is, so ignore it */
         conn->telnetState = 0;
         break;
       }
       break;
-    case 3:                     /* some telnet junk we're ignoring */
+    case 3:                     /* Option numbers for {WILL,DONT,WONT} */
       conn->telnetState = 0;
       break;
-    case 4:                     /* got IAC DO */
-      if (uc == TELOPT_TM)
-        net_send(fd, (char *) will_tm, sizeof will_tm);
-      else if (uc == TELOPT_SGA)
-        net_send(fd, (char *) will_sga, sizeof will_sga);
+    case 4:                     /* got IAC DO, we only handle two opcodes */
+      switch (uc) {
+      case TELOPT_TM:	/* Timing mark */
+        net_send(fd, (char *) will_tm, sizeof will_tm); break;
+      case TELOPT_SGA:	/* Suppress GoAhead marks */
+        net_send(fd, (char *) will_sga, sizeof will_sga); break;
+      default: break;
+      }
       conn->telnetState = 0;
       break;
-    default:
+    default:	/* unreacheable state, hopefully */
       assert(0);
     }
   }
