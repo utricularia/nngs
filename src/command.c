@@ -252,12 +252,9 @@ int match_command(const char *comm)
     int x, i = (left+right)/2; /* Check the middle element. */
 
     x = strncmp(comm, command_list[i].comm_name, len);
-    if (x < 0)
-      right = i;              /* It's on the left side. */
-    else if (x > 0)
-      left = i+1;             /* It's on the right side. */
-    else
-    {                       /* Found it. */
+    if (x < 0) right = i;              /* It's on the left side. */
+    else if (x > 0) left = i+1;             /* It's on the right side. */
+    else {                       /* Found it. */
       /* Check if it's ambiguous. */
       if (i > 0 && !strncmp(comm, command_list[i-1].comm_name, len))
 	return -COM_AMBIGUOUS;

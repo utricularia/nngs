@@ -1162,8 +1162,8 @@ int com_aban(int p, struct parameter* param)
     cnt = rc = range_remove(bot, top);
     pcn_out(p, CODE_INFO, FORMAT_IP_BAN_CHANGED_dn, cnt);
     break;
-  case '/':
-  case '*':
+  case '*': /* Same as +, but also reports currently logged in users ... */
+  case '/': /* Same as -, idem */
     for (p1 = 0; p1 < parray_top; p1++) {
       const char *banned,*connected;
       if (!parray[p1].slotstat.is_valid) continue;
@@ -1181,7 +1181,7 @@ int com_aban(int p, struct parameter* param)
     }
     rc = 0;
     break;
-  case '?':
+  case '?':	/* Report current users within range. */
     rc = range_check(bot,top);
     pcn_out(p, CODE_INFO, FORMAT_IP_ADDRESS_s_s_BAN_IS_dn
       , dotQuad(bot), dotQuad(top), rc);
@@ -1199,14 +1199,14 @@ int com_aban(int p, struct parameter* param)
     }
     cnt = rc = 0;
     break;
-  case '.':
+  case '.':	/* print currently banned ranges */
     pcn_out(p, CODE_INFO, FORMAT_IP_RANGES_n);
     bot = 1; top = 0;
     for(cnt=rc=0 ;range_iter(&bot, &top); ) {
       cpprintf(p, CODE_INFO, "%s - %s\n", dotQuad(bot), dotQuad(top));
     }
     break;
-  case '!':
+  case '!':	/* Check current users; kick out banned ones */
     for(cnt=p1=0 ;p1 < COUNTOF(parray); p1++) {
       if (!parray[p1].slotstat.is_connected) continue;
       bot = parray[p1].thisHost;
