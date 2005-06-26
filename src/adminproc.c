@@ -324,7 +324,7 @@ int com_chk_player(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_GMUZZLED_dn, parray[p1].gmuzzled);
     pcn_out(p, CODE_INFO, FORMAT_BMUZZLED_dn, parray[p1].bmuzzled);
     pcn_out(p, CODE_INFO, FORMAT_LASTHOST_s, dotQuad(parray[p1].lastHost));
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   } 
   pcn_out(p, CODE_INFO, FORMAT_s_IS_NUMBER_d_IN_PARRAY_OF_SIZE_dn,
@@ -345,7 +345,7 @@ int com_chk_player(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_BMUZZLED_dn, parray[p1].bmuzzled);
   pcn_out(p, CODE_INFO, FORMAT_THISHOST_sn, dotQuad(parray[p1].thisHost));
   pcn_out(p, CODE_INFO, FORMAT_LASTHOST_s, dotQuad(parray[p1].lastHost));
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -364,13 +364,13 @@ int com_remplayer(int p, struct parameter* param)
   }
   if (parray[p].adminLevel <= parray[p1].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_REMOVE_AN_ADMIN_WITH_A_LEVEL_HIGHER_THAN_OR_EQUAL_TO_YOURSELF_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (parray[p1].slotstat.is_registered) {
     if (parray[p1].slotstat.is_online) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
   }
@@ -380,7 +380,7 @@ int com_remplayer(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_REMOVED_, pname);
   }
   Show_Admin_Command(p, param[0].val.word, " ");
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -405,13 +405,13 @@ int com_raisedead(int p, struct parameter* param)
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THE_NAME_s_IS_ALREADY_REGISTERED_n, oldplayer);
       pcn_out(p, CODE_ERROR, FORMAT_OBTAIN_A_NEW_HANDLE_FOR_THE_DEAD_PERSON_n);
       pcn_out(p, CODE_ERROR, FORMAT_THEN_USE_RAISEDEAD_OLDNAME_NEWNAME_);
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
     if (parray[p1].slotstat.is_online) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
       pcn_out(p, CODE_ERROR, FORMAT_CAN_T_RAISE_UNTIL_THEY_LEAVE_);
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
   }
@@ -421,15 +421,15 @@ int com_raisedead(int p, struct parameter* param)
     } else {
       pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_RAISED_FROM_DEAD_, oldplayer);
     }
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   } else {
     p2 = player_fetch(newlower);
     if (p2>=0 && parray[p2].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THE_NAME_s_IS_ALREADY_REGISTERED_, newplayer);
       pcn_out(p, CODE_ERROR, FORMAT_OBTAIN_ANOTHER_NEW_HANDLE_FOR_THE_DEAD_PERSON_);
-      player_forget(p1);
-      player_forget(p2);
+      player_unfix(p1);
+      player_unfix(p2);
       return COM_OK;
     }
   }
@@ -440,8 +440,8 @@ int com_raisedead(int p, struct parameter* param)
   } else {
     pcn_out(p, CODE_ERROR, FORMAT_RAISEDEAD_FAILED_);
   }
-  player_forget(p1);
-  player_forget(p2);
+  player_unfix(p1);
+  player_unfix(p2);
   return COM_OK;
 }
 
@@ -651,7 +651,7 @@ int com_arank(int p, struct parameter* param)
   do_copy(parray[p1].srank, param[1].val.string, sizeof parray[0].srank);
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
   player_dirty(p1);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -712,7 +712,7 @@ int com_muzzle(int p, struct parameter* param)
     parray[p1].muzzled = 1;
   }
   player_dirty(p1);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -740,7 +740,7 @@ int com_bmuzzle(int p, struct parameter* param)
     parray[p1].bmuzzled = 1;
   }
   player_dirty(p1);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -768,7 +768,7 @@ int com_gmuzzle(int p, struct parameter* param)
     parray[p1].gmuzzled = 1;
   }
   player_dirty(p1);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -782,7 +782,7 @@ int com_asetpasswd(int p, struct parameter* param)
   if (p1 < 0) return COM_OK;
   if (parray[p].adminLevel <= parray[p1].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_ONLY_SET_PASSWORD_FOR_PLAYERS_BELOW_YOUR_ADMINLEVEL_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (param[1].val.word[0] == '*') {
@@ -804,7 +804,7 @@ int com_asetpasswd(int p, struct parameter* param)
       pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_CHANGED_YOUR_PASSWORD_n, parray[p].pname);
     }
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -831,7 +831,7 @@ int com_asetemail(int p, struct parameter* param)
     }
   }
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
  
@@ -858,7 +858,7 @@ int com_asetrealname(int p, struct parameter* param)
     }
   }
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -878,7 +878,7 @@ int com_asetsilent(int p, struct parameter* param)
 
 
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -897,38 +897,38 @@ int com_asethandle(int p, struct parameter* param)
   p1 = player_fetch(oldlower);
   if (p1 < 0 || !parray[p1].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_PLAYER_BY_THE_NAME_s_IS_REGISTERED_, oldplayer);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (p1 >= 0 && parray[p].adminLevel <= parray[p1].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_SET_HANDLES_FOR_AN_ADMIN_WITH_A_LEVEL_HIGHER_THAN_OR_EQUAL_TO_YOURSELF_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (p1 >= 0 && parray[p1].slotstat.is_online) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   p2=player_fetch(newlower);
   if (p2 >= 0 && parray[p2].slotstat.is_online) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NEW_NAME_IS_LOGGED_IN_);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
   if (p2 >= 0 && parray[p2].slotstat.is_registered) {
     /* if (strcmp(oldlower, newlower)) { */
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_HANDLE_IS_ALREADY_TAKEN_);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
   if (p2 < 0) p2=player_new();
   do_copy(parray[p2].login, newlower, sizeof parray[p2].login);
   if (player_rename(oldlower, newlower) && !player_read(p2)) {
     pcn_out(p, CODE_ERROR, FORMAT_ASETHANDLE_FAILED_);
-    player_forget(p1);
+    player_unfix(p1);
     player_clear(p2);
     return COM_OK;
   }
@@ -936,7 +936,7 @@ int com_asethandle(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_RENAMED_TO_s_, oldplayer, newplayer);
   do_copy(parray[p2].pname, newplayer, sizeof parray[p2].pname);
   player_dirty(p2);
-  player_forget(p2);
+  player_unfix(p2);
   player_clear(p1);
   return COM_OK;
 }
@@ -951,17 +951,17 @@ int com_asetadmin(int p, struct parameter* param)
  
   if (parray[p].adminLevel <= parray[p1].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_ONLY_SET_ADMINLEVEL_FOR_PLAYERS_BELOW_YOUR_ADMINLEVEL_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (p1==p || !strcmp(parray[p1].login , parray[p].login) ) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_CHANGE_YOUR_OWN_ADMINLEVEL_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (param[1].val.integer >= parray[p].adminLevel) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_PROMOTE_SOMEONE_TO_OR_ABOVE_YOUR_ADMINLEVEL_);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
 
@@ -980,7 +980,7 @@ int com_asetadmin(int p, struct parameter* param)
   }
 
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -1000,7 +1000,7 @@ int com_asetwater(int p, struct parameter* param)
     pcn_out_prompt(p1, CODE_INFO, FORMAT_s_HAS_SET_YOUR_WATER_LEVEL_TO_d_n,
               parray[p].pname, parray[p1].water);
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 

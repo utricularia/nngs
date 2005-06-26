@@ -126,7 +126,7 @@ void game_ended(int g, int winner, int why)
     sprintf(statZ1, "%s %3.3s%s %d %d %d T %.1f %d\n",
                 parray[pw].pname,
                 parray[pw].srank,
-                parray[pw].rated ? "*" : " ",
+                parray[pw].flags.is_rated ? "*" : " ",
                 bcaps,
                 TICS2SECS(garray[g].white.ticksleft),
                 garray[g].white.byostones,
@@ -135,7 +135,7 @@ void game_ended(int g, int winner, int why)
     sprintf(statZ2, "%s %3.3s%s %d %d %d T %.1f %d\n",
                 parray[pb].pname,
                 parray[pb].srank,
-                parray[pb].rated ? "*" : " ",
+                parray[pb].flags.is_rated ? "*" : " ",
                 wcaps,
                 TICS2SECS(garray[g].black.ticksleft),
                 garray[g].black.byostones,
@@ -942,7 +942,7 @@ int com_status(int p, struct parameter * param)
   pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
 		parray[pw].pname,
 		parray[pw].srank,
-		parray[pw].rated ? "*" : " ",
+		parray[pw].flags.is_rated ? "*" : " ",
 		wc,
 		TICS2SECS(garray[g1].white.ticksleft),
    		garray[g1].white.byostones,
@@ -951,7 +951,7 @@ int com_status(int p, struct parameter * param)
   pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
 		parray[pb].pname,
 		parray[pb].srank,
-		parray[pb].rated ? "*" : " ",
+		parray[pb].flags.is_rated ? "*" : " ",
 		bc,
 		TICS2SECS(garray[g1].black.ticksleft),
    		garray[g1].black.byostones,
@@ -1094,10 +1094,10 @@ int com_games(int p, struct parameter * param)
             i + 1,
 	    parray[pw].pname,
             parray[pw].srank,
-            parray[pw].rated ? "*" : " ",
+            parray[pw].flags.is_rated ? "*" : " ",
 	    parray[pb].pname,
             parray[pb].srank,
-            parray[pb].rated ? "*" : " ",
+            parray[pb].flags.is_rated ? "*" : " ",
 	    mnum,
             garray[i].GoGame->width,
             garray[i].GoGame->handicap,
@@ -1450,7 +1450,7 @@ int com_allob(int p, struct parameter * param)
     pprintf(p, "%15s %3.3s%s ", 
                 parray[p1].pname, 
                 parray[p1].srank,
-                parray[p1].rated ? "*" : " ");
+                parray[p1].flags.is_rated ? "*" : " ");
     count++;
   }
   if ((count % 3) != 0) 
@@ -1510,14 +1510,14 @@ int com_touch(int p, struct parameter * param)
   if (pw < 0) return COM_OK;
   pb = player_fetch(bname);
   if (pb < 0) {
-    player_forget(pw);
+    player_unfix(pw);
     return COM_OK;
     }
   
   if (pw != p && pb != p) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CANNOT_TOUCH_SOMEONE_ELSES_STORED_GAME_n);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
 
@@ -1525,8 +1525,8 @@ int com_touch(int p, struct parameter * param)
   /* these two names SHOULD refer to the same Inode
   xytouch(FILENAME_GAMES_bs_s, wname, bname); */
   pcn_out(p, CODE_INFO, FORMAT_THE_GAME_s_s_HAS_BEEN_TOUCHED_, wname, bname);
-  player_forget(pw);
-  player_forget(pb);
+  player_unfix(pw);
+  player_unfix(pb);
   return COM_OK;
 }
 
@@ -1735,7 +1735,7 @@ int com_stored(int p, struct parameter * param)
   if (!dirp) {
     pcn_out(p, CODE_CR1|CODE_INFO, FORMAT_FOUND_d_STORED_GAMES_n, 0);
 
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   for (count=0; (dp = readdir(dirp)); ) {
@@ -1751,7 +1751,7 @@ int com_stored(int p, struct parameter * param)
   if (count % 3) pprintf(p, "\n");
   pcn_out(p, CODE_INFO, FORMAT_FOUND_d_STORED_GAMES_n, count);
 
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -1812,7 +1812,7 @@ int com_history(int p, struct parameter * param)
   if (p1 != p) {
     if (!parray[p].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
     fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "r", parray[p1].login);
@@ -1822,7 +1822,7 @@ int com_history(int p, struct parameter * param)
   if (fp) {
     pgames(p, fp);
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OKN;
 }
 
@@ -1844,7 +1844,7 @@ int com_rhistory(int p, struct parameter * param)
       pgames(p, fp);
     }
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OKN;
 }
 
@@ -2414,22 +2414,22 @@ int com_sresign(int p, struct parameter * param)
   pb = player_fetch(bname);
   if (pb < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
-    player_forget(pw);
+    player_unfix(pw);
     return COM_OK;
   }
   
   if (p != pw && p != pb) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_MUST_BE_ONE_OF_THE_TWO_PLAYERS_TO_SRESIGN_);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
 
   if (xystat(&statbuf,FILENAME_GAMES_ws_s,wname, bname) ) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn, 
                parray[pw].pname,parray[pb].pname);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
   oldbstate = parray[pb].protostate;
@@ -2442,8 +2442,8 @@ int com_sresign(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_n, 
            parray[pw].pname,parray[pb].pname);
     game_remove(g);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
   parray[pb].game = g;
@@ -2454,8 +2454,8 @@ int com_sresign(int p, struct parameter * param)
   parray[pw].game = old_w_game;
   parray[pb].game = old_b_game;
 
-  player_forget(pb);
-  player_forget(pw);
+  player_unfix(pb);
+  player_unfix(pw);
   return COM_OKN;
 }
 
@@ -2482,15 +2482,15 @@ int com_look(int p, struct parameter * param)
   pb = player_fetch(bname);
   if (pb < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_BY_THAT_NAME_);
-    player_forget(pw);
+    player_unfix(pw);
     return COM_OK;
   }
 
   if (xystat(&statbuf,FILENAME_GAMES_ws_s, wname, bname) ) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn, 
                parray[pw].pname,parray[pb].pname);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
   oldwstate = parray[pw].protostate;
@@ -2501,8 +2501,8 @@ int com_look(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_s_HMMMMM_n, 
            parray[pw].pname,parray[pb].pname);
     game_remove(g);
-    player_forget(pw);
-    player_forget(pb);
+    player_unfix(pw);
+    player_unfix(pb);
     return COM_OK;
   }
   if (parray[p].i_verbose) send_go_board_to(g, p);
@@ -2512,7 +2512,7 @@ int com_look(int p, struct parameter * param)
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[pw].pname,
                 parray[pw].srank,
-                parray[pw].rated ? "*" : " ",
+                parray[pw].flags.is_rated ? "*" : " ",
                 wc,
                 TICS2SECS(garray[g].white.ticksleft),
                 garray[g].white.byostones,
@@ -2521,7 +2521,7 @@ int com_look(int p, struct parameter * param)
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[pb].pname,
                 parray[pb].srank,
-                parray[pb].rated ? "*" : " ",
+                parray[pb].flags.is_rated ? "*" : " ",
                 bc,
                 TICS2SECS(garray[g].black.ticksleft),
                 garray[g].black.byostones,
@@ -2537,8 +2537,8 @@ int com_look(int p, struct parameter * param)
   game_remove(g);
   parray[pb].protostate = oldbstate;
   parray[pw].protostate = oldwstate;
-  player_forget(pw);
-  player_forget(pb);
+  player_unfix(pw);
+  player_unfix(pb);
   return COM_OKN;
 }
 
@@ -2581,7 +2581,7 @@ int com_problem(int p, struct parameter * param)
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[p].pname,
                 parray[p].srank,
-                parray[p].rated ? "*" : " ",
+                parray[p].flags.is_rated ? "*" : " ",
                 wc,
                 TICS2SECS(garray[g].white.ticksleft),
                 garray[g].white.byostones,
@@ -2590,7 +2590,7 @@ int com_problem(int p, struct parameter * param)
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[p].pname,
                 parray[p].srank,
-                parray[p].rated ? "*" : " ",
+                parray[p].flags.is_rated ? "*" : " ",
                 bc,
                 TICS2SECS(garray[g].black.ticksleft),
                 garray[g].black.byostones,

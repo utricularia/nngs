@@ -138,10 +138,10 @@ int com_register(int p, struct parameter * param)
   if (p1>=0 && parray[p1].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THE_NAME_s_IS_ALREADY_REGISTERED_,
 		 login);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
-  player_forget(p1);
+  player_unfix(p1);
   if (!chkaddr(email)) {
     pcn_out(p, CODE_ERROR, FORMAT_INVALID_EMAIL_ADDRESSn);
     return COM_OK;
@@ -168,7 +168,7 @@ int com_register(int p, struct parameter * param)
   parray[p1].slotstat.is_valid = 1;
   player_dirty(p1);
   /* player_save(p1); this save can be omitted */
-  player_forget(p1);
+  player_unfix(p1);
 
   sprintf(text, "\nWelcome to %s!  Here is your account info:\n\n\
   Login Name: %s\n\
@@ -443,7 +443,7 @@ the list */
 
   if (in_list(listname, member)) {
     pcn_out(p, CODE_ERROR, FORMAT_s_IS_ALREADY_IN_THE_s_LIST_n, member,listname);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
 
@@ -453,7 +453,7 @@ the list */
   fp = xyfopen(FILENAME_LIST_s, "a", listname);
   fprintf(fp, "%s\n", member);
   fclose(fp);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -498,7 +498,7 @@ already in the list */
 
   if (!in_list(listname, member)) {
     pcn_out(p, CODE_ERROR, FORMAT_s_IS_NOT_IN_THE_s_LIST_n, member,listname);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
 
@@ -518,7 +518,7 @@ already in the list */
   }
   fclose(fp1);
   fclose(fp2);
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -1479,7 +1479,7 @@ int com_kibitz(int p, struct parameter * param)
       pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
  		   parray[p].pname,
  		   parray[p].srank,
- 		   parray[p].rated ? "*" : " ",
+ 		   parray[p].flags.is_rated ? "*" : " ",
 		   parray[garray[g].white.pnum].pname,
 		   parray[garray[g].black.pnum].pname,
 		   g + 1);
@@ -1496,7 +1496,7 @@ int com_kibitz(int p, struct parameter * param)
         pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
  		   parray[p].pname,
  		   parray[p].srank,
- 		   parray[p].rated ? "*" : " ",
+ 		   parray[p].flags.is_rated ? "*" : " ",
 		   parray[garray[g].white.pnum].pname,
 		   parray[garray[g].black.pnum].pname,
 		   otherg + 1);
@@ -1510,7 +1510,7 @@ int com_kibitz(int p, struct parameter * param)
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
                    parray[p].srank,
-                   parray[p].rated ? "*" : " ",
+                   parray[p].flags.is_rated ? "*" : " ",
                    parray[garray[g].white.pnum].pname,
                    parray[garray[g].black.pnum].pname,
                    g + 1);
@@ -1521,7 +1521,7 @@ int com_kibitz(int p, struct parameter * param)
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
                    parray[p].srank,
-                   parray[p].rated ? "*" : " ",
+                   parray[p].flags.is_rated ? "*" : " ",
                    parray[garray[g].white.pnum].pname,
                    parray[garray[g].black.pnum].pname,
                    g + 1);
@@ -1531,7 +1531,7 @@ int com_kibitz(int p, struct parameter * param)
   sprintf(tmp3, " %s %s%s: %s",
                 parray[p].pname,
                 parray[p].srank,
-                parray[p].rated ? "*" : " ",
+                parray[p].flags.is_rated ? "*" : " ",
                 tmp2);
   add_kib(&garray[g], movenum(garray[g].GoGame), tmp3);
 #ifdef PAIR
@@ -1648,7 +1648,7 @@ int com_say(int p, struct parameter * param)
   sprintf(tmp, " %s %s%s: %s",
                  parray[p].pname,
                  parray[p].srank,
-                 parray[p].rated ? "*" : " ",
+                 parray[p].flags.is_rated ? "*" : " ",
                  param[0].val.string);
   add_kib(&garray[g], movenum(garray[g].GoGame), tmp);
 
@@ -1699,7 +1699,7 @@ int com_stats(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_PLAYER_sn , parray[p1].pname);
   pcn_out(p, CODE_INFO, FORMAT_GAME_GO_1_n );
   pcn_out(p, CODE_INFO, FORMAT_RATING_ss_dn,
-          parray[p1].srank, parray[p1].rated ? "*" : " ", parray[p1].rating);
+          parray[p1].srank, parray[p1].flags.is_rated ? "*" : " ", parray[p1].rating);
   pcn_out(p, CODE_INFO, FORMAT_RATED_GAMES_dn, parray[p1].numgam );
   pcn_out(p, CODE_INFO, FORMAT_RANK_s_dn, parray[p1].ranked, parray[p1].orating);
   pcn_out(p, CODE_INFO, FORMAT_WINS_dn, parray[p1].gowins);
@@ -1817,7 +1817,7 @@ int com_stats(int p, struct parameter * param)
   if (p == p1) {
     pcn_out(p, CODE_CR1|CODE_INFO, FORMAT_SEE_ALSO_qVARIABLES_sq, parray[p1].pname);
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -1952,7 +1952,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
 
   if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
 
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -2135,8 +2135,8 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
     if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
-    if (sel_bits & WHO_UNRATED) if (parray[p].rated) return 0;
+    if (sel_bits & WHO_RATED) if (!parray[p].flags.is_rated) return 0;
+    if (sel_bits & WHO_UNRATED) if (parray[p].flags.is_rated) return 0;
     if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
     if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
     if (sel_bits & WHO_REGISTERED) if (!parray[p].slotstat.is_registered) return 0;
@@ -2146,8 +2146,8 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
     if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
         return 0;
     if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if (!parray[p].rated) return 0;
-    if (sel_bits & WHO_UNRATED) if (parray[p].rated) return 0;
+    if (sel_bits & WHO_RATED) if (!parray[p].flags.is_rated) return 0;
+    if (sel_bits & WHO_UNRATED) if (parray[p].flags.is_rated) return 0;
     if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
     if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
     if (sel_bits & WHO_REGISTERED) if (!parray[p].slotstat.is_registered) return 0;
@@ -2283,7 +2283,7 @@ static void a_who(int p, int cnt, int *plist)
               flags, otemp, gtemp,
               parray[p1].pname,
               parray[p1].srank,
-              parray[p1].rated ? "*" : parray[p1].rating > 1 ? "?" : " ",
+              parray[p1].flags.is_rated ? "*" : parray[p1].rating > 1 ? "?" : " ",
               pos19,
               pos9,
               newhms(player_idle(p1)),
@@ -2326,7 +2326,7 @@ static void who_terse(int p, int num, int *plist, int type)
               parray[p1].pname,
 	      newhms(player_idle(p1)),
               parray[p1].srank,
-              parray[p1].rated ? "*" : " ",
+              parray[p1].flags.is_rated ? "*" : " ",
 #if MIMIC_NNGS_1205
 	      left ? "| " : " \n"); /* AvK: extra space before \n */
 #else
@@ -3056,15 +3056,15 @@ int com_nsuggest(int p, struct parameter * param)
     if (p1<0) return COM_OK;
     p2 = player_fetch(param[1].val.word);
     if (p2<0) {
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
   }
 
   if (p1 == p2) {
     pcn_out(p,CODE_INFO, FORMAT_PLEASE_TYPE_qHELP_TEACHqn);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
 
@@ -3074,15 +3074,15 @@ int com_nsuggest(int p, struct parameter * param)
     else
       pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_RATED_SO_I_CANNOT_SUGGEST_n, parray[p1].pname);
     pcn_out(p, CODE_INFO, FORMAT_PLEASE_DISCUSS_HANDICAPS_WITH_YOUR_OPPONENT_n);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
   if (!get_nrating(p2, &rat2)) {
     pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_RATED_SO_I_CANNOT_SUGGEST_n, parray[p2].pname);
     pcn_out(p, CODE_INFO, FORMAT_PLEASE_DISCUSS_HANDICAPS_WITH_YOUR_OPPONENT_n );
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
 
@@ -3101,8 +3101,8 @@ int com_nsuggest(int p, struct parameter * param)
   else
     aux_suggest(p, abs((int)(100*(rat2 - rat1 + 0.005))), stronger);
 
-  player_forget(p1);
-  player_forget(p2);
+  player_unfix(p1);
+  player_unfix(p2);
 
   return COM_OK;
 }
@@ -3127,15 +3127,15 @@ int com_suggest(int p, struct parameter * param)
     if (p1<0) return COM_OK;
     p2 = player_fetch(param[1].val.word);
     if (p2<0) {
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
   }
 
   if (p1 == p2) {
     pcn_out(p,CODE_INFO, FORMAT_PLEASE_TYPE_qHELP_TEACHqn);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
 
@@ -3147,8 +3147,8 @@ int com_suggest(int p, struct parameter * param)
       pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_RATED_SO_I_CANNOT_SUGGEST_n,
 	      parray[p1].pname);
     pcn_out(p, CODE_INFO, FORMAT_PLEASE_DISCUSS_HANDICAPS_WITH_YOUR_OPPONENT_n );
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
   if (parray[p2].rating == 0) {
@@ -3157,8 +3157,8 @@ int com_suggest(int p, struct parameter * param)
     else
       pcn_out(p, CODE_INFO, FORMAT_s_IS_NOT_RATED_SO_I_CANNOT_SUGGEST_n, parray[p2].pname);
     pcn_out(p, CODE_INFO, FORMAT_PLEASE_DISCUSS_HANDICAPS_WITH_YOUR_OPPONENT_n);
-    player_forget(p1);
-    player_forget(p2);
+    player_unfix(p1);
+    player_unfix(p2);
     return COM_OK;
   }
 
@@ -3174,8 +3174,8 @@ int com_suggest(int p, struct parameter * param)
 
   aux_suggest(p, abs(parray[p1].rating - parray[p2].rating), stronger);
 
-  player_forget(p1);
-  player_forget(p2);
+  player_unfix(p1);
+  player_unfix(p2);
   return COM_OK;
 }
 
@@ -3320,10 +3320,10 @@ int create_new_gomatch(int wp, int bp,
   sprintf(outStr, "{Match %d: %s [%3.3s%s] vs. %s [%3.3s%s] }\n",
 	  g + 1, parray[wp].pname,
           parray[wp].srank,
-          parray[wp].rated ? "*" : " ",
+          parray[wp].flags.is_rated ? "*" : " ",
 	  parray[bp].pname,
           parray[bp].srank,
-          parray[bp].rated ? "*" : " ");
+          parray[bp].flags.is_rated ? "*" : " ");
   for (p = 0; p < parray_top; p++) {
     if (!parray[p].slotstat.is_online) continue;
     if (!parray[p].i_game) continue;
@@ -3852,7 +3852,7 @@ int com_ranked(int p, struct parameter * param)
       do_copy(parray[p].srank, "NR", sizeof parray[0].srank);
       parray[p].rating = 0;
       parray[p].orating = 0;
-      parray[p].rated = 0;
+      parray[p].flags.is_rated = 0;
       return COM_OK;
     default: break;
   }
@@ -3980,12 +3980,12 @@ int com_sendmessage(int p, struct parameter * param)
   p1 = player_find_sloppy(param[0].val.word);
   if (p1<0 || !parray[p1].slotstat.is_registered) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_PLAYER_MATCHING_THAT_NAME_n);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
     }
   if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_IS_CENSORING_YOU_, parray[p1].pname);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   if (player_add_message(p1, p, param[1].val.string)) {
@@ -3996,7 +3996,7 @@ int com_sendmessage(int p, struct parameter * param)
     if (parray[p1].slotstat.is_online)
       pcn_out_prompt(p1, CODE_INFO, FORMAT_s_JUST_SENT_YOU_A_MESSAGE_n, parray[p].pname);
   }
-  player_forget(p1);
+  player_unfix(p1);
   return COM_OK;
 }
 
@@ -4603,19 +4603,19 @@ int com_notify(int p, struct parameter * param)
     for (i = 0; i < parray[p].num_notify; i++) {
       if (!strcasecmp(parray[p].notifyList[i], parray[p1].pname)) {
         pcn_out(p, CODE_ERROR, FORMAT_YOUR_NOTIFY_LIST_ALREADY_INCLUDES_s_n, parray[p1].pname);
-        player_forget(p1);
+        player_unfix(p1);
         return COM_OK;
       }
     }
     if (p1 == p) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_NOTIFY_YOURSELF_n);
-      player_forget(p1);
+      player_unfix(p1);
       return COM_OK;
     }
     parray[p].notifyList[parray[p].num_notify++] = mystrdup(parray[p1].pname);
     pcn_out(p, CODE_INFO, FORMAT_s_IS_NOW_ON_YOUR_NOTIFY_LIST_n,
                   parray[p1].pname);
-    player_forget(p1);
+    player_unfix(p1);
     return COM_OK;
   }
   return COM_BADPARAMETERS;

@@ -312,10 +312,10 @@ void send_go_board_to(int g, int p)
 		g + 1,
 		parray[garray[g].white.pnum].pname,
 		parray[garray[g].white.pnum].srank,
-                parray[garray[g].white.pnum].rated ? "*" : " ",
+                parray[garray[g].white.pnum].flags.is_rated ? "*" : " ",
 		parray[garray[g].black.pnum].pname,
 		parray[garray[g].black.pnum].srank,
-                parray[garray[g].black.pnum].rated ? "*" : " ");
+                parray[garray[g].black.pnum].flags.is_rated ? "*" : " ");
     for(yy=0; yy<(garray[g].GoGame->height) + 2; yy++){
       if (yy == 0) 
         pcn_out(p, CODE_OBSERVE, FORMAT_s_H_CAP_d_KOMI_fn, 
@@ -798,11 +798,11 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   fprintf(fp, "PW[%s]WR[%s%s]\n", 
                parray[wp].pname, 
                parray[wp].slotstat.is_registered ? parray[wp].srank : "UR",
-               parray[wp].rated ? "*" : " ");
+               parray[wp].flags.is_rated ? "*" : " ");
   fprintf(fp, "PB[%s]BR[%s%s]\n", 
                parray[bp].pname, 
                parray[bp].slotstat.is_registered ? parray[bp].srank : "UR",
-               parray[bp].rated ? "*" : " ");
+               parray[bp].flags.is_rated ? "*" : " ");
   fprintf(fp, "PC[%s: %s]\n", server_name, server_address);
   fprintf(fp, "DT[%s]\n", strDTtime(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g].GoGame->width,
@@ -925,8 +925,8 @@ int write_g_out(int g, FILE *fp, int maxlines, char *fdate)
     return 0;
     }
 
-  sprintf(wrnk, "%3.3s%s", parray[wp].srank, parray[wp].rated ? "*" : " ");
-  sprintf(brnk, "%3.3s%s", parray[bp].srank, parray[bp].rated ? "*" : " ");
+  sprintf(wrnk, "%3.3s%s", parray[wp].srank, parray[wp].flags.is_rated ? "*" : " ");
+  sprintf(brnk, "%3.3s%s", parray[bp].srank, parray[bp].flags.is_rated ? "*" : " ");
 
   if (garray[g].gresult == 0.0) sprintf(resu, "Resign");
   else if (garray[g].gresult == -1.0) sprintf(resu, "Time");

@@ -676,7 +676,7 @@ static int process_password(int p, char *password)
   sprintf(tmptext, "{%s [%3.3s%s] has connected.}\n",
       parray[p].pname,
       parray[p].srank,
-      parray[p].rated ? "*" : " ");
+      parray[p].flags.is_rated ? "*" : " ");
   sprintf(ctmptext, "%d %s", CODE_SHOUT, tmptext);
 
   len = strlen(tmptext);
@@ -692,7 +692,7 @@ static int process_password(int p, char *password)
        pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_ss_ss_s_HAS_CONNECTED_n,
          parray[p].pname,
          parray[p].srank,
-         parray[p].rated ? "*" : " ",
+         parray[p].flags.is_rated ? "*" : " ",
          parray[p].slotstat.is_registered ? "R" : "U",
          (parray[p].adminLevel>=ADMIN_ADMIN) ? "*" : "",
          dotQuad(parray[p].thisHost));
@@ -700,7 +700,7 @@ static int process_password(int p, char *password)
       pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_ss_HAS_CONNECTED_n,
       parray[p].pname,
       parray[p].srank,
-      parray[p].rated ? "*" : " ");
+      parray[p].flags.is_rated ? "*" : " ");
     }
 
   }
@@ -965,7 +965,7 @@ void process_disconnection(int fd)
     }
   }
   player_disconnect(p);
-  player_forget(p);
+  player_unfix(p);
   net_close(fd);
   return;
 }
@@ -1093,26 +1093,26 @@ int process_heartbeat(int *fdp)
 
 	    do_copy(parray[p].srank, rp.rank, sizeof parray[0].srank);
 	    if (rp.star)
-	      parray[p].rated = 1;
+	      parray[p].flags.is_rated = 1;
 	    orat = parray[p].rating;
 	    parray[p].rating = parray[p].orating = (int)(rp.rating * 100);
 	    parray[p].numgam = rp.wins + rp.losses;
 	    if (orat == parray[p].rating) {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_RATINGS_UPDATE_YOU_ARE_STILL_ss_d_d_RATED_GAMES_n,
 	      parray[p].srank,
-	      parray[p].rated ? "*" : "",
+	      parray[p].flags.is_rated ? "*" : "",
 	      parray[p].rating,
 	      parray[p].numgam);
 	    } else if (orat == 0 && parray[p].rating > 100) {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_RATINGS_UPDATE_YOU_ARE_NOW_ss_d_d_RATED_GAMES_n, 
 	      parray[p].srank, 
-	      parray[p].rated ? "*" : "", 
+	      parray[p].flags.is_rated ? "*" : "", 
 	      parray[p].rating, 
 	      parray[p].numgam);
 	    } else {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_RATINGS_UPDATE_YOU_ARE_NOW_ss_d_WERE_d_d_RATED_GAMES_n, 
 	        parray[p].srank, 
-	        parray[p].rated ? "*" : "", 
+	        parray[p].flags.is_rated ? "*" : "", 
 	        parray[p].rating, 
 	        orat, 
 	        parray[p].numgam);

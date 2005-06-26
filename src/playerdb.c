@@ -115,12 +115,12 @@ void player_fix(int p)
   }
 }
 
-void player_forget(int p)
+void player_unfix(int p)
 {
   if (p < 0) return;
   if (parray[p].slotstat.fixcount) parray[p].slotstat.fixcount -= 1;
   else {
-    Logit("Slot %s: Fixcount zero", player_dumpslot(p));
+    Logit("Unfix, Slot %s: Fixcount zero", player_dumpslot(p));
   }
   if (!parray[p].slotstat.fixcount && !parray[p].slotstat.is_registered)
     player_clear(p);
@@ -129,21 +129,19 @@ void player_forget(int p)
 void player_dirty(int p)
 {
   if (p < 0) return;
-  if (parray[p].slotstat.is_valid) {
-    parray[p].slotstat.is_dirty = 1;
-    parray[p].slotstat.timestamp = globclock.time;
-    }
-  else {
+
+  parray[p].slotstat.is_dirty = 1;
+  parray[p].slotstat.timestamp = globclock.time;
+#if DEBUG_PLAYER_SLOT
+  if (!parray[p].slotstat.is_valid) {
     Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
-    parray[p].slotstat.is_dirty = 0; /* Avoid warning more than once */
-    parray[p].slotstat.is_valid = 0;
-    parray[p].slotstat.is_inuse = 0;
   }
+#endif
 }
 
 static int player_get_empty_slot(void)
 {
-  int best_e = -1; /* Empty slot available */
+  int best_u = -1; /* Unused slot available */
   int best_v = -1; /* Valid slot available */
   int best_i = -1; /* invalid slot available */
   int best_d = -1; /* Dirty slot available */
@@ -157,7 +155,7 @@ static int player_get_empty_slot(void)
     if (parray[idx].slotstat.fixcount) continue;
     if (parray[idx].slotstat.is_connected) continue;
     if (!parray[idx].slotstat.is_inuse) {
-      if (best_e < 0) best_e=idx; }
+      if (best_u < 0) best_u=idx; }
     else if (parray[idx].slotstat.is_dirty) {
       if (LRU_COMPARE(best_d,idx)) best_d=idx; }
     else if (parray[idx].slotstat.is_valid) {
@@ -167,14 +165,14 @@ static int player_get_empty_slot(void)
   }
 #undef LRU_COMPARE
 
-  idx=best_e;			/* this one is empty */
+  idx=best_u;			/* this one is empty */
   if (idx < 0) idx = best_i;	/* this one is invalid */
   if (idx < 0) idx = best_v;	/* this one is valid */
   if (idx < 0) idx = best_d;	/* this one is dirty */
   if (idx < 0) idx = parray_top;	/* allocate from top */
 #if DEBUG_PLAYER_SLOT
-  Logit("Empty_slot: {e=%d i=%d v=%d d=%d t=%d} -->> %d"
-  , best_e,best_i,best_v,best_d,parray_top,idx);
+  Logit("Empty_slot: {u=%d i=%d v=%d d=%d t=%d} -->> %d"
+  , best_u,best_i,best_v,best_d,parray_top,idx);
 #endif
 
   if (idx == best_d) {
@@ -200,8 +198,9 @@ static int player_get_empty_slot(void)
 #endif
   }
   player_clear(idx);
-  parray[idx].slotstat.is_inuse = 0;
+  parray[idx].slotstat.is_inuse = 1;
   parray[idx].slotstat.is_valid = 0;
+  parray[idx].slotstat.is_dirty = 0;
   parray[idx].slotstat.timestamp = globclock.time;
   return idx;
 }
@@ -332,7 +331,6 @@ int player_new(void)
   slot = player_get_empty_slot();
   if (slot < 0) return slot;
   parray[slot].pstatus = PSTATUS_NEW;
-  parray[slot].slotstat.is_inuse = 1;
   parray[slot].slotstat.fixcount = 1;
   return slot;
 }
@@ -362,7 +360,7 @@ static void player_zero(int p)
   parray[p].numgam = 0;
   parray[p].client = 0;
   parray[p].which_client = 0;
-  parray[p].rated = 0;
+  parray[p].flags.is_rated = 0;
   parray[p].ropen = 1;
   parray[p].bell = 0;
   parray[p].extprompt = 0;
@@ -761,7 +759,7 @@ int player_read(int p)
     do_copy(parray[p].pname, parray[p].login, sizeof parray[p].pname);
     parray[p].slotstat.is_valid = 1;
     parray[p].slotstat.is_registered = 0;
-    parray[p].rated = 0;
+    parray[p].flags.is_rated = 0;
     return -1; /* unregistered */
   }
 
@@ -808,13 +806,11 @@ int player_read(int p)
   }
 #ifdef NNGSRATED
   if (!strcasecmp(parray[p].ranked, "NR") ) {
-    player_dirty(p);
     parray[p].rating = 0;
     parray[p].orating = 0;
-    parray[p].rated = 0;
+    parray[p].flags.is_rated = 0;
   }
   else if (!strcmp(parray[p].ranked, "???")) {
-    player_dirty(p);
     parray[p].rating = 1;
     parray[p].orating = 1;
   } else {
@@ -824,9 +820,9 @@ int player_read(int p)
       rdbm_player_t rp;
 
       if (rdbm_fetch(rdb, parray[p].pname, &rp)) {
-        player_dirty(p);
+        player_dirty(p); /* This will force the playerfile to be written */
 	do_copy(parray[p].srank, rp.rank, sizeof parray[p].srank);
-	if (rp.star) parray[p].rated = 1;
+	if (rp.star) parray[p].flags.is_rated = 1;
 	parray[p].rating = parray[p].orating = (int)(rp.rating * 100);
 	parray[p].numgam = rp.wins + rp.losses;
       }
@@ -836,7 +832,7 @@ int player_read(int p)
     }
   }
   if (parray[p].rating == 0) {
-    player_dirty(p);
+    /* player_dirty(p); */
     do_copy(parray[p].srank, parray[p].ranked, sizeof parray[p].srank);
     if (strcmp(parray[p].srank, "NR")) {
       sscanf(parray[p].srank, "%u%c", &rat, &trnk);
@@ -1006,7 +1002,7 @@ void player_save(int p)
     parray[p].slotstat.is_dirty=0;
     return;
   }
-  if (parray[p].slotstat.is_dirty)
+  if (parray[p].slotstat.is_valid && parray[p].slotstat.is_dirty)
     player_write(p);
 }
 

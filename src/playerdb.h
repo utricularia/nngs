@@ -158,7 +158,9 @@ struct player_ {
   int last_file_line;
   int open;
   int looking;
-  int rated;
+  struct {
+    unsigned  is_rated;
+  } flags;
   int rating;
   int orating;
   int ropen;
@@ -214,7 +216,7 @@ extern void player_array_init(void);
 
 char * player_dumpslot(int p);
 
-extern void player_forget(int);
+extern void player_unfix(int);
 extern void player_fix(int);
 extern int player_fetch(const char *);
 extern void player_dirty(int);
