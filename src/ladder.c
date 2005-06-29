@@ -34,11 +34,6 @@
 #include "common.h"
 #include "ladder.h"
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 struct ladder {
   int n;
   int max;

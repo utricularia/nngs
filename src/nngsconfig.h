@@ -53,14 +53,14 @@
 
 
 /* define this to sift the ladder around */
-#define LADDER_SIFT 1
+#define WANT_LADDER_SIFT 1
 
 /* define this if you want pair-go compiled in */
-#define PAIR 1
+#define WANT_PAIR 1
 
 /* define this if you have a ratings file somewhere.  See playerdb.c */
-#define NNGSRATED
-/*#undef NNGSRATED*/
+#define WANT_NNGSRATED
+/*#undef WANT_NNGSRATED*/
 
 
 /* define this to allow only administrators to be able to register
@@ -69,7 +69,7 @@
 
 /* define this to not allow any guest users on the server (i.e. all
  * users must be registered) */
-#undef NOGUESTS
+#undef WANT_NOGUESTS
 
 
 /* define this if we want the "news" (bulleting boards). */

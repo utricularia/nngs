@@ -75,7 +75,7 @@
 struct game {
 	/* Key info */
   int gstatus;
-#ifdef PAIR
+#ifdef WANT_PAIR
   int pairwith;
   int pairstate;
 #endif

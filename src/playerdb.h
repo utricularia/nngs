@@ -159,14 +159,14 @@ struct player_ {
   int open;
   int looking;
   struct {
-    unsigned  is_rated;
+    unsigned is_rated:1;
+    int is_client;
   } flags;
   int rating;
   int orating;
   int ropen;
   int notifiedby;
   int bell;
-  int client;
   int which_client;
   int i_login;
   int i_game;

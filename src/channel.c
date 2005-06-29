@@ -39,11 +39,6 @@
 #include "playerdb.h"
 #include "utils.h"
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 struct channel carray[MAX_CHANNELS];
 
 void channel_init()

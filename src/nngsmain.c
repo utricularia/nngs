@@ -53,7 +53,7 @@
 /* Arguments */
 int port, Ladder9, Ladder19, num_19, num_9, completed_games,
        num_logins, num_logouts, new_players, Debug;
-#ifdef WANT_BYTE_COUNT
+#if WANT_BYTE_COUNT
 unsigned long byte_count = 0L;
 #endif
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   startuptime = time(NULL);
   player_high = 0;
   game_high = 0;
-#ifdef WANT_BYTE_COUNT
+#if WANT_BYTE_COUNT
   byte_count = 0;
 #endif
   srand(startuptime);

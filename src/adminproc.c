@@ -22,12 +22,6 @@
 #include "files.h"
 #include "ip_ban.h"
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
-
 int com_adrop(int p, struct parameter* param)
 {
   FILE *fp;
@@ -146,7 +140,7 @@ int com_anews(int p, struct parameter* param)
 /* no params - then just display index over news */
    
     pprintf(p, "%s\n    **** ADMIN BULLETIN BOARD ****\n",
-    		parray[p].client ? "6 Info" : "");
+    		parray[p].flags.is_client ? "6 Info" : "");
     fp = xyfopen(FILENAME_ADMINNEWSINDEX, "r");
     if (!fp) {
       return COM_OK; 
@@ -174,7 +168,7 @@ int com_anews(int p, struct parameter* param)
       pprintf(p, "There is no news since your last login (%s).\n",strltime(&crtime));
     } else {
       pprintf(p, "%s\n",
-                parray[p].client ? "6 Info" : "");
+                parray[p].flags.is_client ? "6 Info" : "");
     }
   } else {
 
@@ -214,7 +208,7 @@ int com_anews(int p, struct parameter* param)
       pprintf(p, "Internal error - couldn't send news file!\n");
     }
   }
-  pprintf(p, "%s\n", parray[p].client ? "6 Info" : "");
+  pprintf(p, "%s\n", parray[p].flags.is_client ? "6 Info" : "");
   return COM_OK;
 }
 
@@ -605,7 +599,7 @@ int com_pose(int p, struct parameter* param)
     return COM_OK;
   }
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-#ifdef NOPE
+#if NONONOPE
   Logit("POSE: %s as %s: > %s <", parray[p].pname, parray[p1].pname, param[1].val.string); 
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1= carray[CHANNEL_ASHOUT].members[j];
@@ -1109,7 +1103,7 @@ int com_unhide(int p, struct parameter* param)
 }
 
 
-#ifdef LADDER_SIFT
+#ifdef WANT_LADDER_SIFT
 int com_rating_recalc(int p, struct parameter* param)
 {
   UNUSED(p);
@@ -1122,7 +1116,7 @@ int com_rating_recalc(int p, struct parameter* param)
   Logit("Done sifting");
   return COM_OK;
 }
-#endif /*LADDER_SIFT*/
+#endif /*WANT_LADDER_SIFT*/
 
 int com_aban(int p, struct parameter* param)
 {

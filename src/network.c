@@ -85,11 +85,6 @@
 #include "command.h"
 #include "utils.h"
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 #define UNUSED(_p) (void)(_p)
 /* [PEM]: We have to try this... */
 #define WRITE_AT_ONCE 0

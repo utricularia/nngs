@@ -55,13 +55,8 @@
 #include "playerdb.h"
 #include "utils.h"
 
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
 #include "rdbm.h"		/* PEM */
-#endif
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
 #endif
 
 #ifndef DEBUG_GAME_SLOT
@@ -196,7 +191,7 @@ static void game_zero(struct game *g, int size)
   g->Ladder19 = 0;
   g->Tourn = 0;
   g->Ladder_Possible = 0;
-#ifdef PAIR
+#ifdef WANT_PAIR
   g->pairwith = 0;;
   g->pairstate = NOTPAIRED;
 #endif
@@ -519,11 +514,11 @@ int NewOldGame(int g)
 
 void game_disconnect(int g, int p)
 {
-#ifdef PAIR
+#ifdef WANT_PAIR
   if (paired(parray[p].game)) {
     game_ended(garray[g].pairwith, PLAYER_NEITHER, END_LOSTCONNECTION);
   }
-#endif /* PAIR */
+#endif /* WANT_PAIR */
   game_ended(g, PLAYER_NEITHER, END_LOSTCONNECTION);
 }
 
@@ -757,7 +752,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   if (!fp) return -1;
   wp = garray[g].white.pnum;
   bp = garray[g].black.pnum;
-#ifdef PAIR
+#ifdef WANT_PAIR
   if (paired(g)) {
     owp = garray[garray[g].pairwith].white.pnum;
     obp = garray[garray[g].pairwith].black.pnum;
@@ -779,7 +774,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
   if (garray[g].Ladder9 == 1 || garray[g].Ladder19 == 1) {
     fprintf(fp, "GN[%s-%s(B) NNGS (LADDER RATED)]\n",
      parray[wp].pname, parray[bp].pname);
-#ifdef PAIR
+#ifdef WANT_PAIR
   } else if (paired(g)) {
     fprintf(fp, "GN[%s-%s vs %s-%s(B) NNGS (RENGO)]\n",
      parray[wp].pname, parray[owp].pname,
@@ -956,12 +951,12 @@ int pgames(int p, FILE *fp)
   if (!fp) {
     return COM_OK;
   }
-  if (parray[p].client) pcn_out(p, CODE_THIST, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_THIST, FORMAT_FILEn);
   while (fgets(line, sizeof line, fp)) {
     pprintf(p, "%s",line);
   }
   fclose(fp);
-  if (parray[p].client) pcn_out(p, CODE_THIST, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_THIST, FORMAT_FILEn);
   return COM_OK;
 }
 
@@ -991,7 +986,7 @@ void game_write_complete(int g, twodstring statstring)
      && parray[wp].slotstat.is_registered
      && parray[bp].slotstat.is_registered
      && !garray[g].Teach
-#ifdef PAIR
+#ifdef WANT_PAIR
      && !paired(g)
 #endif
      && movenum(garray[g].GoGame) >= 20
@@ -1012,7 +1007,7 @@ void game_write_complete(int g, twodstring statstring)
      || !parray[bp].slotstat.is_registered
      || !garray[g].rated
      || garray[g].Teach == 1
-#ifdef PAIR
+#ifdef WANT_PAIR
      || paired(g)
 #endif
      || movenum(garray[g].GoGame) <= 20
@@ -1030,7 +1025,7 @@ void game_write_complete(int g, twodstring statstring)
                (garray[g].winner == garray[g].white.pnum ? "W" : "B"),
                ResultsDate(fdate));
   fclose(fp);
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   /* [PEM]: New results file for nrating. */
   {
     rdbm_t rdb;
@@ -1069,7 +1064,7 @@ void game_write_complete(int g, twodstring statstring)
 	    tp->tm_year + 1900, tp->tm_mon + 1, tp->tm_mday);
     fclose(fp);
   }
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
 }
 
 int game_count()

@@ -24,7 +24,6 @@
 #ifndef COMMAND_LIST_H
 #define COMMAND_LIST_H
 
-/* #define WANT_LANGUAGE 1*/
 #undef WANT_LANGUAGE
 
 #include "nngsconfig.h"
@@ -200,27 +199,25 @@ struct command_type command_list[] = {
   {"who",		"T",	com_who,	ADMIN_USER },
   {"withdraw",		"n",	com_withdraw,	ADMIN_USER },
 
-#ifdef UNWANTED
+#ifdef WANT_UNWANTED
   {"nocaps",		"",	com_nocaps,	ADMIN_USER },
   {"raisedead",         "w",    com_raisedead,  ADMIN_DEMIGOD  },
   {"review",		"T",	com_review,	ADMIN_USER },
 #endif
 
-#ifdef LADDER_SIFT
+#ifdef WANT_LADDER_SIFT
   {"forcerecalc",        "",    com_rating_recalc, ADMIN_DEMIGOD },
-#endif /* LADDER_SIFT */
+#endif /* WANT_LADDER_SIFT */
 
-#if ONNGSRATED
-  {"orating",           "o",    com_rating,     ADMIN_USER },
-  {"osuggest",		"wo",	com_suggest,	ADMIN_USER },
-#endif
+  {"orating",           "o",    com_orating,     ADMIN_USER },
+  {"osuggest",		"wo",	com_osuggest,	ADMIN_USER },
 
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   {"rating",		"o",	com_nrating,	ADMIN_USER },
   {"suggest",		"wo",	com_nsuggest,	ADMIN_USER },
 #endif
 
-#ifdef PAIR
+#ifdef WANT_PAIR
   {"teamgo",		"d",	com_pair,	ADMIN_USER }, 
   {"pair",		"d",	com_pair,	ADMIN_USER }, 
 #endif

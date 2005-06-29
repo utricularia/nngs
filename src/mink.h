@@ -57,7 +57,7 @@ struct minkgame {
   int *uf;		/* union-find structure */
   struct uf_log_ *uflog;	/* log of changes to uf */
   int logsize,logid;	/* size of uflog & number of changes to uf */
-#ifdef MINKKOMI
+#ifdef WANT_MINKKOMI
   float komi;
 #endif
   /*int nocaps; */		/* don't make captures, e.g. to play other games */
@@ -76,7 +76,7 @@ extern void freeminkgame(struct minkgame *g);	/* frees up game record */
 extern int sethcap(struct minkgame *g, int n);     /* returns 1 if succesful */
 extern void setnocaps(struct minkgame *g, int val);     /* returns 1 if succesful */
 extern xulong gethash(struct minkgame *g); /* get a hashcode for current board */
-#ifdef MINKKOMI
+#ifdef WANT_MINKKOMI
 extern void setkomi(struct minkgame *g, float k);      /* set the komi */
 extern float getkomi(struct minkgame *g);              /* get the komi */
 #endif
@@ -98,7 +98,7 @@ extern void getcaps(struct minkgame *g, int *wh, int *bl); /* #w/b stones captur
 extern int loadpos(FILE *, struct minkgame *);
 
 /* private functions */
-#if MINK_C
+#ifdef MINK_C
 static char cnv_file2ch(int i);	/* convert file number 0-18 to character */
 static void ufmark(struct minkgame *g);/* put a move-marker on union-find log */
 #endif /* MINK_C */

@@ -42,11 +42,6 @@ extern int random(void);
 #include "mink.h"
 #include "utils.h"
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 
 #define MOVECOLOR(i)	(((i) & 1) ? MINK_BLACK : MINK_WHITE)
 #define LASTCOLOR(g)	MOVECOLOR((g)->movenr)
@@ -131,7 +126,7 @@ struct minkgame *initminkgame(int width, int height, int rules)
   g->height = height;
   g->rules = rules;
   g->handicap = 0;
-#ifdef MINKKOMI
+#ifdef WANT_MINKKOMI
   g->komi = MINK_KOMI;
 #endif
   g->board = calloc(ESize, sizeof *g->board);
@@ -251,7 +246,7 @@ xulong gethash(struct minkgame *g)
   return g->hash;
 }
 
-#ifdef MINKKOMI
+#ifdef WANT_MINKKOMI
 void setkomi(struct minkgame *g, float k)	/* set the komi */
 {
   g->komi = k;
@@ -507,7 +502,7 @@ static int superko(struct minkgame *g) /* return whether current position repeat
 
   for (i = g->movenr; (i-=2) >= 0;) {
     if (g->moves[i].hash == g->hash) { 
-#ifdef HASHFAITH
+#if HASHFAITH
       return 1;
 #else
       curboard = calloc(ESize, sizeof *curboard);

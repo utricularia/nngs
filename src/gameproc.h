@@ -33,12 +33,12 @@
 
 extern void game_ended(int, int, int);
 
-#ifdef PAIR
+#ifdef WANT_PAIR
 extern void process_move(int, char *, int);
 extern int paired(int);
 #else
 extern void process_move(int, char *);
-#endif /* PAIR */
+#endif /* WANT_PAIR */
 
 extern int com_resign(int, struct parameter *);
 extern int com_draw(int, struct parameter *);

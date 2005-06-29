@@ -68,13 +68,8 @@
 #include "alias.h"
 #include "pending.h"
 
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
 #include "rdbm.h"
-#endif
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
 #endif
 
 #define TELL_PLAYER_IN_TMATCH(From, To) \
@@ -593,11 +588,11 @@ int com_showlist(int p, struct parameter * param)
       count++;
     }
     fclose(fp2);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     pprintf( p, "-- The %s list: %d names --", listname, count );
     multicol_pprint( m, p, 78, 2 );
     multicol_end( m );
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
   return COM_OK;
 }
@@ -1102,12 +1097,12 @@ int com_emote(int p, struct parameter * param)
     }
   }
 
-  tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p1].client);
+  tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p1].flags.is_client);
 
   if (tmp) {
-    pcn_out(p1, CODE_EMOTE, FORMAT_s, parray[p1].client ? "" : "\n");
+    pcn_out(p1, CODE_EMOTE, FORMAT_s, parray[p1].flags.is_client ? "" : "\n");
     pcn_out_prompt(p1, CODE_EMOTE, FORMAT_s_n, tmp);
-    tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p].client);
+    tmp = EmoteMkStr(param[0].val.word, parray[p].pname, args, parray[p].flags.is_client);
     pcn_out(p, CODE_INFO, FORMAT_s_, tmp);
   }
   else
@@ -1304,7 +1299,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
     pcn_out_prompt(p1, CODE_CR1|CODE_INFO, FORMAT_s_IS_BEEPING_YOU_n, parray[p].pname);
     break;
   case TELL_CHANNEL:
-    if (parray[p1].client) {
+    if (parray[p1].flags.is_client) {
       pcn_out_prompt(p1, CODE_YELL, FORMAT_d_s_sn,
             ch, parray[p].pname, msg);
     } else if (parray[p1].last_channel == ch) {
@@ -1471,7 +1466,7 @@ int com_kibitz(int p, struct parameter * param)
     if (p1 == p) continue;
     if (player_is_observe(p1, g)) {
       if (player_censored(p1, p)) continue;
-      if (parray[p1].client) {
+      if (parray[p1].flags.is_client) {
         if (parray[p1].bell) {
           pcn_out(p1, CODE_BEEP, FORMAT_nn);
         }
@@ -1485,7 +1480,7 @@ int com_kibitz(int p, struct parameter * param)
 		   g + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
     }
-#ifdef PAIR
+#ifdef WANT_PAIR
     if (paired(g)) {
       otherg = garray[g].pairwith;
       if (player_is_observe(p1, otherg)) {
@@ -1534,7 +1529,7 @@ int com_kibitz(int p, struct parameter * param)
                 parray[p].flags.is_rated ? "*" : " ",
                 tmp2);
   add_kib(&garray[g], movenum(garray[g].GoGame), tmp3);
-#ifdef PAIR
+#ifdef WANT_PAIR
   if (paired(g)) {
     otherg = garray[g].pairwith;
     add_kib(&garray[otherg], movenum(garray[otherg].GoGame), tmp3);
@@ -1837,7 +1832,7 @@ int com_variables(int p, struct parameter * param)
     p1 = p;
     player_fix(p1);
   }
-  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   pprintf(p, "Variable settings of %s:\n", parray[p1].pname);
   pprintf(p, "\
 go shouts (gshout)       = %-3.3s       kibitz (kibitz)              = %-3.3s\n\
@@ -1868,7 +1863,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
         parray[p1].ropen ? "Yes" : "No",
         parray[p1].automail ? "Yes" : "No",
         parray[p1].i_game ? "Yes" : "No",
-        parray[p1].client ? "Yes" : "No",
+        parray[p1].flags.is_client ? "Yes" : "No",
         parray[p1].i_lshout ? "Yes" : "No",
         parray[p1].def_time,
         parray[p1].def_byo_stones,
@@ -1950,7 +1945,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
     default:             pprintf(p, "Unknown\n"); break; }
   }
 
-  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
 
   player_unfix(p1);
   return COM_OK;
@@ -2258,7 +2253,7 @@ static void a_who(int p, int cnt, int *plist)
     if (parray[p1].game >= 0
       && (garray[parray[p1].game].Ladder19 || garray[parray[p1].game].Ladder9)) {
       flags[2] = '*';
-#ifdef PAIR
+#ifdef WANT_PAIR
     } else if (parray[p1].game >= 0 && paired(parray[p1].game)) {
       flags[2] = '@';
 #endif
@@ -2956,7 +2951,7 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
 static int
 get_nrating(int p, double *ratp)
 {
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   rdbm_t db;
   rdbm_player_t rp;
 
@@ -2969,7 +2964,7 @@ get_nrating(int p, double *ratp)
     return 1;
   }
   rdbm_close(db);
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
   return 0;
 }
 
@@ -3036,6 +3031,7 @@ aux_suggest(int p, int ratdiff, int stronger)
   }
 }
 
+#ifdef WANT_NNGSRATED
 int com_nsuggest(int p, struct parameter * param)
 {
   int p1, p2;
@@ -3106,9 +3102,10 @@ int com_nsuggest(int p, struct parameter * param)
 
   return COM_OK;
 }
+#endif /* WANT_NNGSRATED */
 
 
-int com_suggest(int p, struct parameter * param)
+int com_osuggest(int p, struct parameter * param)
 {
   int p1, p2;
   int stronger;
@@ -3313,8 +3310,8 @@ int create_new_gomatch(int wp, int bp,
 	TICS2SECS(garray[g].black.ticksleft),
 	garray[g].black.byostones);
   if (!garray[g].Teach) {
-    if (parray[wp].client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
-    if (parray[bp].client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
+    if (parray[wp].flags.is_client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
+    if (parray[bp].flags.is_client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
     }
   Logit("%s", outStr);
   sprintf(outStr, "{Match %d: %s [%3.3s%s] vs. %s [%3.3s%s] }\n",
@@ -3771,18 +3768,18 @@ int com_refresh(int p, struct parameter * param)
   if (param[0].type == TYPE_NULL) {
     if (parray[p].game >= 0) {
       if (garray[parray[p].game].gotype >= GAMETYPE_GO) {
-        if (!parray[p].client || parray[p].i_verbose)
+        if (!parray[p].flags.is_client || parray[p].i_verbose)
           send_go_board_to(parray[p].game, p);
-        if (parray[p].client) pcommand(p, "moves %d", (parray[p].game) + 1);
+        if (parray[p].flags.is_client) pcommand(p, "moves %d", (parray[p].game) + 1);
       }
     } else {			/* Do observing in here */
       if (parray[p].num_observe) {
 	for (idx = 0; idx < parray[p].num_observe; idx++) {
           gnum = parray[p].observe_list[idx];
           if (garray[gnum].gotype >= GAMETYPE_GO) {
-            if (!parray[p].client || parray[p].i_verbose)
+            if (!parray[p].flags.is_client || parray[p].i_verbose)
               send_go_board_to(gnum, p);
-	    if (parray[p].client)
+	    if (parray[p].flags.is_client)
               pcommand(p, "moves %d", gnum + 1);
           }
 	}
@@ -3796,8 +3793,8 @@ int com_refresh(int p, struct parameter * param)
     } else if (gnum >= garray_top || garray[gnum].gstatus != GSTATUS_ACTIVE) {
       pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_GAME_n);
     } else {
-        if (!parray[p].client || parray[p].i_verbose) send_go_board_to(gnum, p);
-	if (parray[p].client) pcommand(p, "moves %d", gnum +1);
+        if (!parray[p].flags.is_client || parray[p].i_verbose) send_go_board_to(gnum, p);
+	if (parray[p].flags.is_client) pcommand(p, "moves %d", gnum +1);
     }
   } else {
     return COM_BADPARAMETERS;
@@ -4041,7 +4038,7 @@ int com_adhelp(int p, struct parameter * param)
 
   if (param[0].type == TYPE_NULL) {
     count = search_index(filenames, sizeof filenames, NULL, FILENAME_AHELP_l_index, parray[p].language);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     for (pos=0,ii = 0; ii < count; ii++) {
       if (pos) do { line[pos++] = ' '; } while(pos % 8) ;
       len = strlen(cp);
@@ -4054,7 +4051,7 @@ int com_adhelp(int p, struct parameter * param)
       }
     }
     if (pos) pprintf(p, "%s\n", line);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
   if (!safestring(param[0].val.word)) {
@@ -4102,7 +4099,7 @@ int com_help(int p, struct parameter * param)
    * help files in the help dir */
   if (param[0].type == TYPE_NULL) {
     count = search_index(filenames, sizeof filenames, NULL, FILENAME_HELP_l_index, parray[p].language);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     for (pos=0,ii = 0; ii < count; ii++) {
       if (pos) do { line[pos++] = ' '; } while(pos % 8) ;
       len = strlen(cp);
@@ -4117,7 +4114,7 @@ int com_help(int p, struct parameter * param)
     if (pos) pprintf(p, "%s\n", line);
 
     pprintf(p, "[Type \"help overview\" for a list of %s general information files.]\n", server_name);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
   if (safestring(param[0].val.word)) {
@@ -4154,9 +4151,9 @@ int com_infor(int p, struct parameter * param)
 {
   UNUSED(param);
 
-  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   xpsend_command(p, "ls -C %s", NULL, FILENAME_INFO);
-  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   return COM_OK;
 }
 
@@ -4199,9 +4196,9 @@ int com_mailhelp(int p, struct parameter * param)
   UNUSED(param);
 
   if (param[0].type == TYPE_NULL) {
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     xpsend_command(p, "ls -C %s", NULL, FILENAME_HELP);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
 
@@ -4383,7 +4380,7 @@ int com_spair(int p, struct parameter * param)
 
 int com_nrating(int p, struct parameter * param)
 {
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   char name[sizeof parray[0].pname];
   rdbm_t db;
   rdbm_player_t rp;
@@ -4420,12 +4417,11 @@ int com_nrating(int p, struct parameter * param)
     pcn_out(p, CODE_INFO, FORMAT_RATED_GAMES_u_u_WINS_u_LOSSES_n, rp.wins+rp.losses, rp.wins, rp.losses);
   }
   rdbm_close(db);
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
   return COM_OK;
 }
 
-#ifdef NNGSRATED
-int com_rating(int p, struct parameter * param)
+int com_orating(int p, struct parameter * param)
 {
   char line[180];
   char neeldle[sizeof parray[0].pname];
@@ -4516,7 +4512,6 @@ int com_rating(int p, struct parameter * param)
   if (!found) pcn_out(p,CODE_INFO, FORMAT_NO_RATING_INFORMATION_FOR_sn, neeldle);
   return COM_OK;
 }
-#endif
 
 int com_translate(int p, struct parameter * param)
 {
@@ -4700,11 +4695,6 @@ int player_notified(int p, int p1)
 /* is p1 on p's notify list? */
 {
   int i;
-
-#if 0
-  /* possible bug: p has just arrived! */
-  if (!parray[p].pname[0])  return 0;
-#endif
 
   for (i = 0; i < parray[p].num_notify; i++) {
     if (!parray[p1].slotstat.is_online) continue;

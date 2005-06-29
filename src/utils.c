@@ -167,7 +167,7 @@ const char *SendCode(int p, int Code)
 {
   static char word[MAX_WORD_SIZE];
 
-  if (!parray[p].client) {
+  if (!parray[p].flags.is_client) {
     switch(Code) {
       case CODE_SHOUT: strcpy(word, "\n");
                   break;
@@ -267,7 +267,7 @@ int Logit(const char *format,...)
   time_t time_in;
   static int in_logit=0;
 
-#ifdef DOKILL
+#if SKIPPIT
   return 0;
 #endif
 
@@ -459,9 +459,6 @@ int pprintf_prompt(int p, const char *format,...)
   va_list ap;
   char tmp[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
 				   stuff */
-#if 0
-  char tmp2[100];
-#endif
   int retval;
   size_t len;
 
@@ -499,7 +496,7 @@ static int pprompt(int p)
   char tmp[MAX_LINE_SIZE];
   int len=0;
 
-  if (parray[p].client) {
+  if (parray[p].flags.is_client) {
     len=sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].protostate);
   }
   else if (parray[p].protostate == STAT_SCORING) {
@@ -576,7 +573,7 @@ int psend_file(int p, const char *dir, const char *file)
   }
 
   if (Debug) Logit("Opened \"%s\"", fname);
-  if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+  if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   while ((cp=fgets( tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
     net_sendStr(parray[p].socket, tmp);
@@ -585,11 +582,11 @@ int psend_file(int p, const char *dir, const char *file)
   if (cp) {
     do_copy(parray[p].last_file, fname, sizeof parray[0].last_file);
     parray[p].last_file_line = (parray[p].d_height-1);
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     pcn_out(p, CODE_INFO, FORMAT_TYPE_OR_qNEXTq_TO_SEE_NEXT_PAGE_n);
   }
   else {
-    if (parray[p].client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
+    if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
   fclose(fp);
   return 0;
@@ -625,11 +622,6 @@ int pxysend_file(int p, int num, ...)
   va_list ap;
   FILE *fp;
   int rc=0;
-#if WANT_OLD_VERSION
-  char tmp[MAX_LINE_SIZE * 2];
-  int lcount=1;
-  char *cp;
-#endif /* WANT_OLD_VERSION */
 
   va_start(ap, num);
 
@@ -669,7 +661,7 @@ int pmore_file( int p )
     return -1;
   }
   
-  if (parray[p].client) {
+  if (parray[p].flags.is_client) {
   pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
   while((cp=fgets(tmp, sizeof tmp, fp))) {
@@ -680,7 +672,7 @@ int pmore_file( int p )
   }
   if (cp) {
     parray[p].last_file_line += parray[p].d_height-1;
-    if (parray[p].client) {
+    if (parray[p].flags.is_client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
     pcn_out(p, CODE_INFO, FORMAT_TYPE_qNEXTq_OR_TO_SEE_NEXT_PAGE_n);
@@ -688,7 +680,7 @@ int pmore_file( int p )
   else {
     parray[p].last_file[0] = '\0';
     parray[p].last_file_line = 0;
-    if (parray[p].client) {
+    if (parray[p].flags.is_client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
   }
@@ -1123,7 +1115,7 @@ int truncate_file(char *file, int lines)
 }
 
 
-#ifdef NEWTRUNC
+#if NEWTRUNC
 int truncate_file(char *file, int lines)
 {
   FILE *fp;
@@ -1241,7 +1233,7 @@ const char *file_bplayer(const char *fname)
   return (const char *) tmp;
 }
 
-#ifdef HAVE_ENDIAN_H
+#if HAVE_ENDIAN_H
 #include <endian.h>
 #endif
 char *dotQuad(unsigned int a)
@@ -1904,7 +1896,7 @@ filename_ahelp_l_index_0:
     break;
   }
 
-#if 0
+#if 0 /* Test trap ... */
 if (strstr(buf,"home/nngs/nngs/share/nngssrv/stats/player_data/j/joop"))
 	raise(5 /* SIGTRAP */ );
 #endif

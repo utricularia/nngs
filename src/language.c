@@ -33,11 +33,6 @@
 #include <string.h>
 #endif
 
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-
 
 	/* NOTE:
 	** header file "formats.h" contains *code* for language_init() 
@@ -49,11 +44,6 @@
 #undef WANT_TO_DEFINE
 #include "utils.h"
 #include "language.h"
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
 
 struct language {
   int lang;	/* Language number as used in language variable */

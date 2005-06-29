@@ -111,9 +111,9 @@ static int set_client(int p, const char *var, const char *val)
 {
   UNUSED(var);
 
-  if (set_boolean_var(&parray[p].client, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_CLIENT_TO_BE_s_, (parray[p].client)  ? "True" : "False");
-  if (parray[p].client) parray[p].i_verbose = 0;
+  if (set_boolean_var(&parray[p].flags.is_client, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_CLIENT_TO_BE_s_, (parray[p].flags.is_client)  ? "True" : "False");
+  if (parray[p].flags.is_client) parray[p].i_verbose = 0;
   return VAR_OK;
 }
 
@@ -528,7 +528,7 @@ static int set_plan(int p, const char *var, const char *val)
     }
     if (parray[p].num_plan < MAX_PLAN)
       parray[p].num_plan++;
-    parray[p].planLines[0] = (val) ? mystrdup(val) : NULL);
+    parray[p].planLines[0] = (val) ? mystrdup(val) : NULL;
     return VAR_OK;
   }
   if (which > parray[p].num_plan) {	/* new line at bottom */

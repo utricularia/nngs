@@ -52,7 +52,7 @@
 #include "plan.h"
 #include "alias.h"
 
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
 #include "rdbm.h"
 #endif
 
@@ -358,9 +358,9 @@ static void player_zero(int p)
   parray[p].last_file_line = 0;
   parray[p].open = 1;
   parray[p].numgam = 0;
-  parray[p].client = 0;
   parray[p].which_client = 0;
   parray[p].flags.is_rated = 0;
+  parray[p].flags.is_client = 0;
   parray[p].ropen = 1;
   parray[p].bell = 0;
   parray[p].extprompt = 0;
@@ -514,7 +514,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     parray[p].water = atoi(cp);
     if (parray[p].water < 0) parray[p].water = 3;
     cp = strtok(NULL, ":"); if (!cp) return 0;
-    parray[p].client = atoi(cp);
+    parray[p].flags.is_client = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].ropen = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
@@ -550,7 +550,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     parray[p].automail = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].adminLevel = atoi(cp);
-#if EXISTING_USERS_ARE_REGISTERED
+#ifdef EXISTING_USERS_ARE_REGISTERED
 	/* Silently convert users to registered users ... */
     if (parray[p].adminLevel <= ADMIN_USER)
       parray[p].adminLevel = ADMIN_REGISTERED_USER;
@@ -651,7 +651,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
   } else if (!strcasecmp(attr, "open:")) {
     parray[p].open = atoi(value);
   } else if (!strcasecmp(attr, "client:")) {
-    parray[p].client = atoi(value);
+    parray[p].flags.is_client = atoi(value);
   } else if (!strcasecmp(attr, "ropen:")) {
     parray[p].ropen = atoi(value);
   } else if (!strcasecmp(attr, "bell:")) {
@@ -804,7 +804,7 @@ int player_read(int p)
     player_dirty(p);
     do_copy(parray[p].RegDate, strltime(&tt), sizeof parray[p].RegDate);
   }
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   if (!strcasecmp(parray[p].ranked, "NR") ) {
     parray[p].rating = 0;
     parray[p].orating = 0;
@@ -850,7 +850,7 @@ int player_read(int p)
     parray[p].orating = rat * 100;
   } else
     parray[p].orating = 0;
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
   return 0;
 }
 
@@ -922,7 +922,7 @@ static int player_save_extended(int p)
   fprintf(fp, "VARS:\n");
   fprintf(fp, "open:%d\n", parray[p].open);
   fprintf(fp, "water:%d\n", parray[p].water);
-  fprintf(fp, "client:%d\n", parray[p].client);
+  fprintf(fp, "client:%d\n", parray[p].flags.is_client);
   fprintf(fp, "ropen:%d\n", parray[p].ropen);
   fprintf(fp, "bell:%d\n", parray[p].bell);
   fprintf(fp, "i_login:%d\n", parray[p].i_login);
@@ -997,13 +997,12 @@ static int player_save_extended(int p)
 void player_save(int p)
 {
 
-  /* non-registered player info is not saved! */
-  if (!parray[p].slotstat.is_registered) {
+  /* invalid or non-registered player info is not saved! */
+  if (!parray[p].slotstat.is_registered || !parray[p].slotstat.is_valid) {
     parray[p].slotstat.is_dirty=0;
     return;
   }
-  if (parray[p].slotstat.is_valid && parray[p].slotstat.is_dirty)
-    player_write(p);
+  if (parray[p].slotstat.is_dirty) player_write(p);
 }
 
 
@@ -1033,7 +1032,7 @@ static void player_write(int p)
   fprintf(fp, "VARS: %d:%d:%d:%d:%d:%d:%d:%d",
   parray[p].open,
   parray[p].water,
-  parray[p].client,
+  parray[p].flags.is_client,
   parray[p].ropen,
   parray[p].bell,
   parray[p].i_login,

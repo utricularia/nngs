@@ -127,16 +127,17 @@ extern int com_unlock(int, struct parameter *);
 extern int com_invite(int, struct parameter *);
 extern int com_emote(int, struct parameter *);
 extern int com_mailmess(int, struct parameter *);
-extern int com_suggest(int, struct parameter *);
-extern int com_nsuggest(int, struct parameter *);
 extern int com_note(int, struct parameter *);
 extern int com_shownote(int, struct parameter *);
 extern int com_ping(int, struct parameter *);
 
+#ifdef WANT_NNGSRATED
+extern int com_nsuggest(int, struct parameter *);
 extern int com_nrating(int, struct parameter *);
-#ifdef NNGSRATED
-extern int com_rating(int, struct parameter *);
 #endif
+extern int com_orating(int, struct parameter *);
+extern int com_osuggest(int, struct parameter *);
+
 extern int plogins(int, FILE *);
 extern int com_dnd(int, struct parameter *);
 extern int com_which_client(int, struct parameter *);

@@ -67,14 +67,9 @@
 #include "alias.h"
 #include "ip_ban.h"
 
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
 #include "rdbm.h"
-#endif /* NNGSRATED */
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
+#endif /* WANT_NNGSRATED */
 
 const char *ahelp_dir = AHELP_DIR;
 const char *help_dir = HELP_DIR;
@@ -521,7 +516,7 @@ static void process_login(int p, char *login)
       stolower(login);
       do_copy(parray[p].login,login,sizeof parray[p].login);
       if (player_read(p)) {
-#ifdef NOGUESTS
+#ifdef WANT_NOGUESTS
         Logit("LOGIN: Unknown userid: %s", login);
         pprintf(p, "\nUser unknown.  Send mail to %s", SERVER_EMAIL);
         pprintf(p, "\nfor registration information\n");
@@ -540,7 +535,7 @@ static void process_login(int p, char *login)
 #endif
       } else {
         failed = 0;
-	pprintf(p, "\n%s",parray[p].client ? "1 1\n" : "Password: ");
+	pprintf(p, "\n%s",parray[p].flags.is_client ? "1 1\n" : "Password: ");
         net_echoOff(parray[p].socket);
         parray[p].pstatus = PSTATUS_PASSWORD;
       }
@@ -584,7 +579,7 @@ static int process_password(int p, char *password)
   if (parray[p].slotstat.is_registered && parray[p].passwd[0]) {
     if (strlen(password) < 2) {
       parray[p].pstatus = PSTATUS_PASSWORD;
-      pprintf(p, "\n%s", parray[p].client ? "1 1\n" : "Password: ");
+      pprintf(p, "\n%s", parray[p].flags.is_client ? "1 1\n" : "Password: ");
       net_echoOff(parray[p].socket);
       return COM_OKN;
     }
@@ -624,7 +619,7 @@ static int process_password(int p, char *password)
     if (p == p1) continue;
     if (!parray[p1].slotstat.is_inuse) continue;
     if (strcmp (parray[p].login, parray[p1].login)) continue;
-#if DEBUG_PLAYER_KICK
+#ifdef DEBUG_PLAYER_KICK
     Logit("Slot %s #%d NEW ", player_dumpslot(p), p);
     Logit("Slot %s #%d OLD ", player_dumpslot(p1), p1);
 #endif
@@ -636,7 +631,7 @@ static int process_password(int p, char *password)
       pprintf (p, "\n*** Sorry %s is already logged in ***\n", parray[p1].pname);
       return COM_LOGOUT;
     }
-#if DEBUG_PLAYER_KICK
+#ifdef DEBUG_PLAYER_KICK
     Logit("Ass %d<<==Foot %d", p1, p);
 #endif  
     boot_out(p,p1);
@@ -651,16 +646,16 @@ static int process_password(int p, char *password)
   }
 
   parray[p].pstatus = PSTATUS_PROMPT;
-  pprintf(p, "%s\n", parray[p].client ? "1 5" : "");
+  pprintf(p, "%s\n", parray[p].flags.is_client ? "1 5" : "");
 
-  pprintf(p, "%s\n", parray[p].client ? "9 File" : "");
+  pprintf(p, "%s\n", parray[p].flags.is_client ? "9 File" : "");
   if (parray[p].adminLevel >= ADMIN_ADMIN) {
     pxysend_raw_file(p, FILENAME_MESS_AMOTD);
   } else {
     pxysend_raw_file(p, FILENAME_MESS_MOTD);
   }
 
-  pprintf(p, "\n%s\n", parray[p].client ? "9 File" : "");
+  pprintf(p, "\n%s\n", parray[p].flags.is_client ? "9 File" : "");
 
   if (parray[p].slotstat.is_registered && !parray[p].passwd[0])
     pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_NO_PASSWORD_PLEASE_SET_ONE_WITH_THE_PASSWORD_COMMAND_n);
@@ -768,7 +763,7 @@ static int process_prompt(int p, char *command)
 
   command = eatwhite(command);
   if (!*command) {
-    if (!parray[p].client) pprintf(p, "%s", parray[p].prompt);
+    if (!parray[p].flags.is_client) pprintf(p, "%s", parray[p].prompt);
     else pprintf_prompt(p, "\n");
     return COM_OK;
   }
@@ -793,7 +788,7 @@ static int process_prompt(int p, char *command)
       break;
     case COM_ISMOVE:
       retval = COM_OK;
-#ifdef PAIR
+#ifdef WANT_PAIR
       process_move(p, command, 1);
 #else
       process_move(p, command);
@@ -997,7 +992,7 @@ int process_incomplete(int fd, char *com_string)
   }
   if (last_char == '\3') {	/* ctrl-c */
     if (parray[p].pstatus == PSTATUS_PROMPT) {
-      if (!parray[p].client) pprintf(p, "\n%s", parray[p].prompt);
+      if (!parray[p].flags.is_client) pprintf(p, "\n%s", parray[p].prompt);
       else pprintf(p, "\n1 %d\n",parray[p].protostate);
       return COM_FLUSHINPUT;
     } else {
@@ -1019,9 +1014,9 @@ int process_heartbeat(int *fdp)
   static int resu = 0;
   time_t now = globclock.time;
   static struct stat ratingsbuf1, ratingsbuf2;
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   rdbm_t rdb;
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
 
   game_update_times();
 
@@ -1056,7 +1051,7 @@ int process_heartbeat(int *fdp)
   else {
     if (last_ratings + 6 * 60 * 60 < now) { /* Every 6 hours */
       last_ratings = now;
-#ifdef LADDERSIFT
+#ifdef WANT_LADDERSIFT
       Logit("Sifting 19x19 ladder");
       PlayerSift(Ladder19, 14);  /* Do the ladder stuff, 19x19 is 14 days */
       Logit("Sifting 9x9 ladder");
@@ -1064,7 +1059,7 @@ int process_heartbeat(int *fdp)
 #endif
     }
   }
-#ifdef NNGSRATED
+#ifdef WANT_NNGSRATED
   if (!last_results) {
     last_results = now;
     stat(NRATINGS_FILE, &ratingsbuf1);  /* init the stat buf */
@@ -1092,8 +1087,7 @@ int process_heartbeat(int *fdp)
             if (!rdbm_fetch(rdb, parray[p].pname, &rp)) continue;
 
 	    do_copy(parray[p].srank, rp.rank, sizeof parray[0].srank);
-	    if (rp.star)
-	      parray[p].flags.is_rated = 1;
+	    if (rp.star) parray[p].flags.is_rated = 1;
 	    orat = parray[p].rating;
 	    parray[p].rating = parray[p].orating = (int)(rp.rating * 100);
 	    parray[p].numgam = rp.wins + rp.losses;
@@ -1123,7 +1117,7 @@ int process_heartbeat(int *fdp)
       }	/* if (resu > 0) */
     }
   }
-#endif /* NNGSRATED */
+#endif /* WANT_NNGSRATED */
   ShutHeartBeat();
   return COM_OK;
 }

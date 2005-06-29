@@ -250,8 +250,8 @@ static char * emote_next_arg(void)
   return argstr+argpos;
 }
 
-/*#define TESTMAIN*/
-#ifdef TESTMAIN
+/*#define WANT_MAIN*/
+#ifdef WANT_MAIN
 
 int main(int, const char **)
 {
