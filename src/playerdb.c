@@ -130,8 +130,9 @@ void player_dirty(int p)
 {
   if (p < 0) return;
 
-  parray[p].slotstat.is_dirty = 1;
   parray[p].slotstat.timestamp = globclock.time;
+  if (parray[p].slotstat.is_dirty) return;
+  parray[p].slotstat.is_dirty = 1;
 #if DEBUG_PLAYER_SLOT
   if (!parray[p].slotstat.is_valid) {
     Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
@@ -1138,14 +1139,19 @@ int player_find_part_login(const char *name)
 {
   int i;
   int found = -1;
+  size_t len,cnt;
 
+  cnt = 0;
+  len = strlen(name);
   for (i = 0; i < parray_top; i++) {
     if (!parray[i].slotstat.is_inuse) continue;
     if (!parray[i].slotstat.is_online) continue;
-    if (strncmp(parray[i].login, name, strlen(name))) continue;
-    if (found >= 0) return -2; 	/* Ambiguous */
-    found = i;
+    if (!strcmp(parray[i].login, name)) return i; /* exact match */
+    if (strncmp(parray[i].login, name, len)) continue;
+    if (found < 0) found = i;
+    cnt++;
   }
+  if (cnt > 1) return -2;
   return found;
 }
 
@@ -1618,10 +1624,12 @@ int player_fetch(const char *name)
 
 int player_find_sloppy(const char *name)
 /*
- * Find player matching the given string. First looks for exact match
- *  with a logged in player, then an exact match with a registered player,
- *  then a partial unique match with a logged in player, then a partial
- *  match with a registered player.
+ * Find player matching the given string.
+ * (1) exact match with a logged in player,
+ * (2) exact match with a registered player,
+ * (3) a partial unique match with a logged in player,
+ * {{{{{{(4) a partial match with a registered player. }}}}}}
+ *
  *  Returns slot number if the player was found
  *  -1 if no player was found
  *  -cnt if more players were found

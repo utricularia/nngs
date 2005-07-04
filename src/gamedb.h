@@ -89,8 +89,7 @@ struct game {
   int nmvinfos;
   struct mvinfo *mvinfos;
 	/* flags */
-  int Teach;  /* Single player teaching game presentation */
-  int Teach2; /* two players teaching */
+  int teach;  /* 1=Single player teaching game presentation 2=2player-teach*/
   int rated;
   int Private;
   int Tourn;

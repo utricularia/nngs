@@ -243,7 +243,7 @@ void game_ended(int g, int winner, int why)
           parray[pw].pname,
           parray[pb].pname);
 
-    if (!garray[g].Teach) {
+    if (garray[g].teach != 1) {
       pcn_out(pw, CODE_INFO, FORMAT_GAME_HAS_BEEN_ADJOURNED_n );
       pcn_out(pw, CODE_INFO, FORMAT_GAME_d_s_VS_s_HAS_ADJOURNED_n,
           g + 1,
@@ -371,9 +371,9 @@ void game_ended(int g, int winner, int why)
   parray[pw].protostate = STAT_WAITING;
   parray[pb].protostate = STAT_WAITING;
   pprintf_prompt(pw, "\n");
-  if (!garray[g].Teach) pprintf_prompt(pb, "\n");
+  if (garray[g].teach != 1) pprintf_prompt(pb, "\n");
   if (why == END_RESIGN || why == END_FLAG || why == END_DONE) {
-    if (!garray[g].Teach) {
+    if (garray[g].teach != 1) {
       parray[pb].lastColor = PLAYER_BLACK;
       parray[pw].lastColor = PLAYER_WHITE;
       parray[pb].gonum_black++;
@@ -436,7 +436,7 @@ void process_move(int p, char *command)
 
   g = parray[p].game;
 
-  if (!garray[g].Teach && !garray[g].Teach2
+  if (!garray[g].teach
      && parray[p].side != garray[g].onMove
      && parray[p].protostate != STAT_SCORING) {
     pcn_out_prompt(p, CODE_ERROR, FORMAT_IT_IS_NOT_YOUR_MOVE_n);
@@ -497,7 +497,7 @@ void process_move(int p, char *command)
       /* pass is valid */
       garray[g].num_pass = pass(garray[g].GoGame); 
       /* Check if we need to start scoring.... */
-      if (!garray[g].Teach && garray[g].num_pass >= 2) {
+      if (garray[g].teach != 1 && garray[g].num_pass >= 2) {
         parray[garray[g].white.pnum].protostate = STAT_SCORING;
         parray[garray[g].black.pnum].protostate = STAT_SCORING;
         pcn_out_prompt(garray[g].white.pnum, CODE_INFO, FORMAT_YOU_CAN_CHECK_YOUR_SCORE_WITH_THE_SCORE_COMMAND_TYPE_DONE_WHEN_FINISHED_n);
@@ -687,7 +687,7 @@ int com_adjourn(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_A_GAME_);
     return COM_OK;
   }
-  if (garray[g1].Teach == 1) {
+  if (garray[g1].teach == 1) {
     game_ended(g1, PLAYER_NEITHER, END_ADJOURN);
     return COM_OKN;
     }
@@ -723,7 +723,7 @@ int com_pteach(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (garray[g1].Teach2 == 1) {
+  if (garray[g1].teach == 2) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THIS_IS_ALREADY_A_TEACHING_GAME_);
     return COM_OK;
   }
@@ -735,7 +735,7 @@ int com_pteach(int p, struct parameter * param)
 
     pcn_out(p, CODE_INFO, FORMAT_THIS_IS_NOW_A_FREE_UNRATED_TEACHING_GAME_n);
     pcn_out(p1, CODE_INFO, FORMAT_THIS_IS_NOW_A_FREE_UNRATED_TEACHING_GAME_n);
-    garray[g1].Teach2 = 1;
+    garray[g1].teach = 2;
     garray[g1].rated = 0;
     return COM_OK;
   }
@@ -827,7 +827,7 @@ int com_komi(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (garray[g1].Teach == 1) {
+  if (garray[g1].teach == 1) {
     garray[g1].komi = newkomi;
     pcn_out(p, CODE_INFO, FORMAT_SET_THE_KOMI_TO_f, newkomi);
     return COM_OK;
@@ -986,7 +986,7 @@ int com_undo(int p, struct parameter * param)
 
   if (parray[p].side != garray[g1].onMove
      && parray[p].protostate != STAT_SCORING
-     && !garray[g1].Teach2 && !garray[g1].Teach) {
+     && !garray[g1].teach) {
     pcn_out(p, CODE_ERROR, FORMAT_IT_IS_NOT_YOUR_MOVE_);
     return COM_OK;
   }
@@ -1019,12 +1019,12 @@ int com_undo(int p, struct parameter * param)
       garray[g1].onMove = PLAYER_BLACK; 
       return COM_OK; 
     }
-    if (!garray[g1].Teach && !garray[g1].Teach2 && x == 0) x = num;
+    if (!garray[g1].teach && x == 0) x = num;
     listmove(garray[g1].GoGame, gmove, buf);
     pcn_out(garray[g1].black.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
-    if (!garray[g1].Teach) 
+    if (garray[g1].teach != 1) 
       pcn_out(garray[g1].white.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
@@ -1099,8 +1099,7 @@ int com_games(int p, struct parameter * param)
             garray[i].GoGame->handicap,
             garray[i].komi,
             TICS2SECS(garray[i].ts.byoticks) / 60,
-	    (garray[i].rated) ? ' ' : ((garray[i].Teach) || 
-                                      (garray[i].Teach2))? 'T' : 'F',
+	    (garray[i].rated) ? ' ' : garray[i].teach ? 'T' : 'F',
 /*	    (garray[i].gotype) ? 'I' : '*', */
 	    (garray[i].rules == RULES_NET) ? (parray[pw].match_type == GAMETYPE_TNETGO ? '*' : 'I') : 'G',
             game_get_num_ob(i));
@@ -2178,7 +2177,7 @@ void game_update_time(int g)
   }
 
   /* If a teaching game */
-  if (garray[g].Teach == 1 || garray[g].Teach2 == 1) {
+  if (garray[g].teach) {
     garray[g].black.ticksleft = SECS2TICS(600);
     garray[g].white.ticksleft = SECS2TICS(600);
     garray[g].black.byoperiods = 0;

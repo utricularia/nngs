@@ -82,8 +82,9 @@ VARS: 1:4:0:1:0:1:1:0 :0:1:1:0:1:1:0:0 :0:100:0:0:0:0:0:0 :0:4:1:3:90:19:10:25 :
 The server code is undergoing development and contributions are
 welcome.  See:
 
-<http://people.debian.org/~lohner/nngs> #Old?
 <http://www.sourceforge.org/nngs>
+
+<http://people.debian.org/~lohner/nngs> #Obsolete!!
 
 for the latest status and sources.
 Contributions and suggestions are welcome.

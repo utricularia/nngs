@@ -620,8 +620,8 @@ static int process_password(int p, char *password)
     if (!parray[p1].slotstat.is_inuse) continue;
     if (strcmp (parray[p].login, parray[p1].login)) continue;
 #ifdef DEBUG_PLAYER_KICK
-    Logit("Slot %s #%d NEW ", player_dumpslot(p), p);
-    Logit("Slot %s #%d OLD ", player_dumpslot(p1), p1);
+    Logit("Slot %s NEW ", player_dumpslot(p));
+    Logit("Slot %s OLD ", player_dumpslot(p1));
 #endif
     if (!parray[p1].slotstat.is_connected) {
       player_clear(p1); /* this may lose dirty data(can it be dirty?) */

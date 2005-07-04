@@ -4,6 +4,9 @@
 
 
 1.1.18 2005-05-29 AvK
+- Bugfix: find_part_login() when there was an exact + one or more partial
+  matches, it returned -2. It now returns the exact match, once there is one.
+- combined game.{Teach/Teach2} variables into .teach.
 - cleaned up network.c
   changed lots of "else if" in main loop to "continue"
 - cruft removal

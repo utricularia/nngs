@@ -175,8 +175,8 @@ static void game_zero(struct game *g, int size)
   g->gtitle = NULL;
   g->gevent = NULL;
   g->GoGame = NULL;
-  g->Teach = 0;
-  g->Teach2 = 0;
+  g->teach = 0;
+  /* g->Teach2 = 0; */
   g->ts.time_type = TIMETYPE_UNTIMED;
   g->ts.totalticks = SECS2TICS(300);
   g->ts.byoticks = SECS2TICS(300);
@@ -377,10 +377,10 @@ void send_go_boards(int g, int players_only)
         TICS2SECS(garray[g].black.ticksleft),
         garray[g].black.byostones);
 
-  if (parray[wp].i_verbose && !garray[g].Teach ) 
+  if (parray[wp].i_verbose && garray[g].teach != 1 ) 
     send_go_board_to(g, wp);
 
-  else if (parray[wp].protostate != STAT_SCORING && !garray[g].Teach)  { 
+  else if (parray[wp].protostate != STAT_SCORING && garray[g].teach != 1)  { 
     pcn_out(wp, CODE_MOVE, FORMAT_s,outStr);
     if (movenum(garray[g].GoGame) - 1 >= 0) {
       pcn_out(wp, CODE_MOVE, FORMAT_d_c_sn,
@@ -588,9 +588,9 @@ static int got_attr_value(struct game *g, char *attr, char *value, FILE * fp, ch
   } else if (!strcmp(attr, "ladder9:")) {
     g->Ladder9 = atoi(value);
   } else if (!strcmp(attr, "teach2:")) {
-    g->Teach2 = atoi(value);
+    g->teach = 2;
   } else if (!strcmp(attr, "teach:")) {
-    g->Teach = atoi(value);
+    g->teach = atoi(value);
   } else if (!strcmp(attr, "ladder_possible:")) {
     g->Ladder_Possible = atoi(value);
   } else if (!strcmp(attr, "ladder19:")) {
@@ -831,7 +831,7 @@ int game_save_complete(int g, FILE *fp, twodstring statstring)
 
   fprintf(fp, ")\n\n---\n");
   fclose(fp);
-  if (!garray[g].Teach)
+  if (garray[g].teach != 1)
     if (parray[garray[g].white.pnum].automail) {
       sprintf(command, "%s -s \"%s\" %s < %s&", MAILPROGRAM,
           tmp + 1, parray[wp].email, filename() );
@@ -885,8 +885,8 @@ int game_save(int g)
   fprintf(fp, "GoType: %d\n", garray[g].gotype);
   fprintf(fp, "NumPass: %d\n", garray[g].num_pass);
   fprintf(fp, "Komi: %.1f\n", garray[g].komi);
-  fprintf(fp, "Teach: %d\n", garray[g].Teach);
-  fprintf(fp, "Teach2: %d\n", garray[g].Teach2);
+  fprintf(fp, "Teach: %d\n", garray[g].teach);
+  /*fprintf(fp, "Teach2: %d\n", garray[g].Teach2); */
   fprintf(fp, "Ladder9: %d\n", garray[g].Ladder9);
   fprintf(fp, "Ladder19: %d\n", garray[g].Ladder19);
   fprintf(fp, "Tourn: %d\n", garray[g].Tourn);
@@ -985,7 +985,7 @@ void game_write_complete(int g, twodstring statstring)
   if (garray[g].rated
      && parray[wp].slotstat.is_registered
      && parray[bp].slotstat.is_registered
-     && !garray[g].Teach
+     && garray[g].teach != 1
 #ifdef WANT_PAIR
      && !paired(g)
 #endif
@@ -1006,7 +1006,7 @@ void game_write_complete(int g, twodstring statstring)
   if (!parray[wp].slotstat.is_registered
      || !parray[bp].slotstat.is_registered
      || !garray[g].rated
-     || garray[g].Teach == 1
+     || garray[g].teach
 #ifdef WANT_PAIR
      || paired(g)
 #endif

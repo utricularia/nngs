@@ -147,6 +147,8 @@ int main(int argc, char *argv[])
 #endif
 
   GetArgs(argc, argv);
+	/* start the clock (which is used by the Logit fnc) */
+  (void) refetch_ticker();
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
 #if 0
@@ -160,12 +162,12 @@ int main(int argc, char *argv[])
     main_exit(1);
   }
   startuptime = time(NULL);
+  srand(startuptime);
   player_high = 0;
   game_high = 0;
 #if WANT_BYTE_COUNT
   byte_count = 0;
 #endif
-  srand(startuptime);
 
 #ifdef SGI
   /*mallopt(100, 1);*/  /* Turn on malloc(3X) debugging (Irix only) */
@@ -178,7 +180,6 @@ int main(int argc, char *argv[])
   commands_init();
   /*Logit("channel_init()");*/
   channel_init();
-  /* Ochannel_init(); */
   /*Logit("player_array_init()");*/
   player_array_init();
   player_init();
@@ -241,5 +242,5 @@ static void read_ban_ip_list(void)
     cnt += range_add(bot,top);
   }
   fclose(fp);
-  Logit("Ipban %d from %s", cnt, filename() );
+  Logit("Ipban: Read %d ranges from %s", cnt, filename() );
 }

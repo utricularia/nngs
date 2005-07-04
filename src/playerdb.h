@@ -181,7 +181,7 @@ struct player_ {
   int Private;
   int automail;
   int adminLevel;
-  int teach;    /* A teaching account */
+  /* int teach;    unused:: A teaching account */
   int nochannels;
   int gonum_white;
   int gonum_black;

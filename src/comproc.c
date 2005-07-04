@@ -1500,7 +1500,7 @@ int com_kibitz(int p, struct parameter * param)
     }
 #endif
   }
-  if (garray[g].Teach2 == 1) {
+  if (garray[g].teach == 2) {
     p1 = garray[g].white.pnum;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
@@ -1511,7 +1511,7 @@ int com_kibitz(int p, struct parameter * param)
                    g + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
   }
-  if (garray[g].Teach == 1 || garray[g].Teach2 == 1) {
+  if (garray[g].teach) {
     p1 = garray[g].black.pnum;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
@@ -3189,7 +3189,7 @@ int com_teach(int p, struct parameter * param)
   if (param[0].val.integer <= 0) t = COM_FAILED;
   else t = create_new_gomatch(p, p, param[0].val.integer, 1, 1, 1, RULES_NET, GAMETYPE_GO);
   if (t == COM_FAILED) return COM_FAILED;
-  garray[parray[p].game].Teach = 1;
+  garray[parray[p].game].teach = 1;
   garray[parray[p].game].rated = 0;
   return COM_OK;
 }
@@ -3259,7 +3259,7 @@ int create_new_gomatch(int wp, int bp,
     else byo_time = (start_time) / 6;
     garray[g].ts.time_type = TIMETYPE_TIMED;
   }
-  garray[g].Teach = teaching;
+  garray[g].teach = teaching?1:0;
   if (rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g].type = GAMETYPE_GO;
   else garray[g].type = GAMETYPE_GOEGO;
 #ifdef USING_PRIVATE_GAMES
@@ -3285,12 +3285,12 @@ int create_new_gomatch(int wp, int bp,
   garray[g].lastDectick = garray[g].starttick;
   garray[g].clockStopped = 0;
   garray[g].rules = rules;
-  if (!garray[g].Teach)
+  if (!garray[g].teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_MATCH_d_WITH_s_IN_d_ACCEPTED_n,
           g + 1,
           parray[bp].pname,
           start_time / 60);
-  if (!garray[g].Teach)
+  if (!garray[g].teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_CREATING_MATCH_d_WITH_s_n,
           g + 1,
           parray[bp].pname);
@@ -3309,7 +3309,7 @@ int create_new_gomatch(int wp, int bp,
         parray[bp].pname,
 	TICS2SECS(garray[g].black.ticksleft),
 	garray[g].black.byostones);
-  if (!garray[g].Teach) {
+  if (!garray[g].teach) {
     if (parray[wp].flags.is_client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
     if (parray[bp].flags.is_client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
     }
@@ -3335,7 +3335,7 @@ int create_new_gomatch(int wp, int bp,
   parray[bp].opponent = wp;
   parray[bp].side = PLAYER_BLACK;
   send_go_boards(g, 0);
-  if (garray[g].Teach == 1) return COM_OKN;
+  if (garray[g].teach) return COM_OKN;
   if (size == 19) {
     if ((LadderPlayer=PlayerNamed(Ladder19,parray[bp].pname))) {
       bpos = LadderPlayer->idx;
@@ -3396,14 +3396,7 @@ int com_accept(int p, struct parameter * param)
     } else if (!strcmp(param[0].val.word, "adjourn")) {
       type = PEND_ADJOURN; mode = 2;
     } else if (!strcmp(param[0].val.word, "all")) {
-#if 0
-      while (parray[p].incoming) {
-        pcommand(p, "accept 1");
-      }
-      return COM_OK;
-#else
       type = -1; p1 = -1; mode = 4;
-#endif
     } else {
     
       p1 = player_find_part_login(param[0].val.word);
