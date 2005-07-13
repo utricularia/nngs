@@ -74,6 +74,15 @@
 #include <crypt.h>
 #endif
 
+#ifdef SGI
+#include <sex.h>
+#endif
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #include "missing.h"
 #include "nngsconfig.h"
 #include "nngsmain.h"
@@ -85,16 +94,6 @@
 #include "multicol.h"
 #include "network.h"
 #include "language.h"
-
-
-#ifdef SGI
-#include <sex.h>
-#endif
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
 
 
 struct searchdata mysearchdata;
@@ -347,6 +346,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
     code &= ~CODE_CR1;
     idx = sprintf(bigtmp,"\n");
   }
+	/* CODE_NONE == 0: Dont send code or propt */
   if (code) {
     const char *cp;
     cp= SendCode(p, code);
@@ -833,15 +833,15 @@ int safefilename(const char *path)
 ** strange characters can break things too.
 ** The new version allows names of the regexp: [A-Za-z]+[A-Za-z0-9]*
 */
-int alphastring(const char *str)
+int invalid_pname(const char *str)
 {
   /* [PEM]: Seemed easiest to rewrite it. */
   if (!str || !isalpha((int)*str))
-    return 0;
+    return 1;
   while (*++str)
     if (!isalnum((int)*str))
-      return 0;
-  return 1;
+      return 1;
+  return 0;
 }
 
 int printablestring(const char *str)
@@ -1408,13 +1408,13 @@ const struct searchresult *search(char *psz)
   return 0;
 }
 
-int blank(char *psz)
+int is_totally_blank(char *str)
 {
-  while (*psz) {
-    if (!isspace((int)*psz)) {
+  while (*str) {
+    if (!isspace((int)*str)) {
       return 0;
     } else {
-      psz++;
+      str++;
     }
   }
   return 1;

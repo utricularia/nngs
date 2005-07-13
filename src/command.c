@@ -49,6 +49,10 @@
 #include <ctype.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 #include "nngsconfig.h"
 #include "common.h"
@@ -500,9 +504,8 @@ static void process_login(int p, char *login)
   len=strlen(login);
 
   if (len) {
-    if ((!alphastring(login)) || (!printablestring(login))) {
-      pprintf(p, "\nSorry, names can only consist of lower "
-                 "and upper case letters.  Try again.\n");
+    if (invalid_pname(login)) {
+      pcn_out(p, CODE_NONE, FORMAT_ILLEGAL_CHARACTERS_IN_PLAYER_NAME_ONLY_A_Z_A_Z_0_9_ALLOWED_);
       Logit("LOGIN: Bad userid: %s", login);
     } else if (len < MIN_NAME) {
       pprintf(p, "\nA name should be at least %d characters long! "
@@ -619,7 +622,7 @@ static int process_password(int p, char *password)
     if (p == p1) continue;
     if (!parray[p1].slotstat.is_inuse) continue;
     if (strcmp (parray[p].login, parray[p1].login)) continue;
-#ifdef DEBUG_PLAYER_KICK
+#if DEBUG_PLAYER_KICK
     Logit("Slot %s NEW ", player_dumpslot(p));
     Logit("Slot %s OLD ", player_dumpslot(p1));
 #endif
@@ -631,7 +634,7 @@ static int process_password(int p, char *password)
       pprintf (p, "\n*** Sorry %s is already logged in ***\n", parray[p1].pname);
       return COM_LOGOUT;
     }
-#ifdef DEBUG_PLAYER_KICK
+#if DEBUG_PLAYER_KICK
     Logit("Ass %d<<==Foot %d", p1, p);
 #endif  
     boot_out(p,p1);

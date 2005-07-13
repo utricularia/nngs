@@ -10,13 +10,13 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "utils.h"
-#include "plan.h"
-
 #ifdef USING_DMALLOC
 #include <dmalloc.h>
 #define DMALLOC_FUNC_CHECK 1
 #endif
+
+#include "utils.h"
+#include "plan.h"
 
 #define INITSIZE 10
 

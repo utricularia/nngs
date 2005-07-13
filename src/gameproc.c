@@ -46,6 +46,11 @@
 #include <sys/types.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #include "nngsmain.h"
 #include "nngsconfig.h"
 #include "gameproc.h"

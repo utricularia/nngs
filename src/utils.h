@@ -113,7 +113,7 @@ extern char *stoupper(char *);
 extern int safechar(int);
 extern int safestring(const char *);
 extern int safefilename(const char *path);
-extern int alphastring(const char *);
+extern int invalid_pname(const char *);
 extern int printablestring(const char *);
 extern char *mystrdup(const char *);
 extern char * mycrypt(const char *passwd, const char * salt);
@@ -197,6 +197,6 @@ struct searchresult {
 } ;
 
 extern const struct searchresult *search(char *);
-extern int blank(char *);
+extern int is_totally_blank(char *);
 
 #endif /* UTILS_H */

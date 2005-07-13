@@ -6,8 +6,18 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 #include "nngsconfig.h"
 #include "nngsmain.h"
@@ -163,7 +173,7 @@ int com_anews(int p, struct parameter* param)
       }
     }
     fclose(fp);
-    crtime=player_lastconnect(p);
+    crtime = player_lastconnect(p);
     if (!flag) {
       pprintf(p, "There is no news since your last login (%s).\n",strltime(&crtime));
     } else {
@@ -879,18 +889,18 @@ int com_asetsilent(int p, struct parameter* param)
 
 int com_asethandle(int p, struct parameter* param)
 {
-  char *oldplayer = param[0].val.word;
-  char *newplayer = param[1].val.word;
+  char *oldname = param[0].val.word;
+  char *newname = param[1].val.word;
   char oldlower[MAX_LOGIN_NAME+1], newlower[MAX_LOGIN_NAME+1];
   int p1, p2;
 
-  strcpy(oldlower, oldplayer);
+  strcpy(oldlower, oldname);
   stolower(oldlower);
-  strcpy(newlower, newplayer);
+  strcpy(newlower, newname);
   stolower(newlower);
   p1 = player_fetch(oldlower);
   if (p1 < 0 || !parray[p1].slotstat.is_registered) {
-    pcn_out(p, CODE_ERROR, FORMAT_NO_PLAYER_BY_THE_NAME_s_IS_REGISTERED_, oldplayer);
+    pcn_out(p, CODE_ERROR, FORMAT_NO_PLAYER_BY_THE_NAME_s_IS_REGISTERED_, oldname);
     player_unfix(p1);
     return COM_OK;
   }
@@ -904,7 +914,7 @@ int com_asethandle(int p, struct parameter* param)
     player_unfix(p1);
     return COM_OK;
   }
-  p2=player_fetch(newlower);
+  p2 = player_fetch(newlower);
   if (p2 >= 0 && parray[p2].slotstat.is_online) {
     pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NEW_NAME_IS_LOGGED_IN_);
     player_unfix(p1);
@@ -912,13 +922,12 @@ int com_asethandle(int p, struct parameter* param)
     return COM_OK;
   }
   if (p2 >= 0 && parray[p2].slotstat.is_registered) {
-    /* if (strcmp(oldlower, newlower)) { */
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_THAT_HANDLE_IS_ALREADY_TAKEN_);
     player_unfix(p1);
     player_unfix(p2);
     return COM_OK;
   }
-  if (p2 < 0) p2=player_new();
+  if (p2 < 0) p2 = player_new();
   do_copy(parray[p2].login, newlower, sizeof parray[p2].login);
   if (player_rename(oldlower, newlower) && !player_read(p2)) {
     pcn_out(p, CODE_ERROR, FORMAT_ASETHANDLE_FAILED_);
@@ -927,8 +936,8 @@ int com_asethandle(int p, struct parameter* param)
     return COM_OK;
   }
 
-  pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_RENAMED_TO_s_, oldplayer, newplayer);
-  do_copy(parray[p2].pname, newplayer, sizeof parray[p2].pname);
+  pcn_out(p, CODE_INFO, FORMAT_PLAYER_s_RENAMED_TO_s_, oldname, newname);
+  do_copy(parray[p2].pname, newname, sizeof parray[p2].pname);
   player_dirty(p2);
   player_unfix(p2);
   player_clear(p1);

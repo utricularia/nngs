@@ -75,9 +75,13 @@
 #include <errno.h>
 #endif           
 
-
 #ifdef AIX
 #include <sys/select.h>
+#endif
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
 #endif
 
 #include "network.h"

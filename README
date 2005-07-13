@@ -14,6 +14,12 @@ Before compiling, read and edit src/nngsconfig.h and src/nngsmain.h
 Things like mail program locations are specified therein.
 You may also want to check config.h after running ./configure
 
+NNGS needs mlrate. Unfortunately, the original (pem's) mlrate
+is not autoconfd/automaked. If you can't get your hands on an
+AC/AM's cpy, you willll need to move all of it's
+source, into a src/ subdirectory, and you may need some
+minor changes.
+
 Configure and compile mlrate and then NNGS.  Here's how:
 (current version numbers may be different...)
 
@@ -92,14 +98,6 @@ Contributions and suggestions are welcome.
 When sending patches that span several files, please use
 diff -ruN <orig-dir> <modified-dir>
 
-For development related discussions, come to NNGS Channel 10:
-telnet nngs.cosmic.org 9696
-<pick a random name if you're not registered>
-channel 10
-tell 10 hello
-; this text goes to channel 10
-
-
 
 >> MAJOR CHANGES
 Major changes since the beginning of this project:
@@ -111,11 +109,13 @@ Major changes since the beginning of this project:
 ... all game and player dirs created on install
 - nngs local malloc() and salloc() removed
 - mlrate cleaned up
-- all format strings taken out of the code
+- most format strings taken out of the code
 - internationalization
 ... chinese (messages and help files) (courtesy of LGS)
 ... german (messages only)
 ... others to follow
+- added some caching, to reduce reading/writing of playerdb to/from disk.
+- changed clock resolution for games to 0.1 sec .
 
 
 >> WINDOWS

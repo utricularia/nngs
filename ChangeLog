@@ -3,18 +3,36 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.18 2005-05-29 AvK
+1.1.18 2005-07-13 AvK
+- removed excessive debugging in the log file
+- nrat/ contents moved to src/ changes to makefiles//config
+  Had to ask sourceforge.net crew to fix this in the CVS
+- Attributions && Credits ...
+- renames:
+  - player_forget() to player_unfix(), which is more appropriate
+  - misc variables in playerd/gamedb (flags.is_rated,is_client)
+  - changed some more booleans to bitfields (dNd --> is_private)
+  - some of the #defines: PAIR --> WANT_PAIR
 - Bugfix: find_part_login() when there was an exact + one or more partial
   matches, it returned -2. It now returns the exact match, once there is one.
 - combined game.{Teach/Teach2} variables into .teach.
+  still allowing teach2 variable when reading game from file.
+  (this will disappear, eventually)
 - cleaned up network.c
-  changed lots of "else if" in main loop to "continue"
+  - changed lots of "else if" in main loop to "continue"
+  - cleaned up telnet IAC-processing
+  - Attempt to remove some duplicated code
+  - Used fd_top+1 as first arg for select()
+  - (style) replaced silly enum by OldFashioned Defines ...
 - cruft removal
+  - removed (()) prenthesis
+  - replaced some if()if(b) -->> if (a && b)
+  - some more (p == NULL) -->> (!p)
 - tabs/spaces/indent
-- removed ADMIN_LEVELS. If you dont want them: dont use them.
-  They wont harm you.
-1.1.17 2005-05-25 AvK
+- removed ADMIN_LEVELS. They are always enabled, now.
+  If you dont want them: dont use them. They wont harm you.
 
+1.1.17 2005-05-25 AvK
 - lots of timing/byo-yomi. Changed all of the timekeeping to
   0.1 second ticks. Only filedates/logons/gamestarts are still time_t.
   Timekeeping is basically done on the "heartbeat". This goes

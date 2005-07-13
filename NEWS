@@ -32,3 +32,8 @@ Version 1.1.17 (2005 Feb 20)
   this bug seems very old! I could not find a correct version, even
   in a cosmic.org (17 aug 2002) version.
 - changed some ints to time_t
+
+Version 1.1.18 (2005 Jul 13)
+- fixed bug in player_find()
+- cleanup
+- network fixes.

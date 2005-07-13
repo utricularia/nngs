@@ -118,7 +118,7 @@ int com_register(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_IT_WOULD_NOT_BE_NICE_TO_REGISTER_GUEST);
     return COM_OK;
   }
-  if (!alphastring(pname)) {
+  if (invalid_pname(pname)) {
     pcn_out(p, CODE_ERROR, FORMAT_ILLEGAL_CHARACTERS_IN_PLAYER_NAME_ONLY_A_Z_A_Z_0_9_ALLOWED_);
     return COM_OK;
   }
@@ -505,8 +505,8 @@ already in the list */
   fp2 = xyfopen(FILENAME_LIST_s_OLD, "r", listname);
   while((cp=fgets(lmember, sizeof lmember, fp2))) {
     if ((len=strlen(cp)) < 1) {
-      Logit("Cant make copy \"%s\"", filename() );
-      break;
+      Logit("Emty line, not copied in \"%s\"", filename() );
+      continue;
     }
     if (!strncasecmp(lmember, member,len-1)) continue;
     fputs(lmember,fp1);
@@ -536,10 +536,14 @@ int com_showlist(int p, struct parameter * param)
     if (!fp) return COM_OK;
 
     for(lines=1; fgets(buff, sizeof buff, fp); lines++) {
-      if (sscanf(buff, "%s %d\n", member, &rights) == 2) {
-        Logit("Bad format in \"%s\", line%d", filename(), lines );
+      if (sscanf(buff, "%s %d\n", member, &rights) != 2) {
+        Logit("Bad format in \"%s\", line%d:%s", filename(), lines, buff );
+#if 0
         fclose(fp);
         return COM_OK;
+#else
+        continue;
+#endif
       }
       pcn_out(p,CODE_INFO, FORMAT_s_IS_sn, member, (rights == 0) ? "SECRET" :
 (rights == 1) ? "READ ONLY" : "READ/WRITE");
@@ -1466,11 +1470,8 @@ int com_kibitz(int p, struct parameter * param)
     if (p1 == p) continue;
     if (player_is_observe(p1, g)) {
       if (player_censored(p1, p)) continue;
-      if (parray[p1].flags.is_client) {
-        if (parray[p1].bell) {
-          pcn_out(p1, CODE_BEEP, FORMAT_nn);
-        }
-      }
+      if (parray[p1].flags.is_client && parray[p1].bell)
+        pcn_out(p1, CODE_BEEP, FORMAT_nn);
       pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
  		   parray[p].pname,
  		   parray[p].srank,
@@ -1485,9 +1486,7 @@ int com_kibitz(int p, struct parameter * param)
       otherg = garray[g].pairwith;
       if (player_is_observe(p1, otherg)) {
         if (player_censored(p1, p)) continue;
-        if (parray[p1].bell) {
-          pcn_out(p1, CODE_BEEP,FORMAT_nn);
-        }
+        if (parray[p1].bell) pcn_out(p1, CODE_BEEP,FORMAT_nn);
         pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
  		   parray[p].pname,
  		   parray[p].srank,
@@ -2127,26 +2126,24 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
 
   if (from > 0) {
     if (parray[p].orating < from || parray[p].orating > to) return 0;
-    if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
-        return 0;
-    if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if (!parray[p].flags.is_rated) return 0;
-    if (sel_bits & WHO_UNRATED) if (parray[p].flags.is_rated) return 0;
-    if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
-    if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
-    if (sel_bits & WHO_REGISTERED) if (!parray[p].slotstat.is_registered) return 0;
-    if (sel_bits & WHO_UNREGISTERED) if (parray[p].slotstat.is_registered) return 0;
+    if ((sel_bits & WHO_OPEN) && (!parray[p].open || parray[p].game >= 0)) return 0;
+    if ((sel_bits & WHO_CLOSED) && parray[p].open) return 0;
+    if ((sel_bits & WHO_RATED) && !parray[p].flags.is_rated) return 0;
+    if ((sel_bits & WHO_UNRATED) && parray[p].flags.is_rated) return 0;
+    if ((sel_bits & WHO_FREE) && parray[p].game >= 0) return 0;
+    if ((sel_bits & WHO_LOOKING) && !parray[p].looking) return 0;
+    if ((sel_bits & WHO_REGISTERED) && !parray[p].slotstat.is_registered) return 0;
+    if ((sel_bits & WHO_UNREGISTERED) && parray[p].slotstat.is_registered) return 0;
   }
   else {
-    if (sel_bits & WHO_OPEN) if (!parray[p].open || parray[p].game >= 0)
-        return 0;
-    if (sel_bits & WHO_CLOSED) if (parray[p].open) return 0;
-    if (sel_bits & WHO_RATED) if (!parray[p].flags.is_rated) return 0;
-    if (sel_bits & WHO_UNRATED) if (parray[p].flags.is_rated) return 0;
-    if (sel_bits & WHO_FREE) if (parray[p].game >= 0) return 0;
-    if (sel_bits & WHO_LOOKING) if (parray[p].looking == 0) return 0;
-    if (sel_bits & WHO_REGISTERED) if (!parray[p].slotstat.is_registered) return 0;
-    if (sel_bits & WHO_UNREGISTERED) if (parray[p].slotstat.is_registered) return 0;
+    if ((sel_bits & WHO_OPEN) && (!parray[p].open || parray[p].game >= 0)) return 0;
+    if ((sel_bits & WHO_CLOSED) && parray[p].open) return 0;
+    if ((sel_bits & WHO_RATED) && !parray[p].flags.is_rated) return 0;
+    if ((sel_bits & WHO_UNRATED) && parray[p].flags.is_rated) return 0;
+    if ((sel_bits & WHO_FREE) && parray[p].game >= 0) return 0;
+    if ((sel_bits & WHO_LOOKING) && !parray[p].looking) return 0;
+    if ((sel_bits & WHO_REGISTERED) && !parray[p].slotstat.is_registered) return 0;
+    if ((sel_bits & WHO_UNREGISTERED) && parray[p].slotstat.is_registered) return 0;
   }
   return 1;
 }
@@ -2259,7 +2256,7 @@ static void a_who(int p, int cnt, int *plist)
 #endif
     } else if (!parray[p1].open && parray[p1].game < 0) {
       flags[2] = 'X';
-    } else if (parray[p1].looking && (parray[p1].game < 0)) {
+    } else if (parray[p1].looking && parray[p1].game < 0) {
       flags[2] = '!';
     } else {
       flags[2] = ' ';
@@ -2300,10 +2297,10 @@ static void who_terse(int p, int num, int *plist, int type)
     p1 = plist[i];
 /*    if (parray[p1].invisable && parray[p].adminLevel < ADMIN_ADMIN) continue; */
     flags[0] = ' ';
-    flags[1] = (parray[p1].i_shout) ? ((parray[p1].i_login) ? ' ' : 'Q') : 'S';
+    flags[1] = (parray[p1].i_shout) ? (parray[p1].i_login) ? ' ' : 'Q' : 'S';
     if (!parray[p1].open) {
       flags[2] = 'X';
-    } else if (parray[p1].looking && (parray[p1].game < 0)) {
+    } else if (parray[p1].looking && parray[p1].game < 0) {
       flags[2] = '!';
     } else {
       flags[2] = ' ';
@@ -3380,6 +3377,7 @@ int com_accept(int p, struct parameter * param)
   int p1 = -1;
   int mode = 0, cnt = 0, idx = 0;
   struct pending *ptr=NULL;
+  char *stype = "unknown";
 
   switch(param[0].type) {
   case TYPE_NULL:
@@ -3392,9 +3390,9 @@ int com_accept(int p, struct parameter * param)
     break;
   case TYPE_WORD:
     if (!strcmp(param[0].val.word, "pause")) {
-      type = PEND_PAUSE; mode = 2;
+      stype = "pause"; type = PEND_PAUSE; mode = 2;
     } else if (!strcmp(param[0].val.word, "adjourn")) {
-      type = PEND_ADJOURN; mode = 2;
+      stype = "adjourn"; type = PEND_ADJOURN; mode = 2;
     } else if (!strcmp(param[0].val.word, "all")) {
       type = -1; p1 = -1; mode = 4;
     } else {
@@ -3417,7 +3415,7 @@ int com_accept(int p, struct parameter * param)
       pcn_out(p, CODE_ERROR, FORMAT_YOU_HAVE_NO_OFFERS_TO_ACCEPT_);
       break;
     case 2: /* type */
-      pcn_out(p, CODE_ERROR, FORMAT_THERE_ARE_NO_PENDING_s_OFFERS_, type);
+      pcn_out(p, CODE_ERROR, FORMAT_THERE_ARE_NO_PENDING_s_OFFERS_, stype);
       break;
     case 3: /* player name */
       pcn_out(p, CODE_ERROR, FORMAT_THERE_ARE_NO_PENDING_OFFERS_FROM_s_,
@@ -4547,8 +4545,9 @@ int com_find(int p, struct parameter * param)
   if ((fp = xyfopen(FILENAME_FIND, "r")) ) {
     while (fgets(buf, sizeof buf, fp)) {
       i = strlen(buf);
+      if (i < 1) continue;
       buf[i - 1] = '\0';
-      if (blank(buf)) continue;
+      if (is_totally_blank(buf)) continue;
       psr = search(buf);
 
         if (psr) {
@@ -4705,8 +4704,7 @@ void player_notify_departure(int p)
     if (parray[p1].notifiedby
       && !player_notified(p1, p)
       && player_notified(p, p1)) {
-      if (parray[p1].bell)
-        pcn_out(p1, CODE_BEEP, FORMAT_Gn);
+      if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_Gn);
       pcn_out_prompt(p1, CODE_INFO, FORMAT_NOTIFICATION_s_HAS_DEPARTED_AND_ISN_T_ON_YOUR_NOTIFY_LIST_n, parray[p].pname);
     }
   }
@@ -4728,9 +4726,8 @@ int player_notify_present(int p)
       count++;
       pprintf(p, " %s", parray[p1].pname);
       if (parray[p1].notifiedby && !player_notified(p1, p)) {
-        if (parray[p1].bell)
-          pcn_out(p1, CODE_BEEP, FORMAT_007N);
-          pcn_out_prompt(p1, CODE_ERROR, FORMAT_NOTIFICATION_s_HAS_ARRIVED_AND_ISN_T_ON_YOUR_NOTIFY_LIST_n, parray[p].pname);
+        if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_007N);
+        pcn_out_prompt(p1, CODE_ERROR, FORMAT_NOTIFICATION_s_HAS_ARRIVED_AND_ISN_T_ON_YOUR_NOTIFY_LIST_n, parray[p].pname);
       }
     }
   }
@@ -4747,8 +4744,7 @@ int player_notify(int p, char *note1, char *note2)
 
   for (p1 = 0; p1 < parray_top; p1++) {
     if (player_notified(p1, p)) {
-      if (parray[p1].bell)
-        pcn_out(p1, CODE_BEEP, FORMAT_007N);
+      if (parray[p1].bell) pcn_out(p1, CODE_BEEP, FORMAT_007N);
       pcn_out_prompt(p1, CODE_INFO, FORMAT_NOTIFICATION_s_HAS_s_n, parray[p].pname, note1);
       if (!count) {
         pcn_out(p,CODE_INFO, FORMAT_YOUR_s_WAS_NOTED_BY_, note2);

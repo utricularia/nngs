@@ -67,7 +67,7 @@ void pending_init(void)
   pendfree= NULL;
   hnd= &pendfree;
   for(ii=0; ii < COUNTOF(pendingarray); ii++ ) {
-    pendingarray[ii].valid = 0;
+    pendingarray[ii].is_valid = 0;
     pendingarray[ii].seq = 0;
     pendingarray[ii].hnd = hnd;
     *hnd = & pendingarray[ii];
@@ -90,7 +90,7 @@ static struct pending * pending_alloc(void)
   pending_cut(ptr);
   pendcnt.avail--;
   pendcnt.valid++;
-  ptr->valid=1;
+  ptr->is_valid=1;
   return ptr;
 }
 
@@ -102,8 +102,8 @@ static void pending_free(struct pending * ptr)
   pending_cut(ptr);
   pending_ins(&pendfree,ptr);
   pendcnt.avail++;
-  if (ptr->valid) pendcnt.valid++;
-  ptr->valid = 0;
+  if (ptr->is_valid) pendcnt.valid++;
+  ptr->is_valid = 0;
 }
 	/* cut ptr out of linked list. */
 static void pending_cut(struct pending * ptr)
@@ -163,7 +163,7 @@ Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,ptr,pending_dmp() );
   return ptr;
 }
 
-	/* Free pending structure instance by setting it's valid field
+	/* Free pending structure instance by setting it's is_valid field
         ** to zero.
         ** Later , the actual cutting it out of it's current LL 
 	** and inserting it into freelist is done by pending_count()
@@ -173,11 +173,8 @@ Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,ptr,pending_dmp() );
 void pending_delete(struct pending *ptr)
 {
   if (!ptr) return;
-  if (ptr->valid) pendcnt.valid--;
-  ptr->valid=0;
-#if 0
-  pending_free(ptr);
-#endif
+  if (ptr->is_valid) pendcnt.valid--;
+  ptr->is_valid=0;
 #if DEBUG_PENDING
 Logit("Pending_delete(%p:%d,%d,%d) : %s"
 	, ptr,ptr->whofrom,ptr->whoto,ptr->type, pending_dmp() );
@@ -194,7 +191,7 @@ struct pending *pending_find(int from, int to, int type)
   for (ptr=pendlist; ptr; ptr=nxt) {
     if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt = ptr->nxt;
-    if (!ptr->valid) {
+    if (!ptr->is_valid) {
       pending_free(ptr);
       continue;
     }
@@ -224,7 +221,7 @@ struct pending * pending_next(struct pending *ptr, int from, int to, int type)
   for (ptr=ptr->nxt; ptr ; ptr=nxt) {
     if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt = ptr->nxt;
-    if (!ptr->valid) {
+    if (!ptr->is_valid) {
       pending_free(ptr);
       continue;
     }
@@ -252,7 +249,7 @@ int pending_count(int from, int to, int type)
   for (ptr=pendlist; ptr; ptr=nxt) {
     if (ptr->nxt==ptr) ptr->nxt=NULL;
     nxt=ptr->nxt;
-    if (!ptr->valid) {
+    if (!ptr->is_valid) {
       pending_free(ptr);
       continue;
     }

@@ -34,6 +34,11 @@
 #include <strings.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #include "nngsconfig.h"
 #include "nngsmain.h"
 #include "playerdb.h"
@@ -54,11 +59,6 @@
 
 #ifdef WANT_NNGSRATED
 #include "rdbm.h"
-#endif
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
 #endif
 
 struct player_ parray[PARRAY_SIZE]; 
@@ -752,6 +752,9 @@ int player_read(int p)
     Logit("Slot %s shadowed by %d", player_dumpslot(slot), p);
 #endif
     /* we don't want player_clear(slot); here. Player is kicked out later */
+    /* what we could do here, is copy p<-slot, and avoid the read.
+    ** dirty data (if any) has already been written out to disk here
+    */
     }
 
   /* open the player data file */
@@ -1362,7 +1365,7 @@ void player_pending_delete(struct pending * ptr)
   int p1;
 
   if (!ptr) return ;
-  if (!ptr->valid) return;
+  if (!ptr->is_valid) return;
   p1=ptr->whofrom;
   if (p1 >=0 && parray[p1].slotstat.is_connected) parray[p1].outgoing--;
   p1=ptr->whoto;
@@ -1683,13 +1686,13 @@ int player_rename(char *name, char *newname)
   sprintf(fname2, "%s/%c/%s", player_dir, newname[0], newname);
   rename(fname, fname2);
   sprintf(fname, "%s/%c/%s.games", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.games", player_dir, name[0], newname);
+  sprintf(fname2, "%s/%c/%s.games", player_dir, newname[0], newname);
   rename(fname, fname2);
   sprintf(fname, "%s/%c/%s.logons", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.logons", player_dir, name[0], newname);
+  sprintf(fname2, "%s/%c/%s.logons", player_dir, newname[0], newname);
   rename(fname, fname2);
   sprintf(fname, "%s/%c/%s.messages", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.messages", player_dir, name[0], newname);
+  sprintf(fname2, "%s/%c/%s.messages", player_dir, newname[0], newname);
   rename(fname, fname2);
   return 0;
 }

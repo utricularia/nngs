@@ -33,7 +33,7 @@
 #endif
 
 #ifdef HAVE_STRING_H
-#include <string.h> /* strchr() and friends */
+#include <string.h>
 #endif
 
 #ifdef HAVE_SYS_STAT_H
@@ -44,6 +44,10 @@
 #include <time.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 #include "nngsconfig.h"
 #include "nngsmain.h"
@@ -540,16 +544,16 @@ static void loadkib(FILE *fp, struct game *g)
 {
   char buf[256];
   int i,k;
+  size_t len;
 
   while (fgets(buf, sizeof buf, fp)) {
-    buf[strlen(buf) - 1] = '\0';	/* strip '\n' */
-    if (buf[0] == '\0') {
-      if (Debug) Logit("Got my blank line in loadkib");
-      break;
-    }
-    if (buf[1] == '\0') {
-      Logit("PANIC! Got my blank line in loadkib; buf[0]=%d",buf[0]);
-      break;
+    len = strlen(buf);
+    if (!len) continue;
+    if (len >= sizeof buf) len = sizeof buf ;
+    buf[len-1] = '\0';	/* strip '\n' */
+    if (is_totally_blank(buf)) {
+      /* if (Debug) */ Logit("Got my blank line in loadkib");
+      continue;
     }
     sscanf(buf, "%d %n", &i,&k);
     add_kib(g, i, buf+k);

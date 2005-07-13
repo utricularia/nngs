@@ -42,7 +42,7 @@
 
 struct pending {
   struct pending **hnd,*nxt;
-  unsigned valid: 1;
+  unsigned is_valid: 1;
   unsigned seq;
   int type;
   int whoto;

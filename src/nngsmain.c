@@ -32,6 +32,11 @@
 #include <signal.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+
 #include "nngsconfig.h"
 #include "nngsmain.h"
 #include "common.h"
@@ -44,11 +49,6 @@
 #include "emote2.h"
 #include "mink.h"
 #include "ip_ban.h"
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
 
 /* Arguments */
 int port, Ladder9, Ladder19, num_19, num_9, completed_games,

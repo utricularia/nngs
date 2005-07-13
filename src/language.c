@@ -33,6 +33,10 @@
 #include <string.h>
 #endif
 
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
 
 	/* NOTE:
 	** header file "formats.h" contains *code* for language_init() 
