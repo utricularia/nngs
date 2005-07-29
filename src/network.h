@@ -113,4 +113,5 @@ extern void  net_echoOff(int);
  */
 int  net_isalive(int);
 
+char * net_dumpslot(int fd);
 #endif	/* NETWORK_H */

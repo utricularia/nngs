@@ -75,17 +75,20 @@
 struct game {
 	/* Key info */
   int gstatus;
+  struct {
+    unsigned in_use: 1;
+  } slotstat;
 #ifdef WANT_PAIR
   int pairwith;
   int pairstate;
 #endif
   char *gtitle;
   char *gevent;
+  struct minkgame *minkg;
   time_t timeOfStart; 
   unsigned starttick;    /* The tic when this game was started  */
   unsigned lastMovetick; /* Last tic a move was made */
   unsigned lastDectick;  /* Last tic a players clock was decremented */
-  struct minkgame *GoGame;
   int nmvinfos;
   struct mvinfo *mvinfos;
 	/* flags */
@@ -113,7 +116,7 @@ struct game {
   int num_pass; 
   struct playerstuff {
     int pnum;
-    int old_num;	/* Contains the old game player number */
+    int old_pnum;	/* Contains the old game player number */
     int ticksleft;
     int byoperiods;		/* player in byo-yomi: number of byo periods entered */
     int byostones;	/* Stones left to play in byo period */

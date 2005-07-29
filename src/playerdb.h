@@ -39,8 +39,8 @@
 #define MAX_CHANNEL_MEMBERS PARRAY_SIZE
 #define PENDING_SIZE (MAX_PENDING*PARRAY_SIZE)
 
-#define DEBUG_PLAYER_KICK 0
-#define DEBUG_PLAYER_SLOT 0
+#define DEBUG_PLAYER_KICK 1
+#define DEBUG_PLAYER_SLOT 1
 #define DEBUG_GAME_SLOT 0
 
 	/* These are for parray.pstatus */
@@ -109,20 +109,32 @@
  * ("lock leaks").
  */
 struct player_ {
-  int socket;
-  int pstatus;		/* The status of this slot eg PSTATUS_PROMPT */
-  int protostate;	/* The state as reported in the protocol-lines */
-  struct {
-	unsigned  is_inuse:1;	/* Slot is in use */
-	unsigned  is_valid:1;	/* data is valid (initialized or read) */
-	unsigned  is_connected:1;	/* player is connected */
-	unsigned  is_online:1;	/* Player is logged on and can receive */
-	unsigned  is_registered:1;	/* registered Player, data should be saved */
-	unsigned  is_dirty:1;	/* Data has changed */
-	unsigned fixcount:2;	/* Reference count; for refleak testing */
-	time_t timestamp;	/* For LRU allocation */
-	} slotstat;
-  char pname[MAX_NAME + 1];
+	/* This is the part of the player data that depends on the
+	** connection/session, basically identified by filedescriptor
+	*/
+  struct connstat_ {
+    int socket;
+    int pstatus;	/* The status of this slot eg PSTATUS_PROMPT */
+    int protostate;	/* The state as reported in the protocol-lines */
+    int gnum;
+    int opponent; /* Only valid if gnum is >= 0 */
+    int side;	/* Only valid if gnum is >= 0 */
+    int num_observe;
+  } session;
+  struct slotstat {
+    unsigned  is_inuse:1;	/* Slot is in use */
+    unsigned  is_valid:1;	/* data is valid (initialized or read) */
+    unsigned  is_dirty:1;	/* Data has changed */
+    unsigned  is_connected:1;	/* slot is connected to a socket */
+    unsigned  is_online:1;	/* Player is logged on and can receive */
+    unsigned  is_registered:1;	/* registered Player, data should be saved */
+    unsigned fixcount:2;	/* Reference count; for refleak testing */
+    time_t timestamp;	/* For LRU allocation */
+  } slotstat;
+	/* The rest of the playerdata is 'persistent' or volatile
+	** Most of it is saved in the playerfile
+	*/
+  char pname[MAX_NAME + 1];	/* pname == primary key, used in filenames*/
   char login[MAX_NAME + 1];	/* login is the same as pname, but lowercase */
   char passwd[MAX_PASSWORD + 1];
   char fullname[MAX_FULLNAME + 1];
@@ -136,10 +148,7 @@ struct player_ {
   int pass_tries;
   int water;
   int extprompt;
-  int game;
   int gametype;
-  int opponent; /* Only valid if game is >= 0 */
-  int side;	/* Only valid if game is >= 0 */
   int last_tell;
   int last_pzz;
   int last_tell_from;
@@ -148,19 +157,17 @@ struct player_ {
   int language; /* Syncanph, AvK */
   int logon_time;
   int last_command_time;
-  int outgoing;
-  int incoming;
-  int num_observe;
-  int lastColor;
+  int outgoing; /* the number of outgoing pending requests */
+  int incoming; /* idem, incoming */
   int numgam;
   int d_height;
   int d_width;
   int last_file_line;
-  int open;
-  int looking;
   struct {
     unsigned is_rated:1;
     int is_client;
+    int is_looking;
+    int is_open;
   } flags;
   int rating;
   int orating;

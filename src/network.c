@@ -96,6 +96,10 @@
 /*#define  buglog(x)  Logit x */
 #define  buglog(x) 
 
+#ifndef WANT_UDP
+#define WANT_UDP 1
+#endif
+
 /* [PEM]: Debugging. An attempt to find where things hangs sometimes. */
 #if 0
 #define TIMED  struct timeval t0, t1
@@ -123,7 +127,7 @@
 #define NETSTATE_CONNECTED 2
 	/* fd has been closed, but there may still be data in the struct */
 #define NETSTATE_DISCONNECTED 3
-
+#define NETSTATE_UDP 4
 
 struct netstruct {
   int netstate;
@@ -189,6 +193,12 @@ static void  fd_init(int fd);
 static void  fd_cleanup(int fd);
 static void  flushWrites(void);
 
+
+#if WANT_UDP
+#include "udp_commands.h"
+static int  do_read_udp(int fd);
+static char udpbuff[2*4096];
+#endif
 /**********************************************************************
  * Public data
  **********************************************************************/
@@ -282,6 +292,43 @@ int net_init(int port)
   if (fd > net_fd_top) net_fd_top = fd;
   FD_SET(fd , &readSet);
   listen_count++;
+#if WANT_UDP
+  {
+  int val,rc;
+
+  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  fprintf(stderr, "NNGS: can't create UDP socket.  errno=%d\n", errno);
+        return 0;
+        }
+                                                                                             
+  val = 1;
+  rc = setsockopt(fd, IPPROTO_IP , IP_RECVOPTS , &val, sizeof val);
+  if (rc < 0) { rc = errno;
+    fprintf(stderr, "Tinker := %d(%s)\n" , rc, strerror(rc) );
+    close (fd);
+    return 0;
+  }
+
+#if 0
+  addr.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
+#endif
+  if (bind(fd, (struct sockaddr *) &addr, sizeof addr) < 0) {
+    fprintf(stderr
+    , "bind() Fd %d, Family %d, Port %d, Addr %x fails:%s\n"
+    , fd
+    , addr.sin_family
+    , (int) ntohs(addr.sin_port)
+    , (int) ntohl(addr.sin_addr.s_addr)
+    , strerror(errno)
+    );
+    close(fd);
+    }
+  netarray[fd].netstate = NETSTATE_UDP;
+  if (fd > net_fd_top) net_fd_top = fd;
+  FD_SET(fd , &readSet);
+  listen_count++;
+  }
+#endif /* WANT_UDP */
   return 0;
 }
 
@@ -429,6 +476,12 @@ void  net_select(int timeout)
             /* continue; */
           }
           break;
+#if WANT_UDP
+        case NETSTATE_UDP: /* A datagram from a web-interface. */
+          /* Logit("Got UDP Message on %d", fd); */
+	  /* rc = */ do_read_udp(fd);
+	  continue;
+#endif /* WANT_UDP */
 	default:	/* It is not connected. */
           assert(!FD_ISSET(fd, &readSet)); /* bogus */
 	  continue;
@@ -447,6 +500,45 @@ void  net_select(int timeout)
     } /* for */
   } /* while(1) */
 }
+
+
+#if WANT_UDP
+static int  do_read_udp(int fd)
+{
+  int rlen, wlen, alen;
+  struct sockaddr_in addr;
+
+  alen = sizeof addr;
+
+  rlen = recvfrom(fd, netarray[fd].in_buff, sizeof netarray[fd].in_buff
+  , 0 , (struct sockaddr *) &addr, &alen
+  );
+  if (rlen >= sizeof netarray[fd].in_buff) rlen = sizeof netarray[fd].in_buff;
+  if (rlen <= 0) return 0;
+  while( rlen-- > 0) {
+    switch(netarray[fd].in_buff[rlen]) {
+    case ' ': case '\t':
+    case '\n': case '\r': continue;
+      }
+    rlen++; break;
+    }
+  /* Logit("Read UDP Message %d", rlen); */
+  if (rlen < 0) return 0;
+  netarray[fd].in_buff[rlen] = 0;
+  rlen = udp_command(udpbuff, sizeof udpbuff, netarray[fd].in_buff);
+  if (rlen < 0) return 0;
+
+  while(1) {
+    wlen = sendto(fd ,udpbuff, rlen, 0 , (struct sockaddr *) &addr, alen);
+    if (wlen == rlen) break;
+    if (errno == EINTR) continue;
+    return -1;
+  }
+  /* Logit("Wrote UDP Message %d", wlen); */
+  return wlen;
+}
+
+#endif /* WANT_UDP */
 
 
 static int  do_accept(int listenFd)
@@ -821,5 +913,32 @@ int net_isalive(int fd) {
   case NETSTATE_LISTENING: return 0;
   case NETSTATE_CONNECTED: return 1;
   case NETSTATE_DISCONNECTED: return 0;
+  case NETSTATE_UDP: return 0;
   }
 }
+
+char * net_dumpslot(int fd)
+{
+static char buff[200];
+size_t pos;
+
+  if (fd < 0 || fd >= net_fd_top) return NULL;
+
+  pos = sprintf(buff, "%d:%d:%x:%08x:%c:%c"
+    , fd, netarray[fd].netstate, netarray[fd].telnetState
+    , netarray[fd].fromHost
+    , (netarray[fd].is_full) ? 'F' : '-'
+    , (netarray[fd].is_throttled) ? 'T' : '-'
+    );
+  pos += sprintf(buff, ":%u:%u:%p"
+    , netarray[fd].out_used ,netarray[fd].out_size
+    , netarray[fd].out_buff
+    );
+  pos += sprintf(buff, ":%u:%u:%u:%u"
+    , netarray[fd].in_used
+    , netarray[fd].in_end
+    , netarray[fd].parse_dst, netarray[fd].parse_src
+    );
+return buff;
+} ;
+

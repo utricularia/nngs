@@ -25,7 +25,7 @@
   - Used fd_top+1 as first arg for select()
   - (style) replaced silly enum by OldFashioned Defines ...
 - cruft removal
-  - removed (()) prenthesis
+  - removed (()) parenthesis
   - replaced some if()if(b) -->> if (a && b)
   - some more (p == NULL) -->> (!p)
 - tabs/spaces/indent

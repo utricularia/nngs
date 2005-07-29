@@ -73,11 +73,11 @@
 #endif
 
 #define TELL_PLAYER_IN_TMATCH(From, To) \
-    (( (parray[To].game >= 0) \
-    && (parray[From].game != parray[To].game) \
+    (( (parray[To].session.gnum >= 0) \
+    && (parray[From].session.gnum != parray[To].session.gnum) \
     && (parray[To].match_type == GAMETYPE_TNETGO) \
     )||( (parray[From].match_type == GAMETYPE_TNETGO) \
-    && (parray[From].game != parray[To].game) \
+    && (parray[From].session.gnum != parray[To].session.gnum) \
     ))
 
 #define TELL_TELL 0
@@ -85,6 +85,11 @@
 #define TELL_KIBITZ 3
 #define TELL_CHANNEL 4
 #define TELL_BEEP 5
+	/* This declaration is here because we *absolutely* want
+	** a prototype in scope. If it conflicts with a header file:
+	** so be it ...
+	*/
+extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 
 static int index_lookup(char* found , char * find);
 static int com_xmatch(int p, struct parameter * param, int gametype);
@@ -162,7 +167,6 @@ int com_register(int p, struct parameter * param)
   parray[p1].slotstat.is_registered = 1;
   parray[p1].slotstat.is_valid = 1;
   player_dirty(p1);
-  /* player_save(p1); this save can be omitted */
   player_unfix(p1);
 
   sprintf(text, "\nWelcome to %s!  Here is your account info:\n\n\
@@ -605,11 +609,11 @@ int com_showlist(int p, struct parameter * param)
 int com_quit(int p, struct parameter * param)
 {
   UNUSED(param);
-  if (parray[p].game >= 0) {
-    pcn_out_prompt(parray[p].opponent,CODE_ERROR,
+  if (parray[p].session.gnum >= 0) {
+    pcn_out_prompt(parray[p].session.opponent,CODE_ERROR,
     FORMAT_YOUR_OPPONENT_TYPED_QUIT_PERHAPS_THEY_HAD_AN_EMERGENCY_n);
     Logit("ESCAPE: %s quit from game with %s",
-           parray[p].pname, parray[parray[p].opponent].pname);
+           parray[p].pname, parray[parray[p].session.opponent].pname);
   }
   pxysend_file(p, FILENAME_MESS_LOGOUT);
   return COM_LOGOUT;
@@ -689,7 +693,7 @@ int com_join(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_MUST_REGISTER_TO_PLAY_ON_THE_LADDER_);
     return COM_OK;
   }
-  if (parray[p].game >= 0) {
+  if (parray[p].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_CANNOT_JOIN_A_LADDER_WHILE_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -755,7 +759,7 @@ int com_drop(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (parray[p].game >= 0) {
+  if (parray[p].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_SORRY_YOU_CANNOT_DROP_A_LADDER_WHILE_PLAYING_A_GAME_ );
     return COM_OK;
   }
@@ -929,7 +933,7 @@ int com_admins(int p, struct parameter * param)
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_online ) continue;
     if (parray[p1].adminLevel < ADMIN_ADMIN) continue;
-    if (parray[p1].game >= 0) continue;
+    if (parray[p1].session.gnum >= 0) continue;
     if (((player_idle(p1)%3600)/60) > 45) continue;
     if (count %3 == 0)
       pcn_out(p,CODE_CR1|CODE_INFO, FORMAT_empty);
@@ -1324,7 +1328,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       sprintf(tmp," who has been idle %d minutes", ((player_idle(p1)%3600)/60));
     } else *tmp = 0;
 
-    if (parray[p1].game >= 0 && (parray[p1].game != parray[p].game)) {
+    if (parray[p1].session.gnum >= 0 && (parray[p1].session.gnum != parray[p].session.gnum)) {
       strcpy(tmp, " (who is playing a game)");
     }
     break;
@@ -1422,8 +1426,8 @@ static int chtell(int p, int ch, char *msg)
 
 int com_kibitz(int p, struct parameter * param)
 {
-  int g, i, otherg;
-  int p1;
+  int g0, i, otherg;
+  int p1, bp, wp;
   int count = 0;
   char tmp2[MAX_LINE_SIZE];
   char tmp3[MAX_LINE_SIZE];
@@ -1431,44 +1435,44 @@ int com_kibitz(int p, struct parameter * param)
   if (parray[p].muzzled) {
     return COM_OK;
   }
-  if (parray[p].num_observe == 0 && parray[p].game < 0) {
+  if (parray[p].session.num_observe == 0 && parray[p].session.gnum < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_OR_OBSERVING_A_GAME_);
     return COM_OK;
   }
   if (param[0].type == TYPE_NULL) return COM_BADPARAMETERS;
   if (param[0].type == TYPE_INT) {
     if (param[0].val.integer == 0) return COM_BADPARAMETERS;
-    g = param[0].val.integer - 1;
-    for (i = 0; i < parray[p].num_observe; i++) {
-      if (g == parray[p].observe_list[i]) {
+    g0 = param[0].val.integer - 1;
+    for (i = 0; i < parray[p].session.num_observe; i++) {
+      if (g0 == parray[p].observe_list[i]) {
         count = 1;
         continue;
       }
     }
-    if (!count && g != parray[p].game) {
+    if (!count && g0 != parray[p].session.gnum) {
       pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_PLAYING_OR_OBSERVING_THAT_GAME_);
       return COM_OK;
     }
   }
 
   else {
-    if (parray[p].game >= 0)
-      g = parray[p].game;
-    else
-      g = parray[p].observe_list[0];
+    if (parray[p].session.gnum >= 0) g0 = parray[p].session.gnum;
+    else g0 = parray[p].observe_list[0];
   }
   if (param[0].type == TYPE_INT) {
-    sprintf(tmp2, "%s (%d)", param[1].type == TYPE_NULL ? "" : param[1].val.string, movenum(garray[g].GoGame));
+    sprintf(tmp2, "%s (%d)", param[1].type == TYPE_NULL ? "" : param[1].val.string, movenum(garray[g0].minkg));
   } else {
     sprintf(tmp2, "%s %s (%d)", param[0].val.word,
             param[1].type == TYPE_NULL ? "" : param[1].val.string,
-            movenum(garray[g].GoGame));
+            movenum(garray[g0].minkg));
   }
 
+  bp = garray[g0].black.pnum;
+  wp = garray[g0].white.pnum;
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_online) continue;
     if (p1 == p) continue;
-    if (player_is_observe(p1, g)) {
+    if (player_is_observe(p1, g0)) {
       if (player_censored(p1, p)) continue;
       if (parray[p1].flags.is_client && parray[p1].bell)
         pcn_out(p1, CODE_BEEP, FORMAT_nn);
@@ -1476,14 +1480,14 @@ int com_kibitz(int p, struct parameter * param)
  		   parray[p].pname,
  		   parray[p].srank,
  		   parray[p].flags.is_rated ? "*" : " ",
-		   parray[garray[g].white.pnum].pname,
-		   parray[garray[g].black.pnum].pname,
-		   g + 1);
+		   parray[wp].pname,
+		   parray[bp].pname,
+		   g0 + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
     }
 #ifdef WANT_PAIR
-    if (paired(g)) {
-      otherg = garray[g].pairwith;
+    if (paired(g0)) {
+      otherg = garray[g0].pairwith;
       if (player_is_observe(p1, otherg)) {
         if (player_censored(p1, p)) continue;
         if (parray[p1].bell) pcn_out(p1, CODE_BEEP,FORMAT_nn);
@@ -1491,34 +1495,34 @@ int com_kibitz(int p, struct parameter * param)
  		   parray[p].pname,
  		   parray[p].srank,
  		   parray[p].flags.is_rated ? "*" : " ",
-		   parray[garray[g].white.pnum].pname,
-		   parray[garray[g].black.pnum].pname,
+		   parray[wp].pname,
+		   parray[bp].pname,
 		   otherg + 1);
         do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
       }
     }
 #endif
   }
-  if (garray[g].teach == 2) {
-    p1 = garray[g].white.pnum;
+  if (garray[g0].teach == 2) {
+    p1 = wp;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
                    parray[p].srank,
                    parray[p].flags.is_rated ? "*" : " ",
-                   parray[garray[g].white.pnum].pname,
-                   parray[garray[g].black.pnum].pname,
-                   g + 1);
+                   parray[wp].pname,
+                   parray[bp].pname,
+                   g0 + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
   }
-  if (garray[g].teach) {
-    p1 = garray[g].black.pnum;
+  if (garray[g0].teach) {
+    p1 = bp;
     pcn_out(p1, CODE_KIBITZ, FORMAT_KIBITZ_s_ss_GAME_s_VS_s_d_n,
                    parray[p].pname,
                    parray[p].srank,
                    parray[p].flags.is_rated ? "*" : " ",
-                   parray[garray[g].white.pnum].pname,
-                   parray[garray[g].black.pnum].pname,
-                   g + 1);
+                   parray[wp].pname,
+                   parray[bp].pname,
+                   g0 + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
   }
 
@@ -1527,11 +1531,11 @@ int com_kibitz(int p, struct parameter * param)
                 parray[p].srank,
                 parray[p].flags.is_rated ? "*" : " ",
                 tmp2);
-  add_kib(&garray[g], movenum(garray[g].GoGame), tmp3);
+  add_kib(&garray[g0], movenum(garray[g0].minkg), tmp3);
 #ifdef WANT_PAIR
-  if (paired(g)) {
-    otherg = garray[g].pairwith;
-    add_kib(&garray[otherg], movenum(garray[otherg].GoGame), tmp3);
+  if (paired(g0)) {
+    otherg = garray[g0].pairwith;
+    add_kib(&garray[otherg], movenum(garray[otherg].minkg), tmp3);
   }
 #endif
   return COM_OK;
@@ -1631,22 +1635,21 @@ int com_tell(int p, struct parameter * param)
 
 int com_say(int p, struct parameter * param)
 {
-  int g;
+  int g0 = parray[p].session.gnum;
   char tmp[MAX_LINE_SIZE];
 
-  if (parray[p].opponent < 0) {
+  if (parray[p].session.opponent < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_ONE_TO_SAY_ANYTHING_TO_TRY_TELL_);
     return COM_OK;
   }
-  g = parray[p].game;
   sprintf(tmp, " %s %s%s: %s",
                  parray[p].pname,
                  parray[p].srank,
                  parray[p].flags.is_rated ? "*" : " ",
                  param[0].val.string);
-  add_kib(&garray[g], movenum(garray[g].GoGame), tmp);
+  add_kib(&garray[g0], movenum(garray[g0].minkg), tmp);
 
-  return do_tell(p, parray[p].opponent, param[0].val.string, TELL_SAY, 0);
+  return do_tell(p, parray[p].session.opponent, param[0].val.string, TELL_SAY, 0);
 }
 
 int com_set(int p, struct parameter * param)
@@ -1708,10 +1711,10 @@ int com_stats(int p, struct parameter * param)
   else {
     pcn_out(p,CODE_INFO,  FORMAT_IDLE_TIME_ON_SERVER_sn,
                 hms(player_idle(p1), 1, 1, 0));
-    if (parray[p1].game >= 0)
+    if (parray[p1].session.gnum >= 0)
       pcn_out(p,CODE_INFO,  FORMAT_PLAYING_IN_GAME_d_I_n,
-                (parray[p1].game) + 1);
-    else if (parray[p1].num_observe > 0)
+                (parray[p1].session.gnum) + 1);
+    else if (parray[p1].session.num_observe > 0)
       pcn_out(p,CODE_INFO,  FORMAT_OBSERVING_GAME_dn,
                 (parray[p1].observe_list[0]) + 1);
   }
@@ -1748,10 +1751,12 @@ int com_stats(int p, struct parameter * param)
                   (LadderPlayer->idx) +1);
     }
   }
-  if (parray[p1].game >= 0) {
-    int g = parray[p1].game;
-    pcn_out(p,CODE_INFO, FORMAT_PLAYING_GAME_d_s_VS_s_n, g + 1,
-      parray[garray[g].white.pnum].pname, parray[garray[g].black.pnum].pname );
+  if (parray[p1].session.gnum >= 0) {
+    int g0 = parray[p1].session.gnum;
+    int bp = garray[g0].black.pnum;
+    int wp = garray[g0].white.pnum;
+    pcn_out(p,CODE_INFO, FORMAT_PLAYING_GAME_d_s_VS_s_n, g0 + 1,
+      parray[wp].pname, parray[bp].pname );
   }
 
   if (parray[p1].busy[0] && parray[p1].slotstat.is_online) {
@@ -1851,12 +1856,12 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
 	parray[p1].i_gshout ? "Yes" : "No",
         parray[p1].i_kibitz ? "Yes" : "No",
 	parray[p1].i_shout ? "Yes" : "No",
-        parray[p1].open ? "Yes" : "No",
+        parray[p1].flags.is_open ? "Yes" : "No",
 	parray[p1].bell ? "Yes" : "No",
         parray[p1].i_tell ? "Yes" : "No",
 	parray[p1].i_robot ? "Yes" : "No",
         parray[p1].i_login ? "Yes" : "No",
-        parray[p1].looking ? "Yes" : "No",
+        parray[p1].flags.is_looking ? "Yes" : "No",
         parray[p1].i_verbose ? "Yes" : "No",
         parray[p1].Private ? "Yes" : "No",
         parray[p1].ropen ? "Yes" : "No",
@@ -1904,7 +1909,7 @@ Water Balloons           = %2.2d        Extended Prompt (extprompt)  = %-3.3s\n\
   }
 
   if (parray[p].adminLevel >= ADMIN_ADMIN) {
-    pprintf(p, "Socket: %d p: %d\n", parray[p1].socket, p1);
+    pprintf(p, "Socket: %d p: %d\n", parray[p1].session.socket, p1);
   }
 
   if (parray[p1].adminLevel >= ADMIN_ADMIN) {
@@ -2114,6 +2119,7 @@ int com_logons(int p, struct parameter * param)
 
 static int who_ok(int p, unsigned sel_bits, int from, int to)
 {
+  if (!parray[p].slotstat.is_inuse) return 0;
   if (!parray[p].slotstat.is_online) return 0;
 
   if (from < 1 && sel_bits == 0xff) {
@@ -2126,22 +2132,22 @@ static int who_ok(int p, unsigned sel_bits, int from, int to)
 
   if (from > 0) {
     if (parray[p].orating < from || parray[p].orating > to) return 0;
-    if ((sel_bits & WHO_OPEN) && (!parray[p].open || parray[p].game >= 0)) return 0;
-    if ((sel_bits & WHO_CLOSED) && parray[p].open) return 0;
+    if ((sel_bits & WHO_OPEN) && (!parray[p].flags.is_open || parray[p].session.gnum >= 0)) return 0;
+    if ((sel_bits & WHO_CLOSED) && parray[p].flags.is_open) return 0;
     if ((sel_bits & WHO_RATED) && !parray[p].flags.is_rated) return 0;
     if ((sel_bits & WHO_UNRATED) && parray[p].flags.is_rated) return 0;
-    if ((sel_bits & WHO_FREE) && parray[p].game >= 0) return 0;
-    if ((sel_bits & WHO_LOOKING) && !parray[p].looking) return 0;
+    if ((sel_bits & WHO_FREE) && parray[p].session.gnum >= 0) return 0;
+    if ((sel_bits & WHO_LOOKING) && !parray[p].flags.is_looking) return 0;
     if ((sel_bits & WHO_REGISTERED) && !parray[p].slotstat.is_registered) return 0;
     if ((sel_bits & WHO_UNREGISTERED) && parray[p].slotstat.is_registered) return 0;
   }
   else {
-    if ((sel_bits & WHO_OPEN) && (!parray[p].open || parray[p].game >= 0)) return 0;
-    if ((sel_bits & WHO_CLOSED) && parray[p].open) return 0;
+    if ((sel_bits & WHO_OPEN) && (!parray[p].flags.is_open || parray[p].session.gnum >= 0)) return 0;
+    if ((sel_bits & WHO_CLOSED) && parray[p].flags.is_open) return 0;
     if ((sel_bits & WHO_RATED) && !parray[p].flags.is_rated) return 0;
     if ((sel_bits & WHO_UNRATED) && parray[p].flags.is_rated) return 0;
-    if ((sel_bits & WHO_FREE) && parray[p].game >= 0) return 0;
-    if ((sel_bits & WHO_LOOKING) && !parray[p].looking) return 0;
+    if ((sel_bits & WHO_FREE) && parray[p].session.gnum >= 0) return 0;
+    if ((sel_bits & WHO_LOOKING) && !parray[p].flags.is_looking) return 0;
     if ((sel_bits & WHO_REGISTERED) && !parray[p].slotstat.is_registered) return 0;
     if ((sel_bits & WHO_UNREGISTERED) && parray[p].slotstat.is_registered) return 0;
   }
@@ -2240,6 +2246,7 @@ static void a_who(int p, int cnt, int *plist)
   pcn_out(p,CODE_INFO, FORMAT_n);
   for(idx = 0; idx < cnt; idx++) {
     p1 = plist[idx];
+    if (!parray[p1].slotstat.is_inuse) continue;
     if (!parray[p1].slotstat.is_online) continue;
     LadderPlayer19 = PlayerNamed(Ladder19, parray[p1].pname);
     LadderPlayer9 = PlayerNamed(Ladder9, parray[p1].pname);
@@ -2247,26 +2254,26 @@ static void a_who(int p, int cnt, int *plist)
     pos19 = (LadderPlayer19) ? LadderPlayer19->idx + 1 : 0;
     flags[0] = parray[p1].i_shout ? ' ' : 'S';
     flags[1] = (parray[p1].i_login && parray[p1].i_game) ? ' ' : 'Q';
-    if (parray[p1].game >= 0
-      && (garray[parray[p1].game].Ladder19 || garray[parray[p1].game].Ladder9)) {
+    if (parray[p1].session.gnum >= 0
+      && (garray[parray[p1].session.gnum].Ladder19 || garray[parray[p1].session.gnum].Ladder9)) {
       flags[2] = '*';
 #ifdef WANT_PAIR
-    } else if (parray[p1].game >= 0 && paired(parray[p1].game)) {
+    } else if (parray[p1].session.gnum >= 0 && paired(parray[p1].session.gnum)) {
       flags[2] = '@';
 #endif
-    } else if (!parray[p1].open && parray[p1].game < 0) {
+    } else if (!parray[p1].flags.is_open && parray[p1].session.gnum < 0) {
       flags[2] = 'X';
-    } else if (parray[p1].looking && parray[p1].game < 0) {
+    } else if (parray[p1].flags.is_looking && parray[p1].session.gnum < 0) {
       flags[2] = '!';
     } else {
       flags[2] = ' ';
     }
     flags[3] = 0;
-    if (parray[p1].num_observe > 0)
+    if (parray[p1].session.num_observe > 0)
       sprintf(otemp, "%2d", parray[p1].observe_list[0] + 1);
     else strcpy(otemp, "--" );
-    if (parray[p1].game >= 0)
-      sprintf(gtemp, "%2d", parray[p1].game + 1);
+    if (parray[p1].session.gnum >= 0)
+      sprintf(gtemp, "%2d", parray[p1].session.gnum + 1);
     else strcpy(gtemp, "--" );
     if (parray[p1].rank && parray[p1].rank[0])
       strcpy(rtemp, parray[p1].rank);
@@ -2298,19 +2305,19 @@ static void who_terse(int p, int num, int *plist, int type)
 /*    if (parray[p1].invisable && parray[p].adminLevel < ADMIN_ADMIN) continue; */
     flags[0] = ' ';
     flags[1] = (parray[p1].i_shout) ? (parray[p1].i_login) ? ' ' : 'Q' : 'S';
-    if (!parray[p1].open) {
+    if (!parray[p1].flags.is_open) {
       flags[2] = 'X';
-    } else if (parray[p1].looking && parray[p1].game < 0) {
+    } else if (parray[p1].flags.is_looking && parray[p1].session.gnum < 0) {
       flags[2] = '!';
     } else {
       flags[2] = ' ';
     }
     flags[3] = 0;
-    if (parray[p1].num_observe > 0)
+    if (parray[p1].session.num_observe > 0)
       sprintf(otemp, "%2d", parray[p1].observe_list[0] + 1);
     else strcpy(otemp, "--" );
-    if (parray[p1].game >= 0)
-      sprintf(gtemp, "%2d", parray[p1].game + 1);
+    if (parray[p1].session.gnum >= 0)
+      sprintf(gtemp, "%2d", parray[p1].session.gnum + 1);
     else strcpy(gtemp, "--" );
 
     pcn_out(p, (left? CODE_WHO: CODE_NONE), FORMAT_s_s_s_s_s_s_s_s,
@@ -2781,12 +2788,12 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
  GOEGO     e:   goematch daveg b 19 30
   */
 
-  if (parray[p].game >= 0) {
+  if (parray[p].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_CAN_T_CHALLENGE_WHILE_YOU_ARE_PLAYING_A_GAME_);
     return COM_OK;
   }
-  if (!parray[p].open) {
-    parray[p].open = 1;
+  if (!parray[p].flags.is_open) {
+    parray[p].flags.is_open = 1;
     pcn_out(p,CODE_INFO, FORMAT_SETTING_YOU_OPEN_FOR_MATCHES_n);
   }
   stolower(param[0].val.word);
@@ -2809,11 +2816,11 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_CENSORING_qsq_, parray[p1].pname);
     return COM_OK;
   }
-  if (!parray[p1].open) {
+  if (!parray[p1].flags.is_open) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_IS_NOT_OPEN_TO_MATCH_REQUESTS_, parray[p1].pname);
     return COM_OK;
   }
-  if (parray[p1].game >= 0) {
+  if (parray[p1].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_IS_INVOLVED_IN_ANOTHER_GAME_, parray[p1].pname);
     return COM_OK;
   }
@@ -3178,7 +3185,7 @@ int com_teach(int p, struct parameter * param)
 {
   int t;
 
-  if (parray[p].game >= 0) {
+  if (parray[p].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_PLAYING_A_GAME_);
     return COM_OK;
   }
@@ -3186,8 +3193,8 @@ int com_teach(int p, struct parameter * param)
   if (param[0].val.integer <= 0) t = COM_FAILED;
   else t = create_new_gomatch(p, p, param[0].val.integer, 1, 1, 1, RULES_NET, GAMETYPE_GO);
   if (t == COM_FAILED) return COM_FAILED;
-  garray[parray[p].game].teach = 1;
-  garray[parray[p].game].rated = 0;
+  garray[parray[p].session.gnum].teach = 1;
+  garray[parray[p].session.gnum].rated = 0;
   return COM_OK;
 }
 
@@ -3197,19 +3204,19 @@ int create_new_gomatch(int wp, int bp,
     int start_time, int byo_time,
     int teaching, int rules, int type)
 {
-  int g = game_new(GAMETYPE_GO,size), p;
+  int g0 = game_new(GAMETYPE_GO,size), p;
   char outStr[1024];
 
   const struct player *LadderPlayer;
   int bpos, wpos;
 
-  if (g < 0) return COM_FAILED;
+  if (g0 < 0) return COM_FAILED;
   if (size >= NUMLINES) return COM_FAILED;
 
-  garray[g].GoGame = initminkgame(size,size, rules);
-  garray[g].gstatus = GSTATUS_ACTIVE;
-  garray[g].white.pnum = wp;
-  garray[g].black.pnum = bp;
+  garray[g0].minkg = initminkgame(size,size, rules);
+  garray[g0].gstatus = GSTATUS_ACTIVE;
+  garray[g0].white.pnum = wp;
+  garray[g0].black.pnum = bp;
 
   switch(type) {
     case GAMETYPE_GO:
@@ -3219,7 +3226,7 @@ int create_new_gomatch(int wp, int bp,
     player_withdraw_offers(wp, -1, PEND_GMATCH);
     player_decline_offers(bp, -1, PEND_GMATCH);
     player_withdraw_offers(bp, -1, PEND_GMATCH);
-    garray[g].gotype = GAMETYPE_GO;
+    garray[g0].gotype = GAMETYPE_GO;
     break;
 
     case GAMETYPE_GOEGO:
@@ -3229,7 +3236,7 @@ int create_new_gomatch(int wp, int bp,
     player_withdraw_offers(wp, -1, PEND_GOEMATCH);
     player_decline_offers(bp, -1, PEND_GOEMATCH);
     player_withdraw_offers(bp, -1, PEND_GOEMATCH);
-    garray[g].gotype = GAMETYPE_GOEGO;
+    garray[g0].gotype = GAMETYPE_GOEGO;
     break;
 
     case GAMETYPE_TNETGO:
@@ -3239,14 +3246,14 @@ int create_new_gomatch(int wp, int bp,
     player_withdraw_offers(wp, -1, PEND_TMATCH);
     player_decline_offers(bp, -1, PEND_TMATCH);
     player_withdraw_offers(bp, -1, PEND_TMATCH);
-    garray[g].gotype = GAMETYPE_TNETGO;
+    garray[g0].gotype = GAMETYPE_TNETGO;
     break;
   }
 
-  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g].komi = 5.5;
-  if (rules == RULES_ING) garray[g].komi = 8.0;
+  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g0].komi = 5.5;
+  if (rules == RULES_ING) garray[g0].komi = 8.0;
   if (start_time == 0) {
-    garray[g].ts.time_type = TIMETYPE_UNTIMED;
+    garray[g0].ts.time_type = TIMETYPE_UNTIMED;
     start_time = 480;
     byo_time = 480;
   }
@@ -3254,65 +3261,65 @@ int create_new_gomatch(int wp, int bp,
     start_time = start_time * 60;			/* To Seconds */
     if (rules == RULES_NET || type == GAMETYPE_TNETGO) byo_time = byo_time * 60;
     else byo_time = (start_time) / 6;
-    garray[g].ts.time_type = TIMETYPE_TIMED;
+    garray[g0].ts.time_type = TIMETYPE_TIMED;
   }
-  garray[g].teach = teaching?1:0;
-  if (rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g].type = GAMETYPE_GO;
-  else garray[g].type = GAMETYPE_GOEGO;
+  garray[g0].teach = teaching?1:0;
+  if (rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g0].type = GAMETYPE_GO;
+  else garray[g0].type = GAMETYPE_GOEGO;
 #ifdef USING_PRIVATE_GAMES
-  garray[g].Private = parray[wp].Private || parray[bp].Private;
+  garray[g0].Private = parray[wp].Private || parray[bp].Private;
 #endif
-  garray[g].ts.totalticks = SECS2TICS(start_time);
-  garray[g].ts.byoticks = SECS2TICS(byo_time);
-  garray[g].ts.byostones = 25;    /* Making an assumption here */
-  garray[g].black.ticksleft = SECS2TICS(start_time);
-  garray[g].black.byoperiods = 0;
-  garray[g].black.penalty = 0;
-  garray[g].white.ticksleft = SECS2TICS(start_time);
-  garray[g].white.byoperiods = 0;
-  garray[g].white.penalty = 0;
-  if (parray[wp].slotstat.is_registered && parray[bp].slotstat.is_registered) garray[g].rated = 1;
-  else garray[g].rated = 0;
-  if (!strcmp(parray[wp].srank, "NR")) garray[g].rated = 0;
-  if (!strcmp(parray[bp].srank, "NR")) garray[g].rated = 0;
-  garray[g].onMove = PLAYER_BLACK;
-  garray[g].timeOfStart = globclock.time;
-  garray[g].starttick = globclock.tick;
-  garray[g].lastMovetick = garray[g].starttick;
-  garray[g].lastDectick = garray[g].starttick;
-  garray[g].clockStopped = 0;
-  garray[g].rules = rules;
-  if (!garray[g].teach)
+  garray[g0].ts.totalticks = SECS2TICS(start_time);
+  garray[g0].ts.byoticks = SECS2TICS(byo_time);
+  garray[g0].ts.byostones = 25;    /* Making an assumption here */
+  garray[g0].black.ticksleft = SECS2TICS(start_time);
+  garray[g0].black.byoperiods = 0;
+  garray[g0].black.penalty = 0;
+  garray[g0].white.ticksleft = SECS2TICS(start_time);
+  garray[g0].white.byoperiods = 0;
+  garray[g0].white.penalty = 0;
+  if (parray[wp].slotstat.is_registered && parray[bp].slotstat.is_registered) garray[g0].rated = 1;
+  else garray[g0].rated = 0;
+  if (!strcmp(parray[wp].srank, "NR")) garray[g0].rated = 0;
+  if (!strcmp(parray[bp].srank, "NR")) garray[g0].rated = 0;
+  garray[g0].onMove = PLAYER_BLACK;
+  garray[g0].timeOfStart = globclock.time;
+  garray[g0].starttick = globclock.tick;
+  garray[g0].lastMovetick = garray[g0].starttick;
+  garray[g0].lastDectick = garray[g0].starttick;
+  garray[g0].clockStopped = 0;
+  garray[g0].rules = rules;
+  if (!garray[g0].teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_MATCH_d_WITH_s_IN_d_ACCEPTED_n,
-          g + 1,
+          g0 + 1,
           parray[bp].pname,
           start_time / 60);
-  if (!garray[g].teach)
+  if (!garray[g0].teach)
   pcn_out_prompt(wp, CODE_INFO, FORMAT_CREATING_MATCH_d_WITH_s_n,
-          g + 1,
+          g0 + 1,
           parray[bp].pname);
   pcn_out_prompt(bp, CODE_INFO, FORMAT_MATCH_d_WITH_s_IN_d_ACCEPTED_n,
-          g + 1,
+          g0 + 1,
           parray[wp].pname,
           start_time / 60);
   pcn_out_prompt(bp, CODE_INFO, FORMAT_CREATING_MATCH_d_WITH_s_n,
-          g + 1,
+          g0 + 1,
           parray[wp].pname);
   sprintf(outStr, "Game %d %s: %s (0 %d %d) vs %s (0 %d %d)",
-        g + 1, "I",
+        g0 + 1, "I",
         parray[wp].pname,
-        TICS2SECS(garray[g].white.ticksleft),
-        garray[g].white.byostones,
+        TICS2SECS(garray[g0].white.ticksleft),
+        garray[g0].white.byostones,
         parray[bp].pname,
-	TICS2SECS(garray[g].black.ticksleft),
-	garray[g].black.byostones);
-  if (!garray[g].teach) {
+	TICS2SECS(garray[g0].black.ticksleft),
+	garray[g0].black.byostones);
+  if (!garray[g0].teach) {
     if (parray[wp].flags.is_client) pcn_out(wp, CODE_MOVE, FORMAT_sn, outStr);
     if (parray[bp].flags.is_client) pcn_out(bp, CODE_MOVE, FORMAT_sn, outStr);
     }
   Logit("%s", outStr);
   sprintf(outStr, "{Match %d: %s [%3.3s%s] vs. %s [%3.3s%s] }\n",
-	  g + 1, parray[wp].pname,
+	  g0 + 1, parray[wp].pname,
           parray[wp].srank,
           parray[wp].flags.is_rated ? "*" : " ",
 	  parray[bp].pname,
@@ -3323,16 +3330,16 @@ int create_new_gomatch(int wp, int bp,
     if (!parray[p].i_game) continue;
     pcn_out_prompt(p, CODE_SHOUT, FORMAT_s, outStr);
   }
-  parray[wp].protostate = STAT_PLAYING_GO;
-  parray[bp].protostate = STAT_PLAYING_GO;
-  parray[wp].game = g;
-  parray[wp].opponent = bp;
-  parray[wp].side = PLAYER_WHITE;
-  parray[bp].game = g;
-  parray[bp].opponent = wp;
-  parray[bp].side = PLAYER_BLACK;
-  send_go_boards(g, 0);
-  if (garray[g].teach) return COM_OKN;
+  parray[wp].session.protostate = STAT_PLAYING_GO;
+  parray[bp].session.protostate = STAT_PLAYING_GO;
+  parray[wp].session.gnum = g0;
+  parray[wp].session.opponent = bp;
+  parray[wp].session.side = PLAYER_WHITE;
+  parray[bp].session.gnum = g0;
+  parray[bp].session.opponent = wp;
+  parray[bp].session.side = PLAYER_BLACK;
+  send_go_boards(g0, 0);
+  if (garray[g0].teach) return COM_OKN;
   if (size == 19) {
     if ((LadderPlayer=PlayerNamed(Ladder19,parray[bp].pname))) {
       bpos = LadderPlayer->idx;
@@ -3343,7 +3350,7 @@ int create_new_gomatch(int wp, int bp,
     }
     else return COM_OKN;
     if (wpos < bpos) {
-      garray[g].Ladder_Possible = 1;
+      garray[g0].Ladder_Possible = 1;
       pcn_out(wp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER19_RATED_GAME_n);
       pcn_out(wp, CODE_INFO, FORMAT_TYPE_LADDER_BEFORE_YOUR_FIRST_MOVE_TO_MAKE_IT_LADDER_RATED_n);
       pcn_out(bp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER19_RATED_GAME_n);
@@ -3360,7 +3367,7 @@ int create_new_gomatch(int wp, int bp,
     }
     else return COM_OKN;
     if (wpos < bpos) {
-      garray[g].Ladder_Possible = 1;
+      garray[g0].Ladder_Possible = 1;
       pcn_out(wp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER9_RATED_GAME_n );
       pcn_out(wp, CODE_INFO, FORMAT_TYPE_LADDER_BEFORE_YOUR_FIRST_MOVE_TO_MAKE_IT_RATED_n );
       pcn_out(bp, CODE_INFO, FORMAT_THIS_CAN_BE_A_LADDER9_RATED_GAME_n );
@@ -3654,9 +3661,9 @@ int com_watching(int p, struct parameter * param)
   first = 1;
   UNUSED(param);
 
-  if (parray[p].num_observe) {
+  if (parray[p].session.num_observe) {
     pcn_out(p,CODE_INFO, FORMAT_GAMES_CURRENTLY_BEING_OBSERVED_);
-    for (idx = 0; idx < parray[p].num_observe; idx++) {
+    for (idx = 0; idx < parray[p].session.num_observe; idx++) {
       if (first) {
         pprintf(p, "%3d", 1 + (parray[p].observe_list[idx]));
         first = 0;
@@ -3674,7 +3681,7 @@ int com_watching(int p, struct parameter * param)
 
 int com_score(int p, struct parameter * param)
 {
-  int g, wterr, bterr, wocc, bocc, bc, wc;
+  int g0, wterr, bterr, wocc, bocc, bc, wc;
   twodstring statstring;
   float wscore, bscore;
 
@@ -3686,65 +3693,65 @@ int com_score(int p, struct parameter * param)
   wc = 0; /* W Captured */
 
   if (param[0].type == TYPE_NULL) {
-    if (parray[p].game >= 0) {
-      g = parray[p].game;
+    if (parray[p].session.gnum >= 0) {
+      g0 = parray[p].session.gnum;
     } else {			/* Do observing in here */
-      if (parray[p].num_observe) {
-        g = parray[p].observe_list[0];
+      if (parray[p].session.num_observe) {
+        g0 = parray[p].observe_list[0];
       } else {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NEITHER_PLAYING_NOR_OBSERVING_A_GAME_);
         return COM_OK;
       }
     }
 
-    countscore(garray[g].GoGame, statstring, &wterr, &bterr, &wocc, &bocc);
-    getcaps(garray[g].GoGame, &wc, &bc);
-    if (garray[g].komi > 0) {
-      wscore = wterr + wocc + garray[g].komi;
+    countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
+    getcaps(garray[g0].minkg, &wc, &bc);
+    if (garray[g0].komi > 0) {
+      wscore = wterr + wocc + garray[g0].komi;
       bscore = bterr + bocc;
     } else {
       wscore = wterr + wocc;
-      bscore = bterr + bocc - garray[g].komi; /* PEM: komi <= 0 */
+      bscore = bterr + bocc - garray[g0].komi; /* PEM: komi <= 0 */
     }
     pcn_out(p, CODE_INFO, FORMAT_CHINESE_WHITE_f_BLACK_fn, wscore, bscore);
 
-    if (garray[g].komi > 0) {
-      wscore = wterr + bc + garray[g].komi;
+    if (garray[g0].komi > 0) {
+      wscore = wterr + bc + garray[g0].komi;
       bscore = bterr + wc;
     } else {
       wscore = wterr + bc;
-      bscore = bterr + wc - garray[g].komi; /* PEM: komi <= 0 */
+      bscore = bterr + wc - garray[g0].komi; /* PEM: komi <= 0 */
     }
     pcn_out(p, CODE_INFO, FORMAT_JAPANESE_WHITE_f_BLACK_fn, wscore, bscore);
 
   } else if (param[0].type == TYPE_INT) {
-    g = param[0].val.integer - 1;
-    if (g < 0) {
+    g0 = param[0].val.integer - 1;
+    if (g0 < 0) {
       pcn_out(p, CODE_ERROR, FORMAT_GAME_NUMBERS_MUST_BE_1_n);
       return COM_OK;
     }
 
-    if (g >= garray_top || garray[g].gstatus != GSTATUS_ACTIVE) {
+    if (g0 >= garray_top || garray[g0].gstatus != GSTATUS_ACTIVE) {
       return COM_NOSUCHGAME;
     }
 
-    countscore(garray[g].GoGame, statstring, &wterr, &bterr, &wocc, &bocc);
-    getcaps(garray[g].GoGame, &wc, &bc);
-    if (garray[g].komi > 0) {
-      wscore = wterr + wocc + garray[g].komi;
+    countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
+    getcaps(garray[g0].minkg, &wc, &bc);
+    if (garray[g0].komi > 0) {
+      wscore = wterr + wocc + garray[g0].komi;
       bscore = bterr + bocc;
     } else {
       wscore = wterr + wocc;
-      bscore = bterr + bocc - garray[g].komi; /* PEM: komi <= 0 */
+      bscore = bterr + bocc - garray[g0].komi; /* PEM: komi <= 0 */
     }
     pcn_out(p, CODE_INFO, FORMAT_CHINESE_WHITE_f_BLACK_fn, wscore, bscore);
 
-    if (garray[g].komi > 0) {
-      wscore = wterr + bc + garray[g].komi;
+    if (garray[g0].komi > 0) {
+      wscore = wterr + bc + garray[g0].komi;
       bscore = bterr + wc;
     } else {
       wscore = wterr + bc;
-      bscore = bterr + wc - garray[g].komi; /* PEM: komi <= 0 */
+      bscore = bterr + wc - garray[g0].komi; /* PEM: komi <= 0 */
     }
     pcn_out(p, CODE_INFO, FORMAT_JAPANESE_WHITE_f_BLACK_fn, wscore, bscore);
   } else {
@@ -3757,15 +3764,15 @@ int com_refresh(int p, struct parameter * param)
 {
   int idx, gnum;
   if (param[0].type == TYPE_NULL) {
-    if (parray[p].game >= 0) {
-      if (garray[parray[p].game].gotype >= GAMETYPE_GO) {
+    if (parray[p].session.gnum >= 0) {
+      if (garray[parray[p].session.gnum].gotype >= GAMETYPE_GO) {
         if (!parray[p].flags.is_client || parray[p].i_verbose)
-          send_go_board_to(parray[p].game, p);
-        if (parray[p].flags.is_client) pcommand(p, "moves %d", (parray[p].game) + 1);
+          send_go_board_to(parray[p].session.gnum, p);
+        if (parray[p].flags.is_client) pcommand(p, "moves %d", (parray[p].session.gnum) + 1);
       }
     } else {			/* Do observing in here */
-      if (parray[p].num_observe) {
-	for (idx = 0; idx < parray[p].num_observe; idx++) {
+      if (parray[p].session.num_observe) {
+	for (idx = 0; idx < parray[p].session.num_observe; idx++) {
           gnum = parray[p].observe_list[idx];
           if (garray[gnum].gotype >= GAMETYPE_GO) {
             if (!parray[p].flags.is_client || parray[p].i_verbose)
@@ -4339,26 +4346,26 @@ int com_spair(int p, struct parameter * param)
   }
 
   for(idx=0; idx < 4; idx++) {
-    if (parray[pp4[idx]].game >= 0) break;
+    if (parray[pp4[idx]].session.gnum >= 0) break;
   }
   if (idx < 4) {
     pcn_out(p, CODE_ERROR, FORMAT_ONE_OF_THE_4_LISTED_PLAYERS_IS_ALREADY_PLAYING_A_GAME_);
     return COM_OK;
   }
   for(idx=0; idx < 4; idx++) {
-    int pa,pb,pc; /* player, buddy, opponent */
+    int pa,pp,pc; /* player, buddy, opponent */
     pa=pp4[idx];
-    pb=pp4[idx^1];
+    pp=pp4[idx^1];
     pc=pp4[idx^2];
     pcn_out(pa,CODE_INFO, FORMAT_WELCOME_TO_NNGS_PAIR_GO_n);
     if (idx < 2) {	/* White players */
-      pcn_out(pa, CODE_INFO, FORMAT_YOU_AND_s_ARE_THE_WHITE_TEAM_n, parray[pb].pname);
+      pcn_out(pa, CODE_INFO, FORMAT_YOU_AND_s_ARE_THE_WHITE_TEAM_n, parray[pp].pname);
       pcn_out(pa, CODE_INFO, FORMAT_FIRST_CREATE_A_MATCH_AGAINST_YOUR_OPPONENT_s_n, parray[pc].pname);
       pcn_out(pa, CODE_INFO, FORMAT_TYPE_MATCH_s_W_SIZE_TIME_BYO_TIMEn, parray[pc].pname);
-      pcn_out(pa,CODE_INFO, FORMAT_ONCE_YOUR_MATCH_IS_CREATED_CHECK_TO_SEE_WHAT_s_S_GAME_NUMBER_IS_n, parray[pb].pname);
-      pcn_out(pa, CODE_INFO, FORMAT_THEN_TYPE_qPAIR_q_WHERE_IS_s_S_GAME_NUMBER_n, parray[pb].pname);
+      pcn_out(pa,CODE_INFO, FORMAT_ONCE_YOUR_MATCH_IS_CREATED_CHECK_TO_SEE_WHAT_s_S_GAME_NUMBER_IS_n, parray[pp].pname);
+      pcn_out(pa, CODE_INFO, FORMAT_THEN_TYPE_qPAIR_q_WHERE_IS_s_S_GAME_NUMBER_n, parray[pp].pname);
     } else {	/* Black players */
-      pcn_out(pa, CODE_INFO, FORMAT_YOU_AND_s_ARE_THE_BLACK_TEAM_n, parray[pb].pname);
+      pcn_out(pa, CODE_INFO, FORMAT_YOU_AND_s_ARE_THE_BLACK_TEAM_n, parray[pp].pname);
       pcn_out(pa,CODE_INFO, FORMAT_IMPORTANT_TO_REMEMBER_DO_NOT_MOVE_UNTIL_AFTER_THE_GAMES_ARE_PAIRED_n);
       pcn_out(pa, CODE_INFO, FORMAT_YOUR_OPPONENT_s_WILL_FIRST_REQUEST_A_MATCH_WITH_YOU_n, parray[pc].pname);
       pcn_out(pa,CODE_INFO, FORMAT_SIT_BACK_AND_WAIT_FOR_THE_MESSAGE_qGAME_HAS_BEEN_PAIREDq_THEN_MOVE_n);

@@ -91,6 +91,7 @@ extern int removedead(struct minkgame *g, int p, int c);
 extern void replay(struct minkgame *g);   /* replay game so as to undo all removes */
 extern int pass(struct minkgame *g);   /* if pass is i'th consecutive one, return i */
 extern void printboard(struct minkgame *g, twodstring buf); /* print ascii representation of go board */
+int printboard_raw(char * buff, size_t buflen, struct minkgame *g); /* idem, unformatted */
 extern void statusdims(struct minkgame *g, int *width, int *height);
 extern void boardstatus(struct minkgame *g, twodstring buf);
 extern void countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, int *bo);	/* count w/b territory and w/b occupied */

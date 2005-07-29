@@ -72,16 +72,16 @@ static int set_boolean_var(int *var, const char *val)
 
 static int set_open(int p, const char *var, const char *val)
 {
-  int v = set_boolean_var (&parray[p].open, val);
+  int v = set_boolean_var (&parray[p].flags.is_open, val);
   UNUSED(var);
 
   if (v < 0) return VAR_BADVAL;
   if (!v) {
       player_decline_offers(p, -1, PEND_MATCH);
       player_withdraw_offers(p, -1, PEND_MATCH);
-      parray[p].looking = 0;
+      parray[p].flags.is_looking = 0;
   }
-  pcn_out(p, CODE_INFO, FORMAT_SET_OPEN_TO_BE_s_, (parray[p].open) ? "True" : "False");
+  pcn_out(p, CODE_INFO, FORMAT_SET_OPEN_TO_BE_s_, (parray[p].flags.is_open) ? "True" : "False");
   return VAR_OK;
 }
 
@@ -144,9 +144,9 @@ static int set_looking(int p, const char *var, const char *val)
 {
   UNUSED(var);
 
-  if (set_boolean_var(&parray[p].looking, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_LOOKING_TO_BE_s_, (parray[p].looking)  ? "True" : "False");
-  if (parray[p].looking) parray[p].open = 1;
+  if (set_boolean_var(&parray[p].flags.is_looking, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_LOOKING_TO_BE_s_, (parray[p].flags.is_looking)  ? "True" : "False");
+  if (parray[p].flags.is_looking) parray[p].flags.is_open = 1;
   return VAR_OK;
 }
 

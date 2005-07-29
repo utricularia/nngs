@@ -267,11 +267,11 @@ int com_ausers(int p, struct parameter* param)
                 parray[p1].last_tell >= 0 ? 
                          parray[parray[p1].last_tell].pname : "----",
                 parray[p1].last_channel,
-                parray[p1].game < 0 ? 
-                 (parray[p1].num_observe > 0 ? "O" : "-") : "P",
-                parray[p1].game < 0 ?
-                 (parray[p1].num_observe>0 ? parray[p1].observe_list[0] : 0) :
-                 parray[p1].game + 1);
+                parray[p1].session.gnum < 0 ? 
+                 (parray[p1].session.num_observe > 0 ? "O" : "-") : "P",
+                parray[p1].session.gnum < 0 ?
+                 (parray[p1].session.num_observe>0 ? parray[p1].observe_list[0] : 0) :
+                 parray[p1].session.gnum + 1);
   }
   return COM_OK;
 }
@@ -298,7 +298,7 @@ int com_chk_socket(int p, struct parameter* param)
 
   cnt = 0;
   for (p1 = 0; p1 < parray_top; p1++) {
-    if (!parray[p1].socket == fd) continue;
+    if (!parray[p1].session.socket == fd) continue;
     cnt++;
     pcn_out(p, CODE_INFO, FORMAT_SOCKET_d_IS_USED_BY_s,
       fd, parray[p1].pname);
@@ -337,13 +337,13 @@ int com_chk_player(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_LOGIN_sn, parray[p1].login);
   pcn_out(p, CODE_INFO, FORMAT_FULLNAME_sn, IFNULL0(parray[p1].fullname, "(none)") );
   pcn_out(p, CODE_INFO, FORMAT_EMAILADDRESS_sn, IFNULL0(parray[p1].email, "(none)") );
-  pcn_out(p, CODE_INFO, FORMAT_SOCKET_dn, parray[p1].socket);
+  pcn_out(p, CODE_INFO, FORMAT_SOCKET_dn, parray[p1].session.socket);
   pcn_out(p, CODE_INFO, FORMAT_REGISTERED_dn, (int) parray[p1].slotstat.is_registered);
   pcn_out(p, CODE_INFO, FORMAT_LAST_TELL_dn, parray[p1].last_tell);
   pcn_out(p, CODE_INFO, FORMAT_LAST_CHANNEL_dn, parray[p1].last_channel);
   pcn_out(p, CODE_INFO, FORMAT_LOGON_TIME_dn, parray[p1].logon_time);
   pcn_out(p, CODE_INFO, FORMAT_ADMINLEVEL_dn, parray[p1].adminLevel);
-  pcn_out(p, CODE_INFO, FORMAT_STATE_dn, parray[p1].protostate);
+  pcn_out(p, CODE_INFO, FORMAT_STATE_dn, parray[p1].session.protostate);
   pcn_out(p, CODE_INFO, FORMAT_MUZZLED_dn, parray[p1].muzzled);
   pcn_out(p, CODE_INFO, FORMAT_GMUZZLED_dn, parray[p1].gmuzzled);
   pcn_out(p, CODE_INFO, FORMAT_BMUZZLED_dn, parray[p1].bmuzzled);
@@ -613,7 +613,7 @@ int com_pose(int p, struct parameter* param)
   Logit("POSE: %s as %s: > %s <", parray[p].pname, parray[p1].pname, param[1].val.string); 
   for(j = 0; j < carray[CHANNEL_ASHOUT].count; j++) {
     p1= carray[CHANNEL_ASHOUT].members[j];
-    if (!parray[p1].slotstat.is_connected) continue;
+    if (!parray[p1].slotstat.is_online) continue;
     if (p1 == p) continue;
     pprintf(p1, "\n");
     pcn_out_prompt(p1, CODE_INFO, FORMAT_POSE_s_AS_s_s_n,
@@ -1028,7 +1028,7 @@ int com_nuke(int p, struct parameter* param)
       parray[p].pname,
       parray[pk].pname);
   }
-  process_disconnection(parray[pk].socket);
+  process_disconnection(parray[pk].session.socket);
   return COM_OK;
 }
 
@@ -1216,11 +1216,11 @@ int com_aban(int p, struct parameter* param)
       rc = range_check(bot,bot);
       if (!rc) continue;
       cpprintf(p, CODE_INFO, "Disconnecting %s fd=%d %s\n"
-        , parray[p1].login,  parray[p1].socket, dotQuad(bot));
+        , parray[p1].login,  parray[p1].session.socket, dotQuad(bot));
       Logit("Aban ! %s fd=%d %s"
         , parray[p1].login, rc, dotQuad(bot));
       if (p1 == p) continue;
-      process_disconnection(parray[p1].socket);
+      process_disconnection(parray[p1].session.socket);
       cnt++;
     }
     rc = 0;

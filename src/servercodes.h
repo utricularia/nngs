@@ -2,7 +2,7 @@
 #define SERVERCODE_H 1
 
 /* 
-   These are the possible values for in parray.protostate.
+   These are the possible values for in parray.session.protostate.
    They are used as the first second number in the client-type numerical prompt.
    For more information on these #$%^$%## defines, look at client source
    code, such as xigc.  What a horrible way to live.

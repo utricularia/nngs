@@ -109,6 +109,12 @@ static int lines_file(char *file);
 static FILE * vafopen(int num, const char * mode, va_list ap);
 static FILE * pvafopen(int p, int num, const char * mode, va_list ap);
 
+extern int vfprintf(FILE *fp, const char *fmt, va_list ap);
+extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
+extern int vsnprintf(char *dst, size_t dstlen, const char *fmt, va_list ap);
+extern FILE * popen(const char *cmd, const char *mode);
+extern int * pclose(FILE *fp);
+
 int iswhitespace(int c)
 {
 #if 0
@@ -241,7 +247,7 @@ int pcommand(int p, const char *comstr, ...)
   va_list ap;
   char tmp[MAX_LINE_SIZE];
   int retval;
-  int fd = parray[p].socket;
+  int fd = parray[p].session.socket;
 
   va_start(ap, comstr);
   vsnprintf(tmp, sizeof tmp, comstr, ap);
@@ -325,7 +331,7 @@ int pprintf(int p, const char *format, ...)
     Logit("pprintf buffer overflow");
     len=sizeof tmp -1; tmp[len] = 0;
   }
-  net_send(parray[p].socket, tmp, len);
+  net_send(parray[p].session.socket, tmp, len);
   va_end(ap);
   return retval; /* AvK: should be equal to len, but is always ignored anyway */
 }
@@ -368,27 +374,12 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
   }
   else len = idx+rc;
 
-  net_send(parray[p].socket, bigtmp, len);
+  net_send(parray[p].session.socket, bigtmp, len);
 
   return len;
 }
 
-#if FUTURE
-int sncpprintf(char *buff, size_t bufflen, int p, int code, const char *format, ...)
-{
-  va_list ap;
-  int retval;
-
-  va_start(ap, format);
-
-  retval = vsnprintf(buff, bufflen, format, ap);
-
-  va_end(ap);
-  return retval;
-}
-#endif
-
-#if (!HAVE_VSNPRINTF)
+#if (1 || !HAVE_VSNPRINTF || !HAVE_SNPRINTF)
 /* this is a simple, robust (and clumsy ...)
  * substitution for the [v]snprintf() functions, which
  * still seem to be absent on some systems.
@@ -402,10 +393,10 @@ int sncpprintf(char *buff, size_t bufflen, int p, int code, const char *format, 
  * A better, but very big implementation can be found in the
  * Apache sources.
  */
-int my_vsnprintf(char *dst, size_t siz, const char *format, va_list ap)
+int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
 {
   static FILE * dummy = NULL;
-  int len;
+  int rlen, wlen;
 
 
   if (!dummy) {
@@ -413,27 +404,26 @@ int my_vsnprintf(char *dst, size_t siz, const char *format, va_list ap)
     name = tempnam(NULL, NULL);
     dummy = fopen(name, "w+");
     if (!dummy) Logit("Could not open tempfile '%s'", name);
-    unlink(name);
+    /* unlink(name); */
   }
   rewind(dummy);
-  len = vfprintf(dummy, format, ap);
+  wlen = vfprintf(dummy, format, ap);
   fflush(dummy);
-  if (len >= siz) { *dst = 0; return -1; }
+  if (wlen < 0 || wlen >= dstlen) { *dst = 0; return -1; }
   rewind(dummy);
-  len = fread(dst, 1, (size_t) len, dummy);
-  dst[len] = 0;
-  return len;
+  rlen = fread(dst, 1, (size_t) wlen, dummy);
+  if (rlen != wlen) { *dst = 0; return -1; }
+  dst[rlen] = 0;
+  return rlen;
 }
-#endif
 
-#if (!HAVE_SNPRINTF)
 int my_snprintf(char *dst, size_t siz, const char *format, ... )
 {
   va_list ap;
   int rc;
 
   va_start(ap, format);
-  rc = vsnprintf(dst, siz, format, ap);
+  rc = my_vsnprintf(dst, siz, format, ap);
   va_end(ap);
 
   return rc;
@@ -469,7 +459,7 @@ int pprintf_prompt(int p, const char *format,...)
     Logit("pprintf_prompt buffer overflow");
     len =sizeof tmp -1; tmp[len] = 0;
   }
-  net_send(parray[p].socket, tmp, len);
+  net_send(parray[p].session.socket, tmp, len);
 
   pprompt(p);
   va_end(ap);
@@ -497,9 +487,9 @@ static int pprompt(int p)
   int len=0;
 
   if (parray[p].flags.is_client) {
-    len=sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].protostate);
+    len=sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].session.protostate);
   }
-  else if (parray[p].protostate == STAT_SCORING) {
+  else if (parray[p].session.protostate == STAT_SCORING) {
     len=sprintf(tmp,"Enter Dead Group: "); 
   } else {
     if (parray[p].extprompt) {
@@ -511,7 +501,7 @@ static int pprompt(int p)
     }
     else len=sprintf(tmp, "%s",parray[p].prompt);
   }
- if (len>0) net_send(parray[p].socket, tmp, len);
+ if (len>0) net_send(parray[p].session.socket, tmp, len);
   return len;
 }
 
@@ -546,7 +536,7 @@ int psend_raw_file(int p, const char *dir, const char *file)
     return -1;
   }
   while ((num = fread(tmp, sizeof(char), sizeof tmp, fp)) > 0) {
-    net_send(parray[p].socket, tmp, num);
+    net_send(parray[p].session.socket, tmp, num);
   }
   fclose(fp);
   return 0;
@@ -576,7 +566,7 @@ int psend_file(int p, const char *dir, const char *file)
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   while ((cp=fgets( tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
-    net_sendStr(parray[p].socket, tmp);
+    net_sendStr(parray[p].session.socket, tmp);
     lcount++;
   }
   if (cp) {
@@ -611,7 +601,7 @@ int pxysend_raw_file(int p, int num, ...)
   if (!is_regfile(filename1)) { fclose(fp); return -1; }
 
   while ((cnt = fread(tmp, sizeof(char), sizeof tmp, fp)) > 0) {
-    net_send(parray[p].socket, tmp, cnt);
+    net_send(parray[p].session.socket, tmp, cnt);
   }
   fclose(fp);
   return 0;
@@ -667,7 +657,7 @@ int pmore_file( int p )
   while((cp=fgets(tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].last_file_line + parray[p].d_height-1)) break;
     if (lcount >= parray[p].last_file_line) 
-      net_sendStr(parray[p].socket, tmp);
+      net_sendStr(parray[p].session.socket, tmp);
     lcount++;
   }
   if (cp) {
@@ -748,7 +738,7 @@ int xpsend_command(int p, const char *command, char *input, int num, ...)
     fwrite(input, sizeof(char), 1+strlen(input), fp);
   } else {
     while ((cnt = fread(tmp, sizeof(char), sizeof tmp, fp))) {
-      net_send(parray[p].socket, tmp, cnt);
+      net_send(parray[p].session.socket, tmp, cnt);
     }
   }
   pclose(fp);

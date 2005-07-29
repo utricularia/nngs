@@ -473,8 +473,8 @@ int process_command(int p, char *com_string)
 
   stolower(comm);               /* All commands are case-insensitive */
 
-  if (parray[p].game >= 0) {
-    if (go_move(garray[parray[p].game].GoGame, comm)) {
+  if (parray[p].session.gnum >= 0) {
+    if (go_move(garray[parray[p].session.gnum].minkg, comm)) {
       return COM_ISMOVE;
     }
   }
@@ -525,7 +525,7 @@ static void process_login(int p, char *login)
         pprintf(p, "\nfor registration information\n");
 #else
         failed = 0;
-        parray[p].pstatus = PSTATUS_PASSWORD;
+        parray[p].session.pstatus = PSTATUS_PASSWORD;
 	do_copy(parray[p].pname, login, sizeof parray[0].pname); 
 	pprintf(p, "\n\"%s\" is not a registered name.  You may use this name to play unrated games.\n(After logging in, do \"help register\" for more info on how to register.)\n\nThis is a guest account.\nYour account name is %s.\n", 
 	    parray[p].pname,
@@ -539,8 +539,8 @@ static void process_login(int p, char *login)
       } else {
         failed = 0;
 	pprintf(p, "\n%s",parray[p].flags.is_client ? "1 1\n" : "Password: ");
-        net_echoOff(parray[p].socket);
-        parray[p].pstatus = PSTATUS_PASSWORD;
+        net_echoOff(parray[p].session.socket);
+        parray[p].session.pstatus = PSTATUS_PASSWORD;
       }
       /* player_resort(); */
     }
@@ -559,7 +559,7 @@ static void boot_out (int p,int p1)
 
   pprintf (p, "\n **** %s is already logged in - kicking other copy out. ****\n", parray[p].pname);
   pprintf (p1, "**** %s has arrived - you can't both be logged in. ****\n", parray[p].pname);
-  process_disconnection(parray[p1].socket);
+  process_disconnection(parray[p1].session.socket);
   /* This may cause some dirty data for p1 to be lost !!!
    * Damage is limited, however, since parray is flushed on logons.
    */
@@ -577,13 +577,13 @@ static int process_password(int p, char *password)
   char ctmptext[256];
   int len, clen;
 
-  net_echoOn(parray[p].socket);
+  net_echoOn(parray[p].session.socket);
 
   if (parray[p].slotstat.is_registered && parray[p].passwd[0]) {
     if (strlen(password) < 2) {
-      parray[p].pstatus = PSTATUS_PASSWORD;
+      parray[p].session.pstatus = PSTATUS_PASSWORD;
       pprintf(p, "\n%s", parray[p].flags.is_client ? "1 1\n" : "Password: ");
-      net_echoOff(parray[p].socket);
+      net_echoOff(parray[p].session.socket);
       return COM_OKN;
     }
 
@@ -593,7 +593,7 @@ static int process_password(int p, char *password)
       Logit("%s tried to log in from %s with a bad password!", 
 	  parray[p].pname,
 	  dotQuad(parray[p].thisHost));
-      fd = parray[p].socket;
+      fd = parray[p].session.socket;
       fromHost = parray[p].thisHost;
       for (i=0; i < MAX_OCHANNELS; i++) {
 	if (on_channel(i, p)) {
@@ -601,9 +601,9 @@ static int process_password(int p, char *password)
 	}
       }
       parray[p].logon_time = globclock.time;
-      parray[p].pstatus = PSTATUS_LOGIN;
+      parray[p].session.pstatus = PSTATUS_LOGIN;
       /* player_resort(); */
-      parray[p].socket = fd;
+      parray[p].session.socket = fd;
       parray[p].thisHost = fromHost;
       if (*password) {
 	pprintf(p, "\n\nInvalid password!\n\n");
@@ -617,7 +617,6 @@ static int process_password(int p, char *password)
     }
   }
 
-  /* This should really be a hash! */
   for(p1 = 0; p1 < parray_top; p1++) {
     if (p == p1) continue;
     if (!parray[p1].slotstat.is_inuse) continue;
@@ -648,7 +647,7 @@ static int process_password(int p, char *password)
     parray[p].adminLevel = ADMIN_USER;
   }
 
-  parray[p].pstatus = PSTATUS_PROMPT;
+  parray[p].session.pstatus = PSTATUS_PROMPT;
   pprintf(p, "%s\n", parray[p].flags.is_client ? "1 5" : "");
 
   pprintf(p, "%s\n", parray[p].flags.is_client ? "9 File" : "");
@@ -753,7 +752,7 @@ static int process_password(int p, char *password)
   }
 #endif
   parray[p].lastHost = parray[p].thisHost;
-  parray[p].protostate = STAT_WAITING;
+  parray[p].session.protostate = STAT_WAITING;
   pcn_out_prompt(p, CODE_MVERSION, FORMAT_NO_NAME_GO_SERVER_NNGS_VERSION_sn, version_string);
   if (!parray[p].slotstat.is_registered) parray[p].water = 0;
   return 0;
@@ -856,9 +855,9 @@ int process_input(int fd, char *com_string)
   commanding_player = p;
   strcpy(orig_command, com_string);
   parray[p].last_command_time = globclock.time;
-  switch (parray[p].pstatus) {
+  switch (parray[p].session.pstatus) {
     default:
-      sprintf(statstr,".status=%d", parray[p].pstatus);
+      sprintf(statstr,".status=%d", parray[p].session.pstatus);
       msg=statstr;
       break;
     case PSTATUS_EMPTY:
@@ -901,8 +900,8 @@ void process_new_connection(int fd, unsigned int fromHost)
   }
   p = player_new();
 
-  parray[p].pstatus = PSTATUS_LOGIN;
-  parray[p].socket = fd;
+  parray[p].session.pstatus = PSTATUS_LOGIN;
+  parray[p].session.socket = fd;
   parray[p].slotstat.is_connected = 1;
   parray[p].slotstat.is_online = 0;
   parray[p].logon_time = globclock.time;
@@ -925,17 +924,19 @@ void process_disconnection(int fd)
     return;
   }
 
-  if (!net_isalive(fd)) parray[p].slotstat.is_connected = 0;
+  if (!net_isalive(fd)) {
+    parray[p].slotstat.is_connected = 0;
+    parray[p].slotstat.is_online = 0;
+    }
 
   player_remove_requests(p,-1,-1);
   player_remove_requests(-1,p,-1);
   commanding_player = p;
-  if (parray[p].game>=0)
-    game_disconnect(parray[p].game, p);
+  if (parray[p].session.gnum>=0)
+    game_disconnect(parray[p].session.gnum, p);
 
-  if (parray[p].slotstat.is_online) {
+  if (parray[p].slotstat.is_online && !  parray[p].silent_login) {
     for (i = 0; i < carray[CHANNEL_LOGON].count; i++) {
-      if (parray[p].silent_login) break;
       p1 = carray[CHANNEL_LOGON].members[i];
       if (!parray[p1].slotstat.is_online) continue; 
       if (p1 == p) continue; 
@@ -989,14 +990,14 @@ int process_incomplete(int fd, char *com_string)
   else
     last_char = '\0';
   if (len == 1 && last_char == '\4') {	/* ctrl-d */
-    if (parray[p].pstatus == PSTATUS_PROMPT)
+    if (parray[p].session.pstatus == PSTATUS_PROMPT)
       process_input(fd, quit);
     return COM_LOGOUT;
   }
   if (last_char == '\3') {	/* ctrl-c */
-    if (parray[p].pstatus == PSTATUS_PROMPT) {
+    if (parray[p].session.pstatus == PSTATUS_PROMPT) {
       if (!parray[p].flags.is_client) pprintf(p, "\n%s", parray[p].prompt);
-      else pprintf(p, "\n1 %d\n",parray[p].protostate);
+      else pprintf(p, "\n1 %d\n",parray[p].session.protostate);
       return COM_FLUSHINPUT;
     } else {
       return COM_LOGOUT;
@@ -1035,14 +1036,14 @@ int process_heartbeat(int *fdp)
       if (!parray[p].slotstat.is_connected) continue;
       if (!parray[p].slotstat.is_online 
           && (player_idle(p) > MAX_LOGIN_IDLE))    { 
-        *fdp = parray[p].socket;
+        *fdp = parray[p].session.socket;
         return COM_LOGOUT;
       }
       if (parray[p].adminLevel >= ADMIN_ADMIN) continue;
       if (parray[p].i_robot) continue;	/* [PEM]: Don't timeout robots. */
       if (player_idle(p) > MAX_IDLE
-        && parray[p].protostate == STAT_WAITING
-        && parray[p].pstatus == PSTATUS_PROMPT) pcommand(p, "quit");
+        && parray[p].session.protostate == STAT_WAITING
+        && parray[p].session.pstatus == PSTATUS_PROMPT) pcommand(p, "quit");
     }
     last_idle_check = 0;
   } else {
@@ -1168,7 +1169,7 @@ void TerminateCleanup()
     }
     if (parray[p1].slotstat.is_connected) {
       player_write_loginout(p1, P_LOGOUT);
-      close(parray[p1].socket);
+      close(parray[p1].session.socket);
     }
   }
 }

@@ -66,7 +66,7 @@ am_nngssrv_OBJECTS = network.$(OBJEXT) bm.$(OBJEXT) channel.$(OBJEXT) \
 	alias.$(OBJEXT) censor.$(OBJEXT) plan.$(OBJEXT) \
 	ip_ban.$(OBJEXT) chkaddr.$(OBJEXT) command.$(OBJEXT) \
 	comproc.$(OBJEXT) gamedb.$(OBJEXT) playerdb.$(OBJEXT) \
-	emote2.$(OBJEXT) pending.$(OBJEXT)
+	emote2.$(OBJEXT) pending.$(OBJEXT) udp_commands.$(OBJEXT)
 nngssrv_OBJECTS = $(am_nngssrv_OBJECTS)
 nngssrv_LDADD = $(LDADD)
 nngssrv_DEPENDENCIES = $(top_srcdir)/memory/libmemory.a \
@@ -86,7 +86,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/multicol.Po ./$(DEPDIR)/network.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/nngsmain.Po ./$(DEPDIR)/pending.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/plan.Po ./$(DEPDIR)/playerdb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/utils.Po ./$(DEPDIR)/variable.Po
+@AMDEP_TRUE@	./$(DEPDIR)/udp_commands.Po ./$(DEPDIR)/utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/variable.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -218,7 +219,8 @@ nngssrv_SOURCES = \
 	gamedb.c \
 	playerdb.c \
 	emote2.c \
-	pending.c
+	pending.c \
+	udp_commands.c
 
 noinst_HEADERS = 
 
@@ -319,6 +321,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pending.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playerdb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp_commands.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/variable.Po@am__quote@
 
