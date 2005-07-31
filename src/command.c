@@ -621,7 +621,7 @@ static int process_password(int p, char *password)
     if (p == p1) continue;
     if (!parray[p1].slotstat.is_inuse) continue;
     if (strcmp (parray[p].login, parray[p1].login)) continue;
-#if DEBUG_PLAYER_KICK
+#if DEBUG_PLAYER_SLOT
     Logit("Slot %s NEW ", player_dumpslot(p));
     Logit("Slot %s OLD ", player_dumpslot(p1));
 #endif
@@ -634,7 +634,8 @@ static int process_password(int p, char *password)
       return COM_LOGOUT;
     }
 #if DEBUG_PLAYER_KICK
-    Logit("Ass %d<<==Foot %d", p1, p);
+    Logit("Slot %s Kicking ", player_dumpslot(p));
+    Logit("Slot %s Kicked ", player_dumpslot(p1));
 #endif  
     boot_out(p,p1);
   }
