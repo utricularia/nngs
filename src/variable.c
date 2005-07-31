@@ -163,8 +163,8 @@ static int set_tell(int p, const char *var, const char *val)
 {
   UNUSED(var);
 
-  if (set_boolean_var(&parray[p].i_tell, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_TELL_TO_BE_s_, (parray[p].i_tell)  ? "True" : "False");
+  if (set_boolean_var(&parray[p].flags.want_tells, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_TELL_TO_BE_s_, (parray[p].flags.want_tells)  ? "True" : "False");
   return VAR_OK;
 }
 
@@ -181,8 +181,8 @@ static int set_notifiedby(int p, const char *var, const char *val)
 {
   UNUSED(var);
 
-  if (set_boolean_var(&parray[p].notifiedby, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_NOTIFIED_TO_BE_s_, (parray[p].notifiedby) ? "True" : "False");
+  if (set_boolean_var(&parray[p].forget.notifiedby, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_NOTIFIED_TO_BE_s_, (parray[p].forget.notifiedby) ? "True" : "False");
   return VAR_OK;
 }
 
@@ -199,9 +199,9 @@ static int set_pinform(int p, const char *var, const char *val)
 {
   UNUSED(var);
 
-  if (set_boolean_var (&parray[p].i_login, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_PINFORM_TO_BE_s_, (parray[p].i_login) ? "True" : "False");
-  if (parray[p].i_login) channel_add(CHANNEL_LOGON, p);
+  if (set_boolean_var (&parray[p].flags.want_logins, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_PINFORM_TO_BE_s_, (parray[p].flags.want_logins) ? "True" : "False");
+  if (parray[p].flags.want_logins) channel_add(CHANNEL_LOGON, p);
   else channel_remove(CHANNEL_LOGON, p);
   return VAR_OK;
 }
@@ -211,13 +211,13 @@ static int set_quiet(int p, const char *var, const char *val)
   int  quiet;
   UNUSED(var);
 
-  quiet = ~(parray[p].i_login || parray[p].i_game);
+  quiet = ~(parray[p].flags.want_logins || parray[p].flags.want_gshouts);
   if (set_boolean_var (&quiet, val) < 0) return VAR_BADVAL;
-  parray[p].i_login = !quiet;
-  parray[p].i_game = !quiet;
+  parray[p].flags.want_logins = !quiet;
+  parray[p].flags.want_gshouts = !quiet;
 
-  pcn_out(p, CODE_INFO, FORMAT_SET_QUIET_TO_BE_s_, (parray[p].i_login) ? "False" : "True");
-  if (parray[p].i_login) {
+  pcn_out(p, CODE_INFO, FORMAT_SET_QUIET_TO_BE_s_, (parray[p].flags.want_logins) ? "False" : "True");
+  if (parray[p].flags.want_logins) {
     channel_add(CHANNEL_LOGON, p);
     channel_add(CHANNEL_GAME, p);
   }
@@ -232,9 +232,9 @@ static int set_quiet(int p, const char *var, const char *val)
 static int set_ginform(int p, const char *var, const char *val)
 {
   UNUSED(var);
-  if (set_boolean_var (&parray[p].i_game, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_GINFORM_TO_BE_s, (parray[p].i_game) ? "True" : "False");
-  if (parray[p].i_game) channel_add(CHANNEL_GAME, p);
+  if (set_boolean_var (&parray[p].flags.want_gshouts, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_GINFORM_TO_BE_s, (parray[p].flags.want_gshouts) ? "True" : "False");
+  if (parray[p].flags.want_gshouts) channel_add(CHANNEL_GAME, p);
   else channel_remove(CHANNEL_GAME, p);
 
   return VAR_OK;
@@ -267,8 +267,8 @@ static int set_extprompt(int p, const char *var, const char *val)
 static int set_bell(int p, const char *var, const char *val)
 {
   UNUSED(var);
-  if (set_boolean_var (&parray[p].bell, val) < 0) return VAR_BADVAL;
-  pcn_out(p, CODE_INFO, FORMAT_SET_BELL_TO_BE_s_, parray[p].bell ? "True" : "False");
+  if (set_boolean_var (&parray[p].flags.want_bell, val) < 0) return VAR_BADVAL;
+  pcn_out(p, CODE_INFO, FORMAT_SET_BELL_TO_BE_s_, parray[p].flags.want_bell ? "True" : "False");
   return VAR_OK;
 }
 

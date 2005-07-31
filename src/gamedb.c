@@ -394,7 +394,7 @@ void send_go_boards(int g0, int players_only)
       pcn_out(wp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
     }
-    if (parray[wp].bell) pcn_out_prompt(wp, CODE_CR1|CODE_BEEP, FORMAT_n);
+    if (parray[wp].flags.want_bell) pcn_out_prompt(wp, CODE_CR1|CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(wp, CODE_CR1|CODE_NONE,FORMAT_n);
   }
 
@@ -406,7 +406,7 @@ void send_go_boards(int g0, int players_only)
       pcn_out(bp, CODE_MOVE, FORMAT_d_c_sn,
         movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
     }
-    if (parray[bp].bell) pcn_out_prompt(bp, CODE_BEEP, FORMAT_n);
+    if (parray[bp].flags.want_bell) pcn_out_prompt(bp, CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(bp, CODE_NONE, FORMAT_n);
   }
 
@@ -421,7 +421,7 @@ void send_go_boards(int g0, int players_only)
       pcn_out(p, CODE_MOVE, FORMAT_s, outStr);
       pcn_out(p, CODE_MOVE, FORMAT_d_c_sn,
          movenum(garray[g0].minkg) - 1, buf[0], buf + 1);
-      if (parray[p].bell) pcn_out_prompt(p, CODE_BEEP, FORMAT_n);
+      if (parray[p].flags.want_bell) pcn_out_prompt(p, CODE_BEEP, FORMAT_n);
       else pcn_out_prompt(p, CODE_NONE, FORMAT_n);
     }
   }
@@ -434,7 +434,7 @@ int game_get_num_ob(int g0)
 
   for(p = 0; p < parray_top; p++) {
     for(t = 0; t < parray[p].session.num_observe; t++) {
-      if (parray[p].observe_list[t] == g0) count++;
+      if (parray[p].session.observe_list[t] == g0) count++;
       }
   }
   return count;

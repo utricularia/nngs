@@ -146,7 +146,7 @@ struct netstruct {
   unsigned in_end;  /* The end of the first command in the buffer. */
   unsigned parse_dst, parse_src;
   char  in_buff[MAX_STRING_LENGTH];
-} ;
+};
 
 
 /**********************************************************************
@@ -161,7 +161,7 @@ static struct netstruct netarray[CONNECTION_COUNT];
 
 /*
  * listen_count is the number of file descriptors we are listening on
- * net_fd_top is the highest filedscriptor in use; for use in select();
+ * net_fd_top is the highest filedscriptor in use; for select(net_fd_top+1,...);
  */
 static int listen_count = 0;
 static int net_fd_top = -1;
@@ -221,7 +221,7 @@ static void set_nonblocking(int fd)
 /*
  * Every time you call this, another fd is added to the listen list.
  */
-int net_init(int port)
+int net_init(int portnum)
 {
   static int doneinit = 0;
   int  fd,i;
@@ -264,7 +264,7 @@ int net_init(int port)
   memset((void *)&addr, 0, sizeof addr);
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(port);
+  addr.sin_port = htons(portnum);
 
   /* added in an attempt to allow rebinding to the port */
   opt = 1;
@@ -309,7 +309,7 @@ int net_init(int port)
     return 0;
   }
 
-#if 0
+#ifndef __alpha /* Sorry, this is to minimize distribution errors */
   addr.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
 #endif
   if (bind(fd, (struct sockaddr *) &addr, sizeof addr) < 0) {
@@ -513,6 +513,7 @@ static int  do_read_udp(int fd)
   rlen = recvfrom(fd, netarray[fd].in_buff, sizeof netarray[fd].in_buff
   , 0 , (struct sockaddr *) &addr, &alen
   );
+	/* We could check the ip address here ... */
   if (rlen >= sizeof netarray[fd].in_buff) rlen = sizeof netarray[fd].in_buff;
   if (rlen <= 0) return 0;
   while( rlen-- > 0) {
@@ -597,9 +598,7 @@ static void  fd_cleanup(int fd)
   FD_CLR(fd, &readSet);
   FD_CLR(fd, &writeSet);
 
-  if (fd > net_fd_top) {
-    net_fd_top = fd;
-  }
+  if (fd > net_fd_top) net_fd_top = fd;
 
   for ( ; net_fd_top >= 0; net_fd_top--) {
     if (netarray[net_fd_top].netstate != NETSTATE_EMPTY) break;
@@ -919,10 +918,10 @@ int net_isalive(int fd) {
 
 char * net_dumpslot(int fd)
 {
-static char buff[200];
+static char buff[400];
 size_t pos;
 
-  if (fd < 0 || fd >= net_fd_top) return NULL;
+  if (fd < 0 || fd > net_fd_top) return NULL;
 
   pos = sprintf(buff, "%d:%d:%x:%08x:%c:%c"
     , fd, netarray[fd].netstate, netarray[fd].telnetState
@@ -930,15 +929,15 @@ size_t pos;
     , (netarray[fd].is_full) ? 'F' : '-'
     , (netarray[fd].is_throttled) ? 'T' : '-'
     );
-  pos += sprintf(buff, ":%u:%u:%p"
+  pos += sprintf(buff+pos, ":%u:%u:%p"
     , netarray[fd].out_used ,netarray[fd].out_size
     , netarray[fd].out_buff
     );
-  pos += sprintf(buff, ":%u:%u:%u:%u"
+  pos += sprintf(buff+pos, ":%u:%u:%u:%u"
     , netarray[fd].in_used
     , netarray[fd].in_end
     , netarray[fd].parse_dst, netarray[fd].parse_src
     );
 return buff;
-} ;
+}
 

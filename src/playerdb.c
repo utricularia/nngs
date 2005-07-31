@@ -394,36 +394,36 @@ static void player_zero(int p)
   parray[p].busy[0]='\0';
   parray[p].d_height = 24;
   parray[p].d_width = 79;
-  parray[p].last_file[0] = '\0';
-  parray[p].last_file_line = 0;
+  parray[p].forget.last_file[0] = '\0';
+  parray[p].forget.last_file_line = 0;
   parray[p].flags.is_open = 1;
   parray[p].numgam = 0;
   parray[p].which_client = 0;
   parray[p].flags.is_rated = 0;
   parray[p].flags.is_client = 0;
   parray[p].ropen = 1;
-  parray[p].bell = 0;
+  parray[p].flags.want_bell = 0;
   parray[p].extprompt = 0;
-  parray[p].notifiedby = 0;
-  parray[p].i_login = 1;
-  parray[p].i_game = 1;
+  parray[p].forget.notifiedby = 0;
+  parray[p].flags.want_logins = 1;
+  parray[p].flags.want_gshouts = 1;
   parray[p].i_verbose = 1;
   parray[p].i_shout = 1;
   parray[p].i_gshout = 1;
   parray[p].i_lshout = 1;
-  parray[p].i_tell = 1;
+  parray[p].flags.want_tells = 1;
   parray[p].i_robot = 0;
   parray[p].i_kibitz = 1;
   parray[p].flags.is_looking = 0;
   parray[p].Private = 0;
   parray[p].automail = 0;
   parray[p].session.gnum = -1;
-  parray[p].last_tell = -1;
-  parray[p].last_pzz = -1;
-  parray[p].last_tell_from = -1;
+  parray[p].forget.last_tell = -1;
+  parray[p].forget.last_tell_from = -1;
+  parray[p].forget.last_pzz = -1;
   parray[p].last_channel = -1;
-  parray[p].logon_time = 0;
-  parray[p].last_command_time = globclock.time;
+  parray[p].session.logon_time = 0;
+  parray[p].forget.last_command_time = globclock.time;
   parray[p].outgoing = 0;
   parray[p].incoming = 0;
   parray[p].adminLevel = ADMIN_GUEST;
@@ -442,13 +442,13 @@ static void player_zero(int p)
   parray[p].last_problem = 0;
   parray[p].thisHost = 0;
   parray[p].lastHost = 0;
-  /* parray[p].lastColor = PLAYER_WHITE; */
+  /* parray[p].cruft.lastColor = PLAYER_WHITE; */
   parray[p].rating = 0;
   parray[p].orating = 0;
   parray[p].silent_login = 0;
   parray[p].language = 0;
   parray[p].session.opponent = -1;
-  parray[p].last_opponent = -1;
+  parray[p].cruft.last_opponent = -1;
   do_copy(parray[p].ranked, "NR", sizeof parray[p].ranked);
   do_copy(parray[p].rank, " ", sizeof parray[p].rank);
   do_copy(parray[p].srank, "NR", sizeof parray[p].srank);
@@ -525,10 +525,10 @@ void player_disconnect(int p)
 
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_connected) continue;
-    if (parray[p1].last_tell_from == p) parray[p1].last_tell_from = -1;
-    if (parray[p1].last_tell == p) parray[p1].last_tell = -1;
-    if (parray[p1].last_pzz == p) parray[p1].last_pzz = -1;
-    if (parray[p1].last_opponent == p) parray[p1].last_opponent = -1;
+    if (parray[p1].forget.last_tell_from == p) parray[p1].forget.last_tell_from = -1;
+    if (parray[p1].forget.last_tell == p) parray[p1].forget.last_tell = -1;
+    if (parray[p1].forget.last_pzz == p) parray[p1].forget.last_pzz = -1;
+    if (parray[p1].cruft.last_opponent == p) parray[p1].cruft.last_opponent = -1;
   }
   for (p1 = 0; p1 < MAX_NCHANNELS; p1++) channel_remove(p1, p);
 
@@ -557,13 +557,13 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].ropen = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
-    parray[p].bell = atoi(cp);
+    parray[p].flags.want_bell = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
-    parray[p].i_login = atoi(cp);
-    if (parray[p].i_login) channel_add(CHANNEL_LOGON, p);
+    parray[p].flags.want_logins = atoi(cp);
+    if (parray[p].flags.want_logins) channel_add(CHANNEL_LOGON, p);
     cp = strtok(NULL, ":"); if (!cp) return 0;
-    parray[p].i_game = atoi(cp);
-    if (parray[p].i_game) channel_add(CHANNEL_GAME, p);
+    parray[p].flags.want_gshouts = atoi(cp);
+    if (parray[p].flags.want_gshouts) channel_add(CHANNEL_GAME, p);
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].i_shout = atoi(cp);
     if (parray[p].i_shout) channel_add(CHANNEL_SHOUT, p);
@@ -574,7 +574,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     parray[p].i_lshout = atoi(cp);
     if (parray[p].i_lshout) channel_add(CHANNEL_LSHOUT, p);
     cp = strtok(NULL, ":"); if (!cp) return 0;
-    parray[p].i_tell = atoi(cp);
+    parray[p].flags.want_tells = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].i_robot = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
@@ -694,11 +694,11 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
   } else if (!strcasecmp(attr, "ropen:")) {
     parray[p].ropen = atoi(value);
   } else if (!strcasecmp(attr, "bell:")) {
-    parray[p].bell = atoi(value);
+    parray[p].flags.want_bell = atoi(value);
   } else if (!strcasecmp(attr, "i_login:")) {
-    parray[p].i_login = atoi(value);
+    parray[p].flags.want_logins = atoi(value);
   } else if (!strcasecmp(attr, "i_game:")) {
-    parray[p].i_game = atoi(value);
+    parray[p].flags.want_gshouts = atoi(value);
   } else if (!strcasecmp(attr, "i_shout:")) {
     parray[p].i_shout = atoi(value);
   } else if (!strcasecmp(attr, "i_lshout:")) {
@@ -706,7 +706,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
   } else if (!strcasecmp(attr, "i_gshout:")) {
     parray[p].i_gshout = atoi(value);
   } else if (!strcasecmp(attr, "i_tell:")) {
-    parray[p].i_tell = atoi(value);
+    parray[p].flags.want_tells = atoi(value);
   } else if (!strcasecmp(attr, "i_robot:")) {
     parray[p].i_robot = atoi(value);
   } else if (!strcasecmp(attr, "i_verbose:")) {
@@ -799,6 +799,7 @@ int player_read(int p)
       player_swapslots(slot, p, 1);
       Logit("Slot %d copied down from %s", p, player_dumpslot(slot));
       }
+#if PLAYER_SWAPSLOTS_WOULD_BE_CORRECT
     if (parray[slot].slotstat.is_valid && slot < p) {
       player_swapslots(slot, p, -1);
       Logit("Slot %d copied up from %s", p, player_dumpslot(slot));
@@ -807,9 +808,10 @@ int player_read(int p)
       p = slot; continue;
       }
     player_clear(slot);
+#endif
     }
 
-  if (parray[p].slotstat.is_valid) goto skip;
+  if (parray[p].slotstat.is_valid) goto skip_fysical_read;
   /* open the player data file */
   fp = xyfopen(FILENAME_PLAYER_cs, "r", parray[p].login );
   if (!fp) {
@@ -850,7 +852,7 @@ int player_read(int p)
   /* done reading the player data file */
   fclose(fp);
 
-skip:
+skip_fysical_read:
   if (!parray[p].pname[0]) {
     Logit( "Error reading %s for %s, set invalid", filename(), parray[p].login);
     do_copy(parray[p].pname, parray[p].login, sizeof parray[p].pname);
@@ -983,14 +985,14 @@ static int player_save_extended(int p)
   fprintf(fp, "water:%d\n", parray[p].water);
   fprintf(fp, "client:%d\n", parray[p].flags.is_client);
   fprintf(fp, "ropen:%d\n", parray[p].ropen);
-  fprintf(fp, "bell:%d\n", parray[p].bell);
-  fprintf(fp, "i_login:%d\n", parray[p].i_login);
-  fprintf(fp, "i_game:%d\n", parray[p].i_game);
+  fprintf(fp, "bell:%d\n", parray[p].flags.want_bell);
+  fprintf(fp, "i_login:%d\n", parray[p].flags.want_logins);
+  fprintf(fp, "i_game:%d\n", parray[p].flags.want_gshouts);
   fprintf(fp, "i_shout:%d\n", parray[p].i_shout);
 
   fprintf(fp, "i_gshout:%d\n", parray[p].i_gshout);
   fprintf(fp, "i_lshout:%d\n", parray[p].i_lshout);
-  fprintf(fp, "i_tell:%d\n", parray[p].i_tell);
+  fprintf(fp, "i_tell:%d\n", parray[p].flags.want_tells);
   fprintf(fp, "i_robot:%d\n", parray[p].i_robot);
   fprintf(fp, "i_kibitz:%d\n", parray[p].i_kibitz);
   fprintf(fp, "i_verbose:%d\n", parray[p].i_verbose);
@@ -1093,14 +1095,14 @@ static void player_write(int p)
   parray[p].water,
   parray[p].flags.is_client,
   parray[p].ropen,
-  parray[p].bell,
-  parray[p].i_login,
-  parray[p].i_game,
+  parray[p].flags.want_bell,
+  parray[p].flags.want_logins,
+  parray[p].flags.want_gshouts,
   parray[p].i_shout);
   fprintf(fp, " :%d:%d:%d:%d:%d:%d:%d:%d",
   parray[p].i_gshout,
   parray[p].i_lshout,
-  parray[p].i_tell,
+  parray[p].flags.want_tells,
   parray[p].i_robot,
   parray[p].i_kibitz,
   parray[p].i_verbose,
@@ -1246,15 +1248,15 @@ int player_count()
 int player_idle(int p)
 {
   if (parray[p].slotstat.is_online)
-    return globclock.time - parray[p].last_command_time;
+    return globclock.time - parray[p].forget.last_command_time;
   else
-    return globclock.time - parray[p].logon_time;
+    return globclock.time - parray[p].session.logon_time;
 }
 
 
 int player_ontime(int p)
 {
-  return globclock.time - parray[p].logon_time;
+  return globclock.time - parray[p].session.logon_time;
 }
 
 
@@ -1551,7 +1553,7 @@ int player_is_observe(int p, int g)
   int i;
 
   for (i = 0; i < parray[p].session.num_observe; i++) {
-    if (parray[p].observe_list[i] == g)
+    if (parray[p].session.observe_list[i] == g)
       break;
   }
   if (i == parray[p].session.num_observe)
@@ -1564,7 +1566,7 @@ int player_add_observe(int p, int g)
 {
   if (parray[p].session.num_observe == MAX_OBSERVE)
     return -1;
-  parray[p].observe_list[parray[p].session.num_observe] = g;
+  parray[p].session.observe_list[parray[p].session.num_observe] = g;
   parray[p].session.num_observe++;
   parray[p].session.protostate = STAT_OBSERVING;
   return 0;
@@ -1575,20 +1577,20 @@ int player_remove_observe(int p, int g)
   int i;
 
   for (i = 0; i < parray[p].session.num_observe; i++) {
-    if (parray[p].observe_list[i] == g)
+    if (parray[p].session.observe_list[i] == g)
       break;
   }
   if (i == parray[p].session.num_observe)
     return -1;			/* Not found! */
   for (; i < parray[p].session.num_observe - 1; i++) {
-    parray[p].observe_list[i] = parray[p].observe_list[i + 1];
+    parray[p].session.observe_list[i] = parray[p].session.observe_list[i + 1];
   }
   parray[p].session.num_observe--;
   if (parray[p].session.num_observe == 0) {
     parray[p].session.protostate = STAT_WAITING;
-    parray[p].observe_list[0] = -1;
+    parray[p].session.observe_list[0] = -1;
   }
-  parray[p].last_command_time = globclock.time;
+  parray[p].forget.last_command_time = globclock.time;
   return 0;
 }
 

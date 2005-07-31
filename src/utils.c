@@ -113,7 +113,7 @@ extern int vfprintf(FILE *fp, const char *fmt, va_list ap);
 extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 extern int vsnprintf(char *dst, size_t dstlen, const char *fmt, va_list ap);
 extern FILE * popen(const char *cmd, const char *mode);
-extern int * pclose(FILE *fp);
+extern int pclose(FILE *fp);
 
 int iswhitespace(int c)
 {
@@ -494,7 +494,7 @@ static int pprompt(int p)
   } else {
     if (parray[p].extprompt) {
       len=sprintf(tmp, "|%s/%d%s| %s ", 
-        parray[p].last_tell >= 0 ? parray[parray[p].last_tell].pname : "",
+        parray[p].forget.last_tell >= 0 ? parray[parray[p].forget.last_tell].pname : "",
         parray[p].last_channel, 
         parray[p].busy[0] ? "(B)" : "",
         parray[p].prompt);
@@ -550,8 +550,8 @@ int psend_file(int p, const char *dir, const char *file)
   int lcount=1;
   char *cp;
 
-  parray[p].last_file[0] = '\0';
-  parray[p].last_file_line = 0;  
+  parray[p].forget.last_file[0] = '\0';
+  parray[p].forget.last_file_line = 0;  
 
   if (dir) sprintf(fname, "%s/%s", dir, file);
   else     strcpy(fname, file);
@@ -570,8 +570,8 @@ int psend_file(int p, const char *dir, const char *file)
     lcount++;
   }
   if (cp) {
-    do_copy(parray[p].last_file, fname, sizeof parray[0].last_file);
-    parray[p].last_file_line = (parray[p].d_height-1);
+    do_copy(parray[p].forget.last_file, fname, sizeof parray[0].forget.last_file);
+    parray[p].forget.last_file_line = (parray[p].d_height-1);
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     pcn_out(p, CODE_INFO, FORMAT_TYPE_OR_qNEXTq_TO_SEE_NEXT_PAGE_n);
   }
@@ -615,8 +615,8 @@ int pxysend_file(int p, int num, ...)
 
   va_start(ap, num);
 
-  parray[p].last_file[0] = '\0';
-  parray[p].last_file_line = 0;  
+  parray[p].forget.last_file[0] = '\0';
+  parray[p].forget.last_file_line = 0;  
 
   fp = pvafopen(p, num, "r", ap);
   if (!fp)
@@ -625,7 +625,7 @@ int pxysend_file(int p, int num, ...)
     va_end(ap);
     return -1;
   }
-  do_copy(parray[p].last_file, filename(), sizeof parray[0].last_file);
+  do_copy(parray[p].forget.last_file, filename(), sizeof parray[0].forget.last_file);
 
   fclose(fp);
   rc=pmore_file( p );
@@ -640,12 +640,12 @@ int pmore_file( int p )
   int lcount=1;
   char *cp;
 
-  if (!parray[p].last_file[0]) {
+  if (!parray[p].forget.last_file[0]) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_MORE_n);
     return -1;
   }  
   
-  fp = xfopen(parray[p].last_file, "r" );
+  fp = xfopen(parray[p].forget.last_file, "r" );
   if (!fp) {
     pcn_out(p, CODE_ERROR, FORMAT_FILE_NOT_FOUND_n);
     return -1;
@@ -655,21 +655,21 @@ int pmore_file( int p )
   pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
   while((cp=fgets(tmp, sizeof tmp, fp))) {
-    if (lcount >= (parray[p].last_file_line + parray[p].d_height-1)) break;
-    if (lcount >= parray[p].last_file_line) 
+    if (lcount >= (parray[p].forget.last_file_line + parray[p].d_height-1)) break;
+    if (lcount >= parray[p].forget.last_file_line) 
       net_sendStr(parray[p].session.socket, tmp);
     lcount++;
   }
   if (cp) {
-    parray[p].last_file_line += parray[p].d_height-1;
+    parray[p].forget.last_file_line += parray[p].d_height-1;
     if (parray[p].flags.is_client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }
     pcn_out(p, CODE_INFO, FORMAT_TYPE_qNEXTq_OR_TO_SEE_NEXT_PAGE_n);
   }
   else {
-    parray[p].last_file[0] = '\0';
-    parray[p].last_file_line = 0;
+    parray[p].forget.last_file[0] = '\0';
+    parray[p].forget.last_file_line = 0;
     if (parray[p].flags.is_client) {
     pcn_out(p, CODE_HELP, FORMAT_FILEn);
     }

@@ -30,7 +30,7 @@
   /*
    * rangetree-structure for exclusion of ip-adresses
    * basic operations are add-range, remove-range
-   * check-if-in-range. Ranges are split/merged when needed, eg
+   * check-if-XX-is-in-range. Ranges are split/merged when needed, eg
    * [1-9][11-19] + [10] <<-->> [1-19]
    * There is an attempt to keep the binary tree balanced
    * by applying obvious and cheap rotations on-the-fly.
@@ -237,6 +237,7 @@ static struct range **range_hnd(struct range **hnd, unsigned val)
       node_rotate(pp,pl);
       continue;
     }
+	/* Grandmother's rotation ... */
     else if (pl && !pl->prv && !pl->nxt && pr && pr->prv && pr->nxt) {
       node_rotate(pp,pr);
       continue;
@@ -270,6 +271,9 @@ static void node_del(struct range *np)
   hnd = np->hnd;
   node_cut(np);
 
+	/* simple cases: ther are zero or one child nodes.
+	** If any: make them the new root
+	*/
   if (!np->prv && !np->nxt) return;
   if (np->prv && !np->nxt) {
     node_glue(hnd, np->prv);
@@ -281,6 +285,11 @@ static void node_del(struct range *np)
     np->nxt = NULL;
     return;
   }
+	/* If both children are present: consume their subtrees,
+	** and re-insert them onto the new root.
+	** This can be costly, but there is no other way.
+	** the rand() is an attempt to avoid ordered insertions -->vines
+	*/
   while (np->prv && np->nxt) {
     child = node_harvest( (rand() &1) ? np->prv : np->nxt);
     node_app(hnd, child);

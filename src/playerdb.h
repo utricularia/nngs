@@ -40,7 +40,7 @@
 #define PENDING_SIZE (MAX_PENDING*PARRAY_SIZE)
 
 #define DEBUG_PLAYER_KICK 1
-#define DEBUG_PLAYER_SLOT 1
+#define DEBUG_PLAYER_SLOT 0
 #define DEBUG_GAME_SLOT 0
 
 	/* These are for parray.pstatus */
@@ -116,10 +116,12 @@ struct player_ {
     int socket;
     int pstatus;	/* The status of this slot eg PSTATUS_PROMPT */
     int protostate;	/* The state as reported in the protocol-lines */
+    int logon_time;
     int gnum;
     int opponent; /* Only valid if gnum is >= 0 */
     int side;	/* Only valid if gnum is >= 0 */
     int num_observe;
+    int observe_list[MAX_OBSERVE];
   } session;
   struct slotstat {
     unsigned  is_inuse:1;	/* Slot is in use */
@@ -131,6 +133,24 @@ struct player_ {
     unsigned fixcount:2;	/* Reference count; for refleak testing */
     time_t timestamp;	/* For LRU allocation */
   } slotstat;
+	/* These members are assigned but never used
+	*/
+  struct cruft_ {
+    int last_opponent;
+    int lastColor;
+    int gametype; /* Never used ... */
+  /* int teach;    unused:: A teaching account */
+    }cruft;
+  struct forget_ {
+    int pass_tries;
+    int notifiedby;
+    int last_command_time;
+    int last_tell;
+    int last_pzz;
+    int last_tell_from;
+    int last_file_line;
+    char last_file[MAX_LASTFILE + 1];
+  } forget;
 	/* The rest of the playerdata is 'persistent' or volatile
 	** Most of it is saved in the playerfile
 	*/
@@ -141,54 +161,42 @@ struct player_ {
   char email[MAX_EMAIL + 1];
   char prompt[MAX_PROMPT + 1];
   char RegDate[MAX_REGDATE + 1];
-  char last_file[MAX_LASTFILE + 1];
   char srank[MAX_SRANK + 1];
   char rank[MAX_RANK + 1];  
   char ranked[MAX_RANKED + 1];  
-  int pass_tries;
   int water;
   int extprompt;
-  int gametype;
-  int last_tell;
-  int last_pzz;
-  int last_tell_from;
   int last_channel;
-  int last_opponent;
   int language; /* Syncanph, AvK */
-  int logon_time;
-  int last_command_time;
   int outgoing; /* the number of outgoing pending requests */
   int incoming; /* idem, incoming */
   int numgam;
   int d_height;
   int d_width;
-  int last_file_line;
   struct {
     unsigned is_rated:1;
     int is_client;
     int is_looking;
     int is_open;
+    int want_bell;
+    int want_tells;
+    int want_logins;
+    int want_gshouts;
   } flags;
   int rating;
   int orating;
   int ropen;
-  int notifiedby;
-  int bell;
   int which_client;
-  int i_login;
-  int i_game;
   int i_shout;
   int i_gshout;
   int i_lshout;
   int last_problem;
-  int i_tell;
   int i_robot;
   int i_kibitz;
   int i_verbose;
   int Private;
   int automail;
   int adminLevel;
-  /* int teach;    unused:: A teaching account */
   int nochannels;
   int gonum_white;
   int gonum_black;
@@ -208,7 +216,6 @@ struct player_ {
   int silent_login;
   unsigned int thisHost; /* IP address in host byte order */
   unsigned int lastHost; /* IP address in host byte order */
-  int observe_list[MAX_OBSERVE];
   char busy[100]; /* more than enough */
   struct alias * alias_list;
   struct censor * censor_list;

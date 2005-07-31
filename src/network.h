@@ -68,21 +68,11 @@ extern int net_fd_count;
  *   incoming connections.
  * It returns 0 for success, -1 for error.
  */
-extern int  net_init(int);
+extern int  net_init(int portnum);
 
 /*
- * net_select(timeout, fd, action) will wait for input.  action will say
- *   what happened:
- * netAction_cmd: A command was received.  fd is the fd the command came in
- *   on, and a pointer to a null-terminated buffer containing the command
- *   is returned.
- * netAction_newConn: A new connection arrived on file descriptor fd.
- * netAction_closed: A connection was closed by the client.  fd is file
- *   descriptor of the closed connection.
- * netAction_timeout: "timeout" seconds elapsed before any activity
- *   occurred.
  */
-extern void  net_select(int);
+extern void  net_select(int timeout);
 
 /*
  * net_send sends the data in question out the file descriptor.  net_sendStr
@@ -113,5 +103,6 @@ extern void  net_echoOff(int);
  */
 int  net_isalive(int);
 
+	/* format netslot into *static* buffer. For debugging/UDP */
 char * net_dumpslot(int fd);
 #endif	/* NETWORK_H */

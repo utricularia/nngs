@@ -600,7 +600,7 @@ static int process_password(int p, char *password)
 	  channel_remove(i, p);
 	}
       }
-      parray[p].logon_time = globclock.time;
+      parray[p].session.logon_time = globclock.time;
       parray[p].session.pstatus = PSTATUS_LOGIN;
       /* player_resort(); */
       parray[p].session.socket = fd;
@@ -609,7 +609,7 @@ static int process_password(int p, char *password)
 	pprintf(p, "\n\nInvalid password!\n\n");
       }
       pprintf(p, "Login: ");
-      if (parray[p].pass_tries++ > 3) {
+      if (parray[p].forget.pass_tries++ > 3) {
         player_clear(p);
 	return COM_LOGOUT;
       }
@@ -683,7 +683,7 @@ static int process_password(int p, char *password)
      p1 = carray[CHANNEL_LOGON].members[i];
      if (p1 == p) continue;
      if (!parray[p1].slotstat.is_online) continue ;
-     if (!parray[p1].i_login) continue;
+     if (!parray[p1].flags.want_logins) continue;
      if (parray[p].silent_login) continue;
      if (parray[p1].adminLevel >= ADMIN_ADMIN) {
        pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_ss_ss_s_HAS_CONNECTED_n,
@@ -854,7 +854,7 @@ int process_input(int fd, char *com_string)
 
   commanding_player = p;
   strcpy(orig_command, com_string);
-  parray[p].last_command_time = globclock.time;
+  parray[p].forget.last_command_time = globclock.time;
   switch (parray[p].session.pstatus) {
     default:
       sprintf(statstr,".status=%d", parray[p].session.pstatus);
@@ -904,9 +904,9 @@ void process_new_connection(int fd, unsigned int fromHost)
   parray[p].session.socket = fd;
   parray[p].slotstat.is_connected = 1;
   parray[p].slotstat.is_online = 0;
-  parray[p].logon_time = globclock.time;
+  parray[p].session.logon_time = globclock.time;
   parray[p].thisHost = fromHost;
-  parray[p].pass_tries = 0;         /* Clear number of password attempts */
+  parray[p].forget.pass_tries = 0;         /* Clear number of password attempts */
   pxysend_raw_file(p, FILENAME_MESS_LOGIN); /* Send the login file */
   pprintf(p, "Login: ");            /* Give them a prompt */
   return;
@@ -940,7 +940,7 @@ void process_disconnection(int fd)
       p1 = carray[CHANNEL_LOGON].members[i];
       if (!parray[p1].slotstat.is_online) continue; 
       if (p1 == p) continue; 
-      if (!parray[p1].i_login) continue; 
+      if (!parray[p1].flags.want_logins) continue; 
       pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_HAS_DISCONNECTED_n, 
 	  parray[p].pname);
     }

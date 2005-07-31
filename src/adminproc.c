@@ -264,13 +264,13 @@ int com_ausers(int p, struct parameter* param)
     pcn_out(p, CODE_INFO, FORMAT_s_s_s_d_s_dn,
                 parray[p1].pname,
                 dotQuad(parray[p1].thisHost),
-                parray[p1].last_tell >= 0 ? 
-                         parray[parray[p1].last_tell].pname : "----",
+                parray[p1].forget.last_tell >= 0 ? 
+                         parray[parray[p1].forget.last_tell].pname : "----",
                 parray[p1].last_channel,
                 parray[p1].session.gnum < 0 ? 
                  (parray[p1].session.num_observe > 0 ? "O" : "-") : "P",
                 parray[p1].session.gnum < 0 ?
-                 (parray[p1].session.num_observe>0 ? parray[p1].observe_list[0] : 0) :
+                 (parray[p1].session.num_observe>0 ? parray[p1].session.observe_list[0] : 0) :
                  parray[p1].session.gnum + 1);
   }
   return COM_OK;
@@ -339,9 +339,9 @@ int com_chk_player(int p, struct parameter* param)
   pcn_out(p, CODE_INFO, FORMAT_EMAILADDRESS_sn, IFNULL0(parray[p1].email, "(none)") );
   pcn_out(p, CODE_INFO, FORMAT_SOCKET_dn, parray[p1].session.socket);
   pcn_out(p, CODE_INFO, FORMAT_REGISTERED_dn, (int) parray[p1].slotstat.is_registered);
-  pcn_out(p, CODE_INFO, FORMAT_LAST_TELL_dn, parray[p1].last_tell);
+  pcn_out(p, CODE_INFO, FORMAT_LAST_TELL_dn, parray[p1].forget.last_tell);
   pcn_out(p, CODE_INFO, FORMAT_LAST_CHANNEL_dn, parray[p1].last_channel);
-  pcn_out(p, CODE_INFO, FORMAT_LOGON_TIME_dn, parray[p1].logon_time);
+  pcn_out(p, CODE_INFO, FORMAT_LOGON_TIME_dn, parray[p1].session.logon_time);
   pcn_out(p, CODE_INFO, FORMAT_ADMINLEVEL_dn, parray[p1].adminLevel);
   pcn_out(p, CODE_INFO, FORMAT_STATE_dn, parray[p1].session.protostate);
   pcn_out(p, CODE_INFO, FORMAT_MUZZLED_dn, parray[p1].muzzled);
