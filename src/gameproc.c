@@ -1770,8 +1770,6 @@ int com_sgf(int p, struct parameter * param)
   stolower(pname);
 
   count = 0;
-  /* FIXED(AvK): /%c/ in path added! */
-  /* sprintf(dname, "%s/%s", stats_dir, STATS_CGAMES); */
   dirp = xyopendir(FILENAME_CGAMES_c,pname);
   if (!dirp) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_HAS_NO_SGF_GAMES_, pname);

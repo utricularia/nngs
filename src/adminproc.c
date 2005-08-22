@@ -20,6 +20,7 @@
 #endif
 
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "adminproc.h"
 #include "common.h"
@@ -1066,14 +1067,14 @@ int com_reload_ladders(int p, struct parameter* param)
   fp = xyfopen(FILENAME_LADDER9, "r");
   if (fp) {
     num_9 = PlayerLoad(fp, Ladder9);
-    Logit("%d players loaded from file %s", num_9, ladder9_file);
+    Logit("%d players loaded from file %s", num_9, filename());
     fclose(fp);
   }
   num_19 = 0;
   fp = xyfopen(FILENAME_LADDER19, "r");
   if (fp) {
     num_19 = PlayerLoad(fp, Ladder19);
-    Logit("%d players loaded from file %s", num_19, ladder19_file);
+    Logit("%d players loaded from file %s", num_19, filename());
     fclose(fp);
   }
   return COM_OK;

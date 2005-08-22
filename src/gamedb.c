@@ -50,6 +50,7 @@
 #endif
 
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "gamedb.h"
 #include "gameproc.h"
@@ -772,12 +773,12 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   else if (garray[g0].gresult == -1.0) sprintf(resu, "Time");
   else sprintf(resu, "%.1f", garray[g0].gresult);
   fprintf(fp, "\n(;\n");
-  fprintf(fp, "GM[1]FF[4]AP[NNGS:%s]\n", version_string);
+  fprintf(fp, "GM[1]FF[4]AP[NNGS:%s]\n", conffile.version_string);
   fprintf(fp, "US[Brought to you by No Name Go Server]\n");
   fprintf(fp, "CP[\n\
-  Copyright This game was played on the No Name Go Server\n\
+  Copyright This game was played on %s\n\
   Permission to reproduce this game is given,\n\
-  as long as this copyright notice is preserved.]\n");
+  as long as this copyright notice is preserved.]\n", conffile.server_name);
   if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
     fprintf(fp, "GN[%s-%s(B) NNGS (LADDER RATED)]\n",
      parray[wp].pname, parray[bp].pname);
@@ -805,7 +806,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
                parray[bp].pname, 
                parray[bp].slotstat.is_registered ? parray[bp].srank : "UR",
                parray[bp].flags.is_rated ? "*" : " ");
-  fprintf(fp, "PC[%s: %s]\n", server_name, server_address);
+  fprintf(fp, "PC[%s: %s]\n", conffile.server_name, conffile.server_address);
   fprintf(fp, "DT[%s]\n", strDTtime(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g0].minkg->width,
      TICS2SECS(garray[g0].ts.totalticks), garray[g0].komi);

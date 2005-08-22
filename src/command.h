@@ -25,6 +25,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#if 0
 extern const char *mess_dir;
 extern const char *help_dir;
 extern const char *comhelp_dir;
@@ -65,6 +66,7 @@ extern const char *stats_rgames;
 extern const char *stats_cgames;
 
 extern const char *version_string;
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

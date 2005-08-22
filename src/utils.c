@@ -85,6 +85,7 @@
 
 #include "missing.h"
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "utils.h"
 #include "common.h"
@@ -114,6 +115,7 @@ extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 extern int vsnprintf(char *dst, size_t dstlen, const char *fmt, va_list ap);
 extern FILE * popen(const char *cmd, const char *mode);
 extern int pclose(FILE *fp);
+extern char *tempnam(const char *dir, const char *pfx);
 
 int iswhitespace(int c)
 {
@@ -225,7 +227,7 @@ int mail_string_to_address(const char *addr, const char *subj, const char *str)
   fp = popen(&com[0], "w");
   if (!fp)
     return -2;
-  fprintf(fp, "From: %s\n", server_email);
+  fprintf(fp, "From: %s\n", conffile.server_email);
   fprintf(fp, "%s", str);
   pclose(fp);
   return 0;
@@ -270,7 +272,7 @@ int Logit(const char *format,...)
 				   stuff */
   int retval;
   time_t time_in;
-  static int in_logit=0;
+  static int in_logit = 0;
 
 #if SKIPPIT
   return 0;
@@ -286,10 +288,10 @@ int Logit(const char *format,...)
   }
   switch(port) {
   case 9696:
-    sprintf(fname, "%s/%s", stats_dir, log_file);
+    sprintf(fname, "%s/%s", conffile.stats_dir, conffile.log_file);
     break;
   default:
-    sprintf(fname, "%s/%s%d", stats_dir, log_file, port);
+    sprintf(fname, "%s/%s%d", conffile.stats_dir, conffile.log_file, port);
     break;
   }
 	/* Terminate the mutual recursion Logit() <--> xfopen()
@@ -299,7 +301,7 @@ int Logit(const char *format,...)
      /* fprintf(stderr, "In_logit(recursion(%d)) '%s'\n",in_logit, fname); */
   } else if (!(fp = xfopen(fname, "a"))) {
      int err;
-     err=errno;
+     err = errno;
      fprintf(stderr, "Error opening logfile '%s': %d(%s)\n"
        ,fname, err, strerror(err) );
   } else  {
@@ -327,9 +329,9 @@ int pprintf(int p, const char *format, ...)
 	** the strlen() of the resulting string, or -1 on error )
 	*/
   retval = vsprintf(tmp, format, ap);
-  if ((len=strlen(tmp)) >= sizeof tmp) {
+  if ((len = strlen(tmp)) >= sizeof tmp) {
     Logit("pprintf buffer overflow");
-    len=sizeof tmp -1; tmp[len] = 0;
+    len = sizeof tmp -1; tmp[len] = 0;
   }
   net_send(parray[p].session.socket, tmp, len);
   va_end(ap);
@@ -341,7 +343,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
   char bigtmp[10 * MAX_LINE_SIZE];
 
   int rc, len;
-  int idx=0;
+  int idx = 0;
 
 #if SUPPRESS_SYMPTOMS /* :-) */
   memset(bigtmp,0,sizeof bigtmp);
@@ -355,7 +357,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
 	/* CODE_NONE == 0: Dont send code or propt */
   if (code) {
     const char *cp;
-    cp= SendCode(p, code);
+    cp = SendCode(p, code);
     len = strlen(cp);
     memcpy(bigtmp+idx,cp,len);
     idx += len;
@@ -369,7 +371,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
 
   if (rc < 0) {
     Logit("pcvprintf buffer overflow code==%d, format==\"%s\"",code,format);
-    len=sizeof bigtmp -1; bigtmp[len] = 0;
+    len = sizeof bigtmp -1; bigtmp[len] = 0;
     strcpy(NULL, "myabort()" );
   }
   else len = idx+rc;
@@ -404,6 +406,7 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
     name = tempnam(NULL, NULL);
     dummy = fopen(name, "w+");
     if (!dummy) Logit("Could not open tempfile '%s'", name);
+    else Logit("Opened tempfile(%d) '%s'", fileno(dummy), name);
     /* unlink(name); */
   }
   rewind(dummy);
@@ -457,7 +460,7 @@ int pprintf_prompt(int p, const char *format,...)
   retval = vsprintf(tmp, format, ap);
   if ((len = strlen(tmp)) >= sizeof tmp) {
     Logit("pprintf_prompt buffer overflow");
-    len =sizeof tmp -1; tmp[len] = 0;
+    len = sizeof tmp -1; tmp[len] = 0;
   }
   net_send(parray[p].session.socket, tmp, len);
 
@@ -484,22 +487,22 @@ int cpprintf_prompt(int p, int code, const char *format,...)
 static int pprompt(int p)
 {
   char tmp[MAX_LINE_SIZE];
-  int len=0;
+  int len = 0;
 
   if (parray[p].flags.is_client) {
-    len=sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].session.protostate);
+    len = sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].session.protostate);
   }
   else if (parray[p].session.protostate == STAT_SCORING) {
-    len=sprintf(tmp,"Enter Dead Group: "); 
+    len = sprintf(tmp,"Enter Dead Group: "); 
   } else {
     if (parray[p].extprompt) {
-      len=sprintf(tmp, "|%s/%d%s| %s ", 
+      len = sprintf(tmp, "|%s/%d%s| %s ", 
         parray[p].forget.last_tell >= 0 ? parray[parray[p].forget.last_tell].pname : "",
         parray[p].last_channel, 
         parray[p].busy[0] ? "(B)" : "",
         parray[p].prompt);
     }
-    else len=sprintf(tmp, "%s",parray[p].prompt);
+    else len = sprintf(tmp, "%s",parray[p].prompt);
   }
  if (len>0) net_send(parray[p].session.socket, tmp, len);
   return len;
@@ -547,7 +550,7 @@ int psend_file(int p, const char *dir, const char *file)
   FILE *fp;
   char tmp[MAX_LINE_SIZE * 2];
   char fname[MAX_FILENAME_SIZE];
-  int lcount=1;
+  int lcount = 1;
   char *cp;
 
   parray[p].forget.last_file[0] = '\0';
@@ -564,7 +567,7 @@ int psend_file(int p, const char *dir, const char *file)
 
   if (Debug) Logit("Opened \"%s\"", fname);
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
-  while ((cp=fgets( tmp, sizeof tmp, fp))) {
+  while ((cp = fgets( tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
     net_sendStr(parray[p].session.socket, tmp);
     lcount++;
@@ -611,7 +614,7 @@ int pxysend_file(int p, int num, ...)
 {
   va_list ap;
   FILE *fp;
-  int rc=0;
+  int rc = 0;
 
   va_start(ap, num);
 
@@ -628,7 +631,7 @@ int pxysend_file(int p, int num, ...)
   do_copy(parray[p].forget.last_file, filename(), sizeof parray[0].forget.last_file);
 
   fclose(fp);
-  rc=pmore_file( p );
+  rc = pmore_file( p );
   va_end(ap);
   return rc;
 }
@@ -637,7 +640,7 @@ int pmore_file( int p )
 {  
   FILE *fp;
   char tmp[MAX_LINE_SIZE * 2];
-  int lcount=1;
+  int lcount = 1;
   char *cp;
 
   if (!parray[p].forget.last_file[0]) {
@@ -654,7 +657,7 @@ int pmore_file( int p )
   if (parray[p].flags.is_client) {
   pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
-  while((cp=fgets(tmp, sizeof tmp, fp))) {
+  while((cp = fgets(tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].forget.last_file_line + parray[p].d_height-1)) break;
     if (lcount >= parray[p].forget.last_file_line) 
       net_sendStr(parray[p].session.socket, tmp);
@@ -1077,7 +1080,7 @@ int truncate_file(char *file, int lines)
     return 1;
   }
   if (Debug) Logit("Opened %s", file);
-  while ((cp=fgets(tBuf[bptr], MAX_LINE_SIZE, fp))) {
+  while ((cp = fgets(tBuf[bptr], MAX_LINE_SIZE, fp))) {
     len = strlen(cp); if (len < 1) continue;
     if (tBuf[bptr][len-1] != '\n') {	/* Line too long */
       fclose(fp);
@@ -1152,7 +1155,7 @@ int xylines_file(int num,...)
 
   memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
-  cnt=lines_file(filename1);
+  cnt = lines_file(filename1);
 
   va_end(ap);
   return cnt;
@@ -1232,7 +1235,7 @@ char *dotQuad(unsigned int a)
   static char *tmp = NULL;
 
   tmp = (tmp == buff) ? buff+20: buff;
-#if !(BYTE_ORDER==LITTLE_ENDIAN)
+#if !(BYTE_ORDER ==LITTLE_ENDIAN)
   sprintf(tmp, "%d.%d.%d.%d", (a & 0xff),
 	  (a & 0xff00) >> 8,
 	  (a & 0xff0000) >> 16,
@@ -1254,17 +1257,17 @@ int available_space(void)
   int rc;
   struct statfs buf;
 
-  rc=statfs(player_dir, &buf);
+  rc =statfs(conffile.player_dir, &buf);
   return (rc)? 0: ((buf.f_bsize/256) * (buf.f_bavail/4));
 #elif defined(SYSTEM_NEXT)
   struct statfs buf;
 
-  statfs(player_dir, &buf);
+  statfs(conffile.player_dir, &buf);
   return ((buf.f_bsize/ 256) * (buf.f_bavail/4));
 #elif defined(SYSTEM_ULTRIX)
   struct fs_data buf;
 
-  statfs(player_dir, &buf);
+  statfs(conffile.player_dir, &buf);
   return ((buf.bfreen));
 #else
    return 100000000;		/* Infinite space */
@@ -1310,11 +1313,11 @@ int search_directory(char *buffer, int buffersize, char *filter, int num, ...)
     va_end(ap);
     return -1;
     }
-  filtlen=strlen(filter);
+  filtlen = strlen(filter);
   while (fgets(temp, sizeof temp, fp)) {
     len = strlen(temp);
     if (bytecount + len >= buffersize) { break; }
-    diff= filter ? strncmp(filter, temp, filtlen) :0;
+    diff = filter ? strncmp(filter, temp, filtlen) :0;
     if (diff<0) { break; } /* already past filenames that could match */
     if (diff>0) { continue; }
     strcpy(s, temp);
@@ -1455,24 +1458,24 @@ FILE * xfopen(const char * name, const char * mode)
   int err;
 
   do {
-    fp=fopen(name,mode);
+    fp = fopen(name,mode);
     if (fp) break;
-    err=errno;
+    err = errno;
 
 /* Don't log missing files when mode is read.
 ** (unregistered players, missing messagefiles, etc)
 */
-    if (*mode=='r') break;
+    if (*mode =='r') break;
 
     Logit("Xfopen: fopen(\"%s\", \"%s\") failed: %d, %s"
 	  ,name,mode, err,strerror(err) );
 
-    if (*mode=='r') break;
+    if (*mode =='r') break;
 
     switch(err) {
     case ENOENT:
       if (mode_for_dir) {
-        err=mkdir_p(name);
+        err =mkdir_p(name);
         if (err> 0) continue;
 	}
     default:
@@ -1539,30 +1542,30 @@ static FILE * pvafopen(int p, int num, const char * mode, va_list ap)
   case FILENAME_AHELP_q:
     lang = parray[p].language;
     pre = language_num2prefix(lang);
-    fp=xyfopen(num+2, mode, pre); /* num+2 := ..HELP_s */
+    fp = xyfopen(num+2, mode, pre); /* num+2 := ..HELP_s */
     if (fp) break;
     pre = language_num2prefix(LANGUAGE_DEFAULT);
-    fp=xyfopen(num+2, mode, pre);
+    fp = xyfopen(num+2, mode, pre);
     break;
   case FILENAME_HELP_q_s:
   case FILENAME_AHELP_q_s:
-    nam= va_arg(ap,char*);
+    nam = va_arg(ap,char*);
     lang = parray[p].language;
     pre = language_num2prefix(lang);
-    fp=xyfopen(num+2, mode, pre, nam); /* num+2 := ..HELP_s_s */
+    fp = xyfopen(num+2, mode, pre, nam); /* num+2 := ..HELP_s_s */
     if (fp) break;
     pre = language_num2prefix(LANGUAGE_DEFAULT);
-    fp=xyfopen(num+2, mode, pre, nam);
+    fp = xyfopen(num+2, mode, pre, nam);
     break;
   default:
-    Logit("Pvafopen(%d,%d,...) : not langage-dependant", p,num);
+    Logit("Pvafopen(%d,%d,...) : not langage-dependent", p,num);
   case FILENAME_MESS_LOGIN:
   case FILENAME_MESS_LOGOUT:
   case FILENAME_MESS_UNREGISTERED:
   case FILENAME_MESS_MOTD:
   case FILENAME_MESS_MOTDs:
   case FILENAME_MESS_AMOTD:
-    fp=vafopen(num, mode, ap);
+    fp = vafopen(num, mode, ap);
     break;
   }
   return fp;
@@ -1596,7 +1599,7 @@ int xyunlink(int num,...)
 
   memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
-  rc=unlink(filename1);
+  rc = unlink(filename1);
 
   va_end(ap);
   return rc;
@@ -1615,8 +1618,8 @@ int xylink(int num, ...)
 
   memset(filename2,0,sizeof filename2);
   vafilename(filename2,num, ap);
-  if ((rc=strcmp(filename1, filename2)))
-    rc=link(filename1, filename2);
+  if ((rc = strcmp(filename1, filename2)))
+    rc = link(filename1, filename2);
 
   va_end(ap);
   return rc;
@@ -1629,7 +1632,7 @@ int xyfilename(char *buf,int num, ...)
 
   va_start(ap, num);
 
-  rc=vafilename(buf,num, ap);
+  rc = vafilename(buf,num, ap);
 
   va_end(ap);
   return rc;
@@ -1643,246 +1646,246 @@ size_t len;
 
   switch(num) {
   case FILENAME_CMDS :
-    len=sprintf(buf, "%s/commands", help_dir);
+    len = sprintf(buf, "%s/commands", conffile.help_dir);
     break;
   case FILENAME_ACMDS :
-    len=sprintf(buf, "%s/admin_commands", ahelp_dir);
+    len = sprintf(buf, "%s/admin_commands", conffile.ahelp_dir);
     break;
   case FILENAME_INFO:
-    len=sprintf(buf, "%s", info_dir);
+    len = sprintf(buf, "%s", conffile.info_dir);
     break;
 
   case FILENAME_HELP:
-    len=sprintf(buf, "%s", help_dir);
+    len = sprintf(buf, "%s", conffile.help_dir);
     break;
   case FILENAME_HELP_p:
-    i2= va_arg(ap,int);
-    i1=parray[i2].language;
+    i2 = va_arg(ap,int);
+    i1 = parray[i2].language;
     goto filename_help_1;
   case FILENAME_HELP_l:
-    i1= va_arg(ap,int);
+    i1 = va_arg(ap,int);
     goto filename_help_1;
   filename_help_1:
-    cp1=language_num2prefix(i1);
+    cp1 = language_num2prefix(i1);
     goto filename_help_0;
   case FILENAME_HELP_s:
-    cp1= va_arg(ap,char*);
+    cp1 = va_arg(ap,char*);
     goto filename_help_0;
   filename_help_0:
-    len=sprintf(buf, "%s/%s", help_dir, cp1);
+    len = sprintf(buf, "%s/%s", conffile.help_dir, cp1);
     break;
   case FILENAME_HELP_l_index:
-    i1= va_arg(ap,int);
-    cp1=language_num2prefix(i1);
+    i1 = va_arg(ap,int);
+    cp1 = language_num2prefix(i1);
     goto filename_help_l_index_0;
   case FILENAME_HELP_s_index:
-    cp1= va_arg(ap,char*);
+    cp1 = va_arg(ap,char*);
   filename_help_l_index_0:
-    len=sprintf(buf, "%s/%s/%s", help_dir, cp1, ".index" );
+    len = sprintf(buf, "%s/%s/%s", conffile.help_dir, cp1, ".index" );
     break;
   case FILENAME_HELP_l_s:
-    i1= va_arg(ap,int);
-    cp1=language_num2prefix(i1);
+    i1 = va_arg(ap,int);
+    cp1 = language_num2prefix(i1);
     goto filename_help_l_0;
   case FILENAME_HELP_s_s:
-    cp1= va_arg(ap,char*);
+    cp1 = va_arg(ap,char*);
   filename_help_l_0:
-    cp2= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s/%s", help_dir, cp1, cp2);
+    cp2 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s/%s", conffile.help_dir, cp1, cp2);
     break;
 
   case FILENAME_AHELP:
-    len=sprintf(buf, "%s", ahelp_dir);
+    len = sprintf(buf, "%s", conffile.ahelp_dir);
     break;
   case FILENAME_AHELP_p:
-    i2= va_arg(ap,int);
-    i1=parray[i2].language;
+    i2 = va_arg(ap,int);
+    i1 = parray[i2].language;
     goto filename_ahelp_s_1;
   case FILENAME_AHELP_l:
-    i1= va_arg(ap,int);
+    i1 = va_arg(ap,int);
     goto filename_ahelp_s_1;
   filename_ahelp_s_1:
-    cp1=language_num2prefix(i1);
+    cp1 = language_num2prefix(i1);
     goto filename_ahelp_s_0;
   case FILENAME_AHELP_s:
-    cp1= va_arg(ap,char*);
+    cp1 = va_arg(ap,char*);
     goto filename_ahelp_s_0;
   filename_ahelp_s_0:
-    len=sprintf(buf, "%s/%s", ahelp_dir, cp1);
+    len = sprintf(buf, "%s/%s", conffile.ahelp_dir, cp1);
     break;
   case FILENAME_AHELP_s_s:
-    cp1= va_arg(ap,char*);
-    cp2= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s/%s", ahelp_dir, cp1, cp2);
+    cp1 = va_arg(ap,char*);
+    cp2 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s/%s", conffile.ahelp_dir, cp1, cp2);
     break;
   case FILENAME_AHELP_l_index:
-    i1= va_arg(ap,int);
-    cp1=language_num2prefix(i1);
+    i1 = va_arg(ap,int);
+    cp1 = language_num2prefix(i1);
     goto filename_ahelp_l_index_0;
   case FILENAME_AHELP_s_index:
-    cp1= va_arg(ap,char*);
+    cp1 = va_arg(ap,char*);
 filename_ahelp_l_index_0:
-    len=sprintf(buf, "%s/%s/%s", ahelp_dir, cp1, ".index" );
+    len = sprintf(buf, "%s/%s/%s", conffile.ahelp_dir, cp1, ".index" );
     break;
 
   case FILENAME_PLAYER :
-    len=sprintf(buf, "%s", player_dir);
+    len = sprintf(buf, "%s", conffile.player_dir);
     break;
   case FILENAME_PLAYER_cs :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s", player_dir, cp1[0], cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s", conffile.player_dir, cp1[0], cp1);
     break;
   case FILENAME_PLAYER_cs_DELETE :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s.delete", player_dir, cp1[0], cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s.delete", conffile.player_dir, cp1[0], cp1);
     break;
   case FILENAME_PLAYER_cs_LOGONS :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s.%s", player_dir, cp1[0], cp1, stats_logons);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, conffile.stats_logons);
     break;
   case FILENAME_PLAYER_cs_MESSAGES :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s.%s", player_dir, cp1[0], cp1, stats_messages);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, conffile.stats_messages);
     break;
   case FILENAME_PLAYER_cs_GAMES:
     cp1 = va_arg(ap,char*);
-    len=sprintf(buf,"%s/player_data/%c/%s.%s", stats_dir,cp1[0]
+    len = sprintf(buf,"%s/player_data/%c/%s.%s", conffile.stats_dir,cp1[0]
     , cp1, STATS_GAMES);
     break;
 
   case FILENAME_GAMES_s:
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s" , game_dir, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s" , conffile.game_dir, cp1);
     break;
   case FILENAME_GAMES_c :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c" , game_dir, cp1[0]);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c" , conffile.game_dir, cp1[0]);
     break;
   case FILENAME_GAMES_bs_s :
-    cp1= va_arg(ap,char*);
-    cp2= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s-%s" , game_dir, cp2[0], cp1, cp2);
+    cp1 = va_arg(ap,char*);
+    cp2 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s-%s" , conffile.game_dir, cp2[0], cp1, cp2);
     break;
   case FILENAME_GAMES_ws_s :
-    cp1= va_arg(ap,char*);
-    cp2= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s-%s" , game_dir, cp1[0], cp1, cp2);
+    cp1 = va_arg(ap,char*);
+    cp2 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s-%s" , conffile.game_dir, cp1[0], cp1, cp2);
     break;
 
   case FILENAME_CGAMES:
-    len=sprintf(buf, "%s" , cgame_dir );
+    len = sprintf(buf, "%s" , conffile.cgame_dir );
     break;
   case FILENAME_CGAMES_c:
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c" , cgame_dir, cp1[0]);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c" , conffile.cgame_dir, cp1[0]);
     break;
   case FILENAME_CGAMES_cs:
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s" , cgame_dir, cp1[0], cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s" , conffile.cgame_dir, cp1[0], cp1);
     break;
   case FILENAME_CGAMES_ws_s_s:
-    cp1= va_arg(ap,char*);
-    cp2= va_arg(ap,char*);
-    cp3= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s-%s-%s" , cgame_dir
+    cp1 = va_arg(ap,char*);
+    cp2 = va_arg(ap,char*);
+    cp3 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s-%s-%s" , conffile.cgame_dir
 		, cp1[0], cp1, cp2, cp3);
     break;
   case FILENAME_CGAMES_bs_s_s:
-    cp1= va_arg(ap,char*);
-    cp2= va_arg(ap,char*);
-    cp3= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%c/%s-%s-%s" , cgame_dir
+    cp1 = va_arg(ap,char*);
+    cp2 = va_arg(ap,char*);
+    cp3 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%c/%s-%s-%s" , conffile.cgame_dir
 		, cp2[0], cp1, cp2, cp3);
     break;
 
   case FILENAME_RATINGS :
-    len=sprintf(buf,"%s", ratings_file);
+    len = sprintf(buf,"%s", conffile.ratings_file);
     break;
   case FILENAME_RESULTS :
-    len=sprintf(buf, "%s", results_file);
+    len = sprintf(buf, "%s", conffile.results_file);
     break;
   case FILENAME_NRESULTS :
-    len=sprintf(buf, "%s", nresults_file);
+    len = sprintf(buf, "%s", conffile.nresults_file);
     break;
 
   case FILENAME_LADDER9 :
-    len=sprintf(buf, "%s", ladder9_file);
+    len = sprintf(buf, "%s", conffile.ladder9_file);
     break;
   case FILENAME_LADDER19 :
-    len=sprintf(buf, "%s", ladder19_file);
+    len = sprintf(buf, "%s", conffile.ladder19_file);
     break;
 
   case FILENAME_NEWS_s :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/news.%s", news_dir, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/news.%s", conffile.news_dir, cp1);
     break;
   case FILENAME_NEWSINDEX :
-    len=sprintf(buf, "%s/news.index", news_dir);
+    len = sprintf(buf, "%s/news.index", conffile.news_dir);
     break;
   case FILENAME_ADMINNEWSINDEX :
-    len=sprintf(buf, "%s/adminnews.index", news_dir);
+    len = sprintf(buf, "%s/adminnews.index", conffile.news_dir);
     break;
   case FILENAME_ADMINNEWS_s :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/adminnews.%s", news_dir, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/adminnews.%s", conffile.news_dir, cp1);
     break;
   case FILENAME_NOTEFILE :
-    len=sprintf(buf, "%s", note_file);
+    len = sprintf(buf, "%s", conffile.note_file);
     break;
   case FILENAME_LOGONS :
-    len=sprintf(buf, "%s/%s", stats_dir, stats_logons);
+    len = sprintf(buf, "%s/%s", conffile.stats_dir, conffile.stats_logons);
     break;
 
   case FILENAME_MESS_LOGIN:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_LOGIN);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_LOGIN);
     break;
   case FILENAME_MESS_LOGOUT:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_LOGOUT);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_LOGOUT);
     break;
   case FILENAME_MESS_WELCOME:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_WELCOME);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_WELCOME);
     break;
   case FILENAME_MESS_UNREGISTERED:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_UNREGISTERED);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_UNREGISTERED);
     break;
   case FILENAME_MESS_MOTD:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_MOTD);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_MOTD);
     break;
   case FILENAME_MESS_MOTDs:
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s.%s", mess_dir, MESS_MOTD, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s.%s", conffile.mess_dir, MESS_MOTD, cp1);
     break;
   case FILENAME_MESS_AMOTD:
-    len=sprintf(buf, "%s/%s", mess_dir, MESS_AMOTD);
+    len = sprintf(buf, "%s/%s", conffile.mess_dir, MESS_AMOTD);
     break;
   case FILENAME_EMOTE:
-    len=sprintf(buf, "%s", emotes_file) ;
+    len = sprintf(buf, "%s", conffile.emotes_file) ;
     break;
 
   case FILENAME_FIND :
-    len=sprintf(buf, "%s", FIND_FILE);
+    len = sprintf(buf, "%s", FIND_FILE);
     break;
   case FILENAME_LISTINDEX :
-    len=sprintf(buf, "%s/index", lists_dir);
+    len = sprintf(buf, "%s/index", conffile.lists_dir);
     break;
   case FILENAME_LIST_s :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s", lists_dir, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s", conffile.lists_dir, cp1);
     break;
   case FILENAME_LIST_s_OLD :
-    cp1= va_arg(ap,char*);
-    len=sprintf(buf, "%s/%s.old", lists_dir, cp1);
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s.old", conffile.lists_dir, cp1);
     break;
   case FILENAME_LIST_BAN :
-    len=sprintf(buf, "%s/%s", lists_dir, "ban");
+    len = sprintf(buf, "%s/%s", conffile.lists_dir, "ban");
     break;
 
   case FILENAME_PROBLEM_d :
-    i1= va_arg(ap,int);
-    len=sprintf(buf, "%s/xxqj%d.sgf", problem_dir, i1);
+    i1 = va_arg(ap,int);
+    len = sprintf(buf, "%s/xxqj%d.sgf", conffile.problem_dir, i1);
     break;
   default: /* this will fail on open, and appear in the log ... */
-    len=sprintf(buf, "/There/was/a/default/filename:%d", num);
+    len = sprintf(buf, "/There/was/a/default/filename:%d", num);
     break;
   }
 
@@ -1910,10 +1913,10 @@ char * filename(void)
 	*/
 static int mkdir_p(const char * name)
 {
-  int err=0;
+  int err = 0;
   size_t len;
-  int rc=0;
-  int cnt=0;
+  int rc = 0;
+  int cnt = 0;
   char *slash;
   char buff[MAX_FILENAME_SIZE];
   struct stat statbuff;
@@ -1922,15 +1925,15 @@ static int mkdir_p(const char * name)
   memcpy(buff,name,len);
   buff[len] = 0;
 
-  for(slash=buff; (slash=strchr(slash+1, '/' )); ) {
+  for(slash = buff; (slash = strchr(slash+1, '/' )); ) {
 	/* this is to catch double / in paths */
     if (slash[-1] == '/') continue;
-    *slash=0 ;
-    rc=stat(buff, &statbuff);
-    if (!rc) err=EEXIST; /* this is used to skip existing prefix */
+    *slash = 0 ;
+    rc = stat(buff, &statbuff);
+    if (!rc) err =EEXIST; /* this is used to skip existing prefix */
     else {
-      rc=mkdir(buff, mode_for_dir);
-      err=(rc) ? errno: 0;
+      rc = mkdir(buff, mode_for_dir);
+      err = (rc) ? errno: 0;
       }
     switch(err) {
     case 0:
@@ -1997,7 +2000,7 @@ char * mycrypt(const char *passwd, const char * salt)
 {
   char *cp;
 
-  cp=crypt(passwd, salt);
+  cp = crypt(passwd, salt);
   if (!cp) {
     fprintf(stderr,"\n%s,line %d: Need a working crypt() function!\n"
            , __FILE__,__LINE__);
@@ -2034,7 +2037,7 @@ int xytouch(int num, ...)
 
   memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
-  rc=utime(filename1, NULL);
+  rc = utime(filename1, NULL);
 
   va_end(ap);
   return rc;
@@ -2049,7 +2052,7 @@ DIR * xyopendir(int num, ...)
 
   memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
-  dirp=opendir(filename1);
+  dirp = opendir(filename1);
 
   va_end(ap);
   return dirp;
@@ -2085,7 +2088,7 @@ int asc2ipaddr(char *str, unsigned *add)
   default: break;
   case 4:
     *add
-      =(vals[0]&0xff) <<24
+      = (vals[0]&0xff) <<24
       |(vals[1]&0xff) <<16
       |(vals[2]&0xff) <<8
       |(vals[3]&0xff)  ;

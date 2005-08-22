@@ -43,6 +43,7 @@
 
 #include "missing.h"
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "command.h"
 #include "common.h"
@@ -184,13 +185,16 @@ For additional help, type \"help welcome\" while on the server.\n\n\
 On WWW, please try %s/\n\n\
 Regards,\n\n\
 NNGS admins\n\n--",
-          server_name,
+          conffile.server_name,
           pname, fullname,
           email, passwd,
           dotQuad(parray[p].thisHost),
           parray[p].pname,
-          server_email, server_address,server_http);
-  sprintf(tmp, "%s Account Created (%s)", server_name, pname);
+          conffile.server_email
+	, conffile.server_address
+	, conffile.server_http);
+  sprintf(tmp, "%s Account Created (%s)"
+	, conffile.server_name, pname);
   if ((idx = mail_string_to_address(email, tmp, text)) < 0)
     Logit("mail_string_to_address(\"%s\", ...) returned %d", email, idx);
   sprintf(text, "\n\
@@ -202,9 +206,10 @@ NNGS admins\n\n--",
           pname, fullname, email, passwd,
           dotQuad(parray[p].thisHost));
   /* Mail a copy to geek for testing / verification.  */
-  if (geek_email) {
-    if ((idx = mail_string_to_address(geek_email, tmp, text)) < 0)
-      Logit("mail_string_to_address(\"%s\", ...) returned %d", geek_email, idx);
+  if (conffile.geek_email) {
+    if ((idx = mail_string_to_address(conffile.geek_email, tmp, text)) < 0)
+      Logit("mail_string_to_address(\"%s\", ...) returned %d"
+	, conffile.geek_email, idx);
   }
   Logit("NewPlayer: %s [%s] %s (%s) by user %s",
                    pname, email, fullname, passwd, parray[p].pname);
@@ -801,7 +806,7 @@ int com_drop(int p, struct parameter * param)
       PlayerKillAt(Ladder19, LadderPlayer->idx);
       fp = xyfopen(FILENAME_LADDER19, "w");
       if (!fp) {
-        Logit("Error opening \"%s\" for write!!!", ladder19_file);
+        Logit("Error opening \"%s\" for write!!!", filename() );
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         return COM_OK;
       }
@@ -1460,11 +1465,12 @@ int com_kibitz(int p, struct parameter * param)
     else g0 = parray[p].session.observe_list[0];
   }
   if (param[0].type == TYPE_INT) {
-    sprintf(tmp2, "%s (%d)", param[1].type == TYPE_NULL ? "" : param[1].val.string, movenum(garray[g0].minkg));
+    sprintf(tmp2, "%s (%d)", param[1].type == TYPE_NULL
+            ? "" : param[1].val.string, movenum(garray[g0].minkg));
   } else {
     sprintf(tmp2, "%s %s (%d)", param[0].val.word,
-            param[1].type == TYPE_NULL ? "" : param[1].val.string,
-            movenum(garray[g0].minkg));
+            param[1].type == TYPE_NULL
+            ? "" : param[1].val.string, movenum(garray[g0].minkg));
   }
 
   bp = garray[g0].black.pnum;
@@ -1995,9 +2001,9 @@ int com_uptime(int p, struct parameter * param)
   now = globclock.time;
   uptime = now - startuptime;
 
-  pcn_out(p, CODE_INFO, FORMAT_SERVER_NAME_sn, server_name);
-  pcn_out(p, CODE_INFO, FORMAT_SERVER_ADDRESS_sn, server_address);
-  pcn_out(p, CODE_INFO, FORMAT_SERVER_VERSION_sn, version_string);
+  pcn_out(p, CODE_INFO, FORMAT_SERVER_NAME_sn, conffile.server_name);
+  pcn_out(p, CODE_INFO, FORMAT_SERVER_ADDRESS_sn, conffile.server_address);
+  pcn_out(p, CODE_INFO, FORMAT_SERVER_VERSION_sn, conffile.version_string);
 
   pcn_out(p, CODE_INFO, FORMAT_CURRENT_TIME_GMT_sn, strgtime(&now));
   pcn_out(p, CODE_INFO, FORMAT_CURRENT_LOCAL_TIME_sn, strltime(&now));
@@ -2021,7 +2027,7 @@ int com_uptime(int p, struct parameter * param)
   count = game_count();
   pcn_out(p, CODE_INFO, FORMAT_THERE_ARE_CURRENTLY_d_GAMES_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n, count, game_high);
 
-  pcn_out(p, CODE_INFO, FORMAT_CONNECTED_TO_sn, server_name);
+  pcn_out(p, CODE_INFO, FORMAT_CONNECTED_TO_sn, conffile.server_name);
   pcn_out(p, CODE_INFO, FORMAT_BYTES_SENT_dn, byte_count);
 
   LPlayer = PlayerAt(Ladder9, 0);
@@ -4111,7 +4117,7 @@ int com_help(int p, struct parameter * param)
     }
     if (pos) pprintf(p, "%s\n", line);
 
-    pprintf(p, "[Type \"help overview\" for a list of %s general information files.]\n", server_name);
+    pprintf(p, "[Type \"help overview\" for a list of %s general information files.]\n", conffile.server_name);
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
@@ -4442,7 +4448,8 @@ int com_orating(int p, struct parameter * param)
   if (!fp)
   {
     pcn_out(p, CODE_ERROR, FORMAT_AN_UNKNOWN_ERROR_OCCURED_OPENING_THE_RATINGS_FILE_n);
-    fprintf(stderr, "An unknown error occured opening the ratings file '%s'.\n", ratings_file);
+    fprintf(stderr, "An unknown error occured opening the ratings file '%s'.\n"
+	, filename() );
     return COM_OK;
   }
 
@@ -4523,7 +4530,7 @@ int com_translate(int p, struct parameter * param)
     return COM_OK;
   }
 
-  sprintf(cmd, "%s -ta -la %s", intergo_file, param[0].val.word);
+  sprintf(cmd, "%s -ta -la %s", conffile.intergo_file, param[0].val.word);
 
   if ((ptr = popen(cmd, "r")) ) {
     while (fgets(buf, sizeof buf, ptr) )

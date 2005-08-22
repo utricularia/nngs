@@ -55,6 +55,7 @@
 #endif
 
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "common.h"
 #include "command.h"
 #include "servercodes.h"
@@ -75,6 +76,7 @@
 #include "rdbm.h"
 #endif /* WANT_NNGSRATED */
 
+#if 0
 const char *ahelp_dir = AHELP_DIR;
 const char *help_dir = HELP_DIR;
 const char *mess_dir = MESSAGE_DIR;
@@ -112,6 +114,7 @@ const char *server_http = SERVER_HTTP;
 const char *geek_email = GEEK_EMAIL;
 
 const char *version_string = VERSION;
+#endif
 
 time_t startuptime;
 int player_high;
@@ -754,7 +757,8 @@ static int process_password(int p, char *password)
 #endif
   parray[p].lastHost = parray[p].thisHost;
   parray[p].session.protostate = STAT_WAITING;
-  pcn_out_prompt(p, CODE_MVERSION, FORMAT_NO_NAME_GO_SERVER_NNGS_VERSION_sn, version_string);
+  pcn_out_prompt(p, CODE_MVERSION, FORMAT_NO_NAME_GO_SERVER_NNGS_VERSION_sn
+	, conffile.version_string);
   if (!parray[p].slotstat.is_registered) parray[p].water = 0;
   return 0;
 }

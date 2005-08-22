@@ -40,6 +40,7 @@
 #endif
 
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "playerdb.h"
 #include "ladder.h"
@@ -1719,17 +1720,17 @@ int player_kill(char *name)
 {
   char fname[MAX_FILENAME_SIZE], fname2[MAX_FILENAME_SIZE];
 
-  sprintf(fname, "%s/%c/%s", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s", conffile.player_dir, name[0], name);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.games", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.games", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.games", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.games", conffile.player_dir, name[0], name);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.logons", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.logons", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.logons", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.logons", conffile.player_dir, name[0], name);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.messages", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.messages", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.messages", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.messages", conffile.player_dir, name[0], name);
   rename(fname, fname2);
   return 0;
 }
@@ -1739,17 +1740,17 @@ int player_rename(char *name, char *newname)
 {
   char fname[MAX_FILENAME_SIZE], fname2[MAX_FILENAME_SIZE];
 
-  sprintf(fname, "%s/%c/%s", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s", player_dir, newname[0], newname);
+  sprintf(fname, "%s/%c/%s", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/%s", conffile.player_dir, newname[0], newname);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.games", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.games", player_dir, newname[0], newname);
+  sprintf(fname, "%s/%c/%s.games", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/%s.games", conffile.player_dir, newname[0], newname);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.logons", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.logons", player_dir, newname[0], newname);
+  sprintf(fname, "%s/%c/%s.logons", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/%s.logons", conffile.player_dir, newname[0], newname);
   rename(fname, fname2);
-  sprintf(fname, "%s/%c/%s.messages", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/%s.messages", player_dir, newname[0], newname);
+  sprintf(fname, "%s/%c/%s.messages", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/%s.messages", conffile.player_dir, newname[0], newname);
   rename(fname, fname2);
   return 0;
 }
@@ -1759,17 +1760,17 @@ int player_raise(char *name)
 {
   char fname[MAX_FILENAME_SIZE], fname2[MAX_FILENAME_SIZE];
 
-  sprintf(fname, "%s/%c/%s", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s", conffile.player_dir, name[0], name);
   rename(fname2, fname);
-  sprintf(fname, "%s/%c/%s.games", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.games", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.games", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.games", conffile.player_dir, name[0], name);
   rename(fname2, fname);
-  sprintf(fname, "%s/%c/%s.logons", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.logons", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.logons", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.logons", conffile.player_dir, name[0], name);
   rename(fname2, fname);
-  sprintf(fname, "%s/%c/%s.messages", player_dir, name[0], name);
-  sprintf(fname2, "%s/%c/.rem.%s.messages", player_dir, name[0], name);
+  sprintf(fname, "%s/%c/%s.messages", conffile.player_dir, name[0], name);
+  sprintf(fname2, "%s/%c/.rem.%s.messages", conffile.player_dir, name[0], name);
   rename(fname2, fname);
   return 0;
 }

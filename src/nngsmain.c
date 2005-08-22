@@ -38,6 +38,7 @@
 #endif
 
 #include "nngsconfig.h"
+#include "conffile.h"
 #include "nngsmain.h"
 #include "common.h"
 #include "network.h"
@@ -56,8 +57,7 @@ int port, Ladder9, Ladder19, num_19, num_9, completed_games,
 #if WANT_BYTE_COUNT
 unsigned long byte_count = 0L;
 #endif
-
-/* int globClock = 0; */
+static char confname[1024] = "nngs.cnf";
 
 void player_array_init(void);
 void player_init(void);
@@ -88,10 +88,15 @@ static void GetArgs(int argc, char *argv[])
     if (argv[i][0] == '-') {
       switch (argv[i][1]) {
       case 'p':
-	if (i == argc - 1)
-	  usage(argv[0]);
+	if (i == argc - 1) usage(argv[0]);
 	i++;
 	if (sscanf(argv[i], "%d", &port) != 1)
+	  usage(argv[0]);
+	break;
+      case 'c':
+	if (i == argc - 1) usage(argv[0]);
+	i++;
+	if (sscanf(argv[i], "%s", &confname) != 1)
 	  usage(argv[0]);
 	break;
       case 'h':
@@ -146,9 +151,15 @@ int main(int argc, char *argv[])
   dmalloc_debug(1);
 #endif
 
-  GetArgs(argc, argv);
 	/* start the clock (which is used by the Logit fnc) */
   (void) refetch_ticker();
+  GetArgs(argc, argv);
+  if (conf_file_read(confname)) {
+    Logit("Failed to read config file \"%s\"", confname);
+    strcpy(confname, "./nngs.cnf");
+    Logit("Created \"%s\"", confname);
+    conf_file_write(confname);
+  }
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
 #if 0
@@ -174,7 +185,7 @@ int main(int argc, char *argv[])
 #endif
   Logit("Initialized on port %d.", port);
   command_init();
-  EmoteInit(emotes_file);
+  EmoteInit(conffile.emotes_file);
   help_init();
   /*Logit("commands_init()");*/
   commands_init();

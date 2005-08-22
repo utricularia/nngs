@@ -43,6 +43,7 @@
 #endif
 
 #include "nngsmain.h"
+#include "conffile.h"
 #include "mink.h"
 #include "utils.h"
 #include "playerdb.h"
@@ -56,6 +57,7 @@
 static int udp_uptime(char *dst, size_t dstlen);
 static int udp_shutdown(char *dst, size_t dstlen, char *opt);
 static int udp_slots(char *dst, size_t dstlen);
+static int udp_net(char *dst, size_t dstlen);
 static int udp_players(char *dst, size_t dstlen);
 static int udp_games(char *dst, size_t dstlen);
 static int udp_board(char *dst, size_t dstlen, int num);
@@ -71,13 +73,34 @@ int len=0, opt=0;
 
 if (!strcmp(src,"uptime")) len = udp_uptime(dst, dstlen);
 else if (!strcmp(src,"players")) len = udp_players(dst, dstlen);
-else if (!strcmp(src,"games")) len = udp_games(dst, dstlen);
 else if (!strcmp(src,"slots")) len = udp_slots(dst, dstlen);
+else if (!strcmp(src,"net")) len = udp_net(dst, dstlen);
+else if (!strcmp(src,"games")) len = udp_games(dst, dstlen);
 else if (!strncmp(src,"shutdown ", 9)) len = udp_shutdown(dst, dstlen, src+9);
 else if (1 == sscanf(src,"board %d", &opt)) len = udp_board(dst, dstlen, opt);
 else len = snprintf(dst ,dstlen, "Kuttje!:%s\n", src);
 
 return len;
+}
+
+static int udp_net(char *dst, size_t dstlen)
+{
+int ii, len;
+size_t pos=0;
+char *cp;
+
+  len = snprintf(dst, dstlen, "Net\n");
+  if (len < 0) return pos; else pos = len;
+  for (ii = 0; ii < 200; ii++) {
+    if (pos >= dstlen-80) break; /* assume well-behaved */
+    cp = net_dumpslot(ii);
+    if (!cp) break;
+/* fprintf(stderr, "[%u]%s\n", pos, cp ); */
+    len = snprintf(dst+pos, (size_t)(dstlen-pos), "%s\n", cp); /* assume well-behaved */
+    if (len < 0) break; else pos += len;
+  }
+
+return pos;
 }
 
 static int udp_games(char *dst, size_t dstlen)
@@ -87,15 +110,15 @@ int pb, pw, mnum;
 size_t pos=0;
 
   len = snprintf(dst, dstlen, "Games (%u)\n", (unsigned) garray_top);
-  if (len < 0) return pos; else pos = len;
+  if (len < 0) return len; else pos = len;
   for (g0 = 0; g0 < garray_top; g0++) {
     if (pos+80 >= dstlen) break;
     /* if (!garray[g0].gstatus != GSTATUS_ACTIVE) continue; */
     /* if (!garray[g0].slotstat.in_use) continue; */
     pb = garray[g0].black.pnum;
     pw = garray[g0].white.pnum;
-    len = snprintf(dst+pos, dstlen-pos, "%d:%d:%d:%d\n"
-      , g0+1, (int) garray[g0].gstatus, pb+1, pw+1);
+    len = snprintf(dst+pos, dstlen-pos, "%d:%d:%p:%d:%d\n"
+      , g0+1, (int) garray[g0].gstatus, (void*) garray[g0].minkg, pb+1, pw+1);
     if (len < 0) break; else pos += len;
     if (pb < 0 || pw < 0) continue;
     if (pb >= parray_top || pw >= parray_top) continue;
@@ -138,15 +161,14 @@ size_t pos=0;
 len = snprintf(dst, dstlen, "Board %d\n", gnum);
 gnum -= 1;
 
-if (len < 0) return pos; pos = len;
+if (len < 0) return len; pos = len;
 if (pos >= dstlen) {
 	len = snprintf(dst, dstlen, "%d/%u\n", pos, dstlen);
-	return pos; }
+	return len; }
 
 if (gnum < 0 || gnum >= garray_top) {
 	len = snprintf(dst, dstlen, "[invalid: %d >= %u]\n", gnum, garray_top);
-	if (len < 0) return pos; pos += len;
-	return pos;
+	return len;
 	}
 
 len = printboard_raw(dst+pos, dstlen-pos, garray[gnum].minkg);
@@ -207,7 +229,6 @@ return pos;
 static int udp_shutdown(char *dst, size_t dstlen, char *opt)
 {
 int len, slot;
-time_t uptime, now;
 size_t pos=0;
 char *name="*shutdown*";
 
@@ -237,11 +258,11 @@ size_t pos=0;
   now = globclock.time;
   uptime = now - startuptime;
 
-  len = snprintf(dst+pos, dstlen-pos, "Servername: %s\n", server_name);
+  len = snprintf(dst+pos, dstlen-pos, "Servername: %s\n", conffile.server_name);
   if (len < 0) return pos; pos += len;
-  len = snprintf(dst+pos, dstlen-pos, "Serveraddress: %s\n", server_address);
+  len = snprintf(dst+pos, dstlen-pos, "Serveraddress: %s\n", conffile.server_address);
   if (len < 0) return pos; pos += len;
-  len = snprintf(dst+pos, dstlen-pos, "Version: %s\n", version_string);
+  len = snprintf(dst+pos, dstlen-pos, "Version: %s\n", conffile.version_string);
   if (len < 0) return pos; pos += len;
 
   len = snprintf(dst+pos, dstlen-pos, "Date(UTC): %s\n", strgtime(&now));
