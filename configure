@@ -6141,7 +6141,12 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define LOG_FILE "logfile"
+#define LOG_FILE "$prefix/share/${PACKAGE}/stats/logfile"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define LOGONS_FILE "$prefix/share/${PACKAGE}/stats/logons"
 _ACEOF
 
 
@@ -6173,32 +6178,6 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define MESS_UNREGISTERED "unregistered"
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define STATS_MESSAGES "messages"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define STATS_LOGONS "logons"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define STATS_GAMES "games"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define STATS_RGAMES "rgames"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define STATS_CGAMES "cgames"
 _ACEOF
 
 

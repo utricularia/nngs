@@ -286,14 +286,9 @@ int Logit(const char *format,...)
     fprintf(stderr, "Logit buffer overflow (format=\"%s\")\n", format);
     tmp[sizeof tmp -1] = 0;
   }
-  switch(port) {
-  case 9696:
-    sprintf(fname, "%s/%s", conffile.stats_dir, conffile.log_file);
-    break;
-  default:
-    sprintf(fname, "%s/%s%d", conffile.stats_dir, conffile.log_file, port);
-    break;
-  }
+
+  sprintf(fname, "%s", conffile.log_file);
+  
 	/* Terminate the mutual recursion Logit() <--> xfopen()
 	** (this only happens if the logfile does not exist)
 	*/
@@ -1643,6 +1638,11 @@ static size_t vafilename(char *buf, int num, va_list ap)
 size_t len;
   const char *cp1, *cp2,*cp3;
   int i1,i2;
+#define SUFFIX_LOGONS "logons"
+#define SUFFIX_MESSAGES "messages"
+#define SUFFIX_GAMES "games"
+#define SUFFIX_OLD "old"
+#define SUFFIX_DELETE "delete"
 
   switch(num) {
   case FILENAME_CMDS :
@@ -1737,20 +1737,20 @@ filename_ahelp_l_index_0:
     break;
   case FILENAME_PLAYER_cs_DELETE :
     cp1 = va_arg(ap,char*);
-    len = sprintf(buf, "%s/%c/%s.delete", conffile.player_dir, cp1[0], cp1);
+    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, SUFFIX_DELETE);
     break;
   case FILENAME_PLAYER_cs_LOGONS :
     cp1 = va_arg(ap,char*);
-    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, conffile.stats_logons);
+    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, SUFFIX_LOGONS);
     break;
   case FILENAME_PLAYER_cs_MESSAGES :
     cp1 = va_arg(ap,char*);
-    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, conffile.stats_messages);
+    len = sprintf(buf, "%s/%c/%s.%s", conffile.player_dir, cp1[0], cp1, SUFFIX_MESSAGES);
     break;
   case FILENAME_PLAYER_cs_GAMES:
     cp1 = va_arg(ap,char*);
     len = sprintf(buf,"%s/player_data/%c/%s.%s", conffile.stats_dir,cp1[0]
-    , cp1, STATS_GAMES);
+    , cp1, SUFFIX_GAMES);
     break;
 
   case FILENAME_GAMES_s:
@@ -1801,6 +1801,9 @@ filename_ahelp_l_index_0:
   case FILENAME_RATINGS :
     len = sprintf(buf,"%s", conffile.ratings_file);
     break;
+  case FILENAME_NRATINGS :
+    len = sprintf(buf,"%s", conffile.nratings_file);
+    break;
   case FILENAME_RESULTS :
     len = sprintf(buf, "%s", conffile.results_file);
     break;
@@ -1833,7 +1836,7 @@ filename_ahelp_l_index_0:
     len = sprintf(buf, "%s", conffile.note_file);
     break;
   case FILENAME_LOGONS :
-    len = sprintf(buf, "%s/%s", conffile.stats_dir, conffile.stats_logons);
+    len = sprintf(buf, "%s", conffile.logons_file);
     break;
 
   case FILENAME_MESS_LOGIN:
@@ -1874,7 +1877,7 @@ filename_ahelp_l_index_0:
     break;
   case FILENAME_LIST_s_OLD :
     cp1 = va_arg(ap,char*);
-    len = sprintf(buf, "%s/%s.old", conffile.lists_dir, cp1);
+    len = sprintf(buf, "%s/%s.%s", conffile.lists_dir, cp1, SUFFIX_OLD);
     break;
   case FILENAME_LIST_BAN :
     len = sprintf(buf, "%s/%s", conffile.lists_dir, "ban");
@@ -1884,7 +1887,7 @@ filename_ahelp_l_index_0:
     i1 = va_arg(ap,int);
     len = sprintf(buf, "%s/xxqj%d.sgf", conffile.problem_dir, i1);
     break;
-  default: /* this will fail on open, and appear in the log ... */
+  default: /* this will fail on open, and show up in the log ... */
     len = sprintf(buf, "/There/was/a/default/filename:%d", num);
     break;
   }

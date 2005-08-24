@@ -156,7 +156,8 @@ AC_DEFINE_UNQUOTED(NRESULTS_FILE,"$prefix/share/${PACKAGE}/nresults", [file])
 AC_DEFINE_UNQUOTED(FIND_FILE,"$prefix/share/${PACKAGE}/find.out", [find file])
 AC_DEFINE_UNQUOTED(NOTE_FILE,"$prefix/share/${PACKAGE}/note", [notes file])
 
-AC_DEFINE_UNQUOTED(LOG_FILE,"logfile", [logfile- NO PATH! It resides in STATS_DIR])
+AC_DEFINE_UNQUOTED(LOG_FILE,"$prefix/share/${PACKAGE}/stats/logfile", [logfile])
+AC_DEFINE_UNQUOTED(LOGONS_FILE,"$prefix/share/${PACKAGE}/stats/logons", [logonsfile])
 
 dnl
 dnl files found in some of the above directories
@@ -167,12 +168,6 @@ AC_DEFINE_UNQUOTED(MESS_LOGOUT,"logout", [logout message file])
 AC_DEFINE_UNQUOTED(MESS_MOTD,"motd", [motd message file])
 AC_DEFINE_UNQUOTED(MESS_AMOTD,"admotd", [admin motd message file])
 AC_DEFINE_UNQUOTED(MESS_UNREGISTERED,"unregistered", [unreg message file])
-
-AC_DEFINE_UNQUOTED(STATS_MESSAGES,"messages", [messages file])
-AC_DEFINE_UNQUOTED(STATS_LOGONS,"logons", [login log file])
-AC_DEFINE_UNQUOTED(STATS_GAMES,"games", [games file])
-AC_DEFINE_UNQUOTED(STATS_RGAMES,"rgames", [rgames file])
-AC_DEFINE_UNQUOTED(STATS_CGAMES,"cgames", [cgames file])
 
 dnl
 dnl define this to use PEM's malloc and smalloc routines

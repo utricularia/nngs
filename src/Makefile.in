@@ -80,15 +80,16 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/bm.Po ./$(DEPDIR)/censor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/channel.Po ./$(DEPDIR)/chkaddr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/command.Po ./$(DEPDIR)/comproc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/emote2.Po ./$(DEPDIR)/gamedb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gameproc.Po ./$(DEPDIR)/ip_ban.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ladder.Po ./$(DEPDIR)/language.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/legal.Po ./$(DEPDIR)/mink.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/multicol.Po ./$(DEPDIR)/network.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nngsmain.Po ./$(DEPDIR)/pending.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/plan.Po ./$(DEPDIR)/playerdb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/conffile.Po ./$(DEPDIR)/emote2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gamedb.Po ./$(DEPDIR)/gameproc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ip_ban.Po ./$(DEPDIR)/ladder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/language.Po ./$(DEPDIR)/legal.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mink.Po ./$(DEPDIR)/multicol.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/network.Po ./$(DEPDIR)/nngsmain.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/pending.Po ./$(DEPDIR)/plan.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/playerdb.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/udp_commands.Po ./$(DEPDIR)/utils.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/variable.Po	./$(DEPDIR)/conffile.Po
+@AMDEP_TRUE@	./$(DEPDIR)/variable.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)

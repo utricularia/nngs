@@ -3,14 +3,35 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.18avk2 2005-07-31 AvK
+1.1.18avk2 2005-07-31 -2005-08-24 AvK
+- new files : conffile.[ch].
+  All the pahnames/strings/configuration-items are now maintained
+  in a file. Fixed filename 'nngs.cnf' is read (from current directory)
+  an alternate path/file can be specified by a '-c path/file' option
+  on the commandline.
+  If no conffile is found, a nngs.cnf IS WRITTEN in the
+  current directory. This will contain the "compiled in" pathnames.
+  This file is intended as a template first start for further customisation.
+  Note: not all combinations of pathnames are valid, but it will now be
+  -at least- possible to put the data and binary into separate locations
+  , and split the data into 'constant' files (eg helpfiles) and
+  'variable' (players/games/results) parts.
+- changed some of the configuration-items (filename-suffixes)
+  to "non configurable", and dropped them from autoconf.
+- changed LOG_FILE//log_file to contain the full pathname. Now you can put
+  the logfile anywhere you want.
+  The logfile.portnumber-feature has been removed. If you want it, you'll
+  have to edit the conffile.
+- idem for logons
 - New files udp_command.[ch] An attempt at udp interface.
-  It is intended for a PHP web interface on a "local" machine. Putting a
+  This is intended for a PHP web interface on a "local" machine. Putting a
   "standard" client interface into PHP (including login/password: persistent
   sessions) was too hard for me.
   The protocol is basically "commandline over datagrams" which seems
   silly at first glance, but it works. Great tool for monitoring/debugging
   an active server, too.
+  The udp-socket normally binds to 127.0.0.1 (localhost) port 9696/udp,
+  this to avoid unnecessary vulnarabilities.
 - Player-db rework. Sorting out the variables into "persistent" and
   "session-instanciated" variables (which *should* behave different on when
   swapping slots) Found some variables that where never even referenced or
@@ -18,6 +39,7 @@
 - more renaming ... trying to get rid off 1-letter variables && double
 - added some comment on ip_ban.c, which I am very fond of...
   indexing.
+
 1.1.18 2005-07-13 AvK
 - removed excessive debugging in the log file
 - nrat/ contents moved to src/ changes to makefiles//config
@@ -32,7 +54,7 @@
   matches, it returned -2. It now returns the exact match, once there is one.
 - combined game.{Teach/Teach2} variables into .teach.
   still allowing teach2 variable when reading game from file.
-  (this will disappear, eventually)
+  [this will disappear, eventually]
 - cleaned up network.c
   - changed lots of "else if" in main loop to "continue"
   - cleaned up telnet IAC-processing

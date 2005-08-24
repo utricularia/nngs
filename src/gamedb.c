@@ -984,10 +984,10 @@ void game_write_complete(int g0, twodstring statstring)
   stolower(wname);
   stolower(bname);
   sprintf(fdate, strtime_file((time_t *) &now));
-  fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
+  fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
   write_g_out(g0, fp, 23, fdate);
   if (wp != bp) {
-    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
+    fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
     write_g_out(g0, fp, 23, fdate);
   }
   if (garray[g0].rated
@@ -999,15 +999,15 @@ void game_write_complete(int g0, twodstring statstring)
 #endif
      && movenum(garray[g0].minkg) >= 20
      && garray[g0].minkg->width == 19) {
-    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
+    fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
     write_g_out(g0, fp, 23, fdate);
-    fp=xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
+    fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", bname);
     write_g_out(g0, fp, 23, fdate);
   }
-  fp=xyfopen(FILENAME_RESULTS, "a" );
+  fp = xyfopen(FILENAME_RESULTS, "a" );
   write_g_out(g0, fp, 250, fdate);
 
-  fp=xyfopen(FILENAME_CGAMES_ws_s_s, "w", wname, bname, fdate);
+  fp = xyfopen(FILENAME_CGAMES_ws_s_s, "w", wname, bname, fdate);
   game_save_complete(g0, fp, statstring);
   xylink(FILENAME_CGAMES_bs_s_s, wname, bname, fdate);
 

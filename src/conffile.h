@@ -48,24 +48,27 @@ struct conffile {
   char *server_email;
   char *server_http;
   char *geek_email;
+  char *mail_program;
 
   char *intergo_file;
   char *ratings_file;
+  char *nratings_file;
   char *results_file;
   char *nresults_file;
   char *emotes_file;
   char *note_file;
-  char *log_file;
   char *ladder9_file;
   char *ladder19_file;
 
-  char *stats_logons;
-  char *stats_messages;
+  char *log_file;
+  char *logons_file;
+
   char *stats_games;
   char *stats_rgames;
   char *stats_cgames;
 
   char *version_string;
+  char *compile_date;
   };
 
 #if CONFFILE_C
@@ -74,7 +77,7 @@ struct conffile conffile;
 extern struct conffile conffile;
 #endif
 
-int config_file_read(char * fname);
-int config_file_write(char * fname);
+int conf_file_read(char * fname);
+int conf_file_write(char * fname);
 
 #endif /* CONFFILE_H */

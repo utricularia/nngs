@@ -201,7 +201,10 @@
 /* list definition dir */
 #undef LIST_DIR
 
-/* logfile- NO PATH! It resides in STATS_DIR */
+/* logonsfile */
+#undef LOGONS_FILE
+
+/* logfile */
 #undef LOG_FILE
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
@@ -281,23 +284,8 @@
 /* The size of a `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* cgames file */
-#undef STATS_CGAMES
-
 /* message dir */
 #undef STATS_DIR
-
-/* games file */
-#undef STATS_GAMES
-
-/* login log file */
-#undef STATS_LOGONS
-
-/* messages file */
-#undef STATS_MESSAGES
-
-/* rgames file */
-#undef STATS_RGAMES
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

@@ -890,7 +890,7 @@ skip_fysical_read:
       }
       rdbm_close(rdb);
     } else {
-      Logit("Cannot open ratings file");
+      Logit("Cannot open nratings file");
     }
   }
   if (parray[p].rating == 0) {

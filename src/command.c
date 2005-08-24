@@ -100,7 +100,7 @@ const char *ladder9_file = LADDER9_FILE;
 const char *ladder19_file = LADDER19_FILE;
 
 const char *stats_logons = STATS_LOGONS;
-const char *stats_messages = STATS_MESSAGES;
+const char *stats_messages = EXT_MESSAGES;
 const char *stats_games = STATS_GAMES;
 const char *stats_rgames = STATS_RGAMES;
 const char *stats_cgames = STATS_CGAMES;
