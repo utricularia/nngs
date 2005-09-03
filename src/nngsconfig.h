@@ -45,10 +45,11 @@
 #define MIMIC_NNGS_1205 1
 
 /* The name of the server */
-#define SERVER_NAME "NNGS Worldwide"
-#define SERVER_ADDRESS "nngs.localhost 9696"
+#define SERVER_NAME "NNGS unconfigured luser clone"
+#define SERVER_ADDRESS "nngs.localhost"
+#define SERVER_PORTS "6969,9696"
 #define SERVER_EMAIL "nngs@localhost"
-#define SERVER_HTTP "http://nngs.cosmic.org"
+#define SERVER_HTTP "http://localhost"
 #define GEEK_EMAIL NULL
 
 

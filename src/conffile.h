@@ -26,6 +26,20 @@
 #define CONFFILE_H
 
 struct conffile {
+  char *version_string;
+  char *compile_date;
+  char *chroot_dir;
+  char *chroot_user;
+  char *chroot_group;
+
+  char *server_name;
+  char *server_address;
+  char *server_ports;
+  char *server_http;
+  char *server_email;
+  char *geek_email;
+  char *mail_program;
+
   char *mess_dir;
   char *help_dir;
   char *comhelp_dir;
@@ -42,13 +56,6 @@ struct conffile {
   char *source_dir;
   char *lists_dir;
   char *news_dir;
-
-  char *server_name;
-  char *server_address;
-  char *server_email;
-  char *server_http;
-  char *geek_email;
-  char *mail_program;
 
   char *intergo_file;
   char *ratings_file;
@@ -67,8 +74,6 @@ struct conffile {
   char *stats_rgames;
   char *stats_cgames;
 
-  char *version_string;
-  char *compile_date;
   };
 
 #if CONFFILE_C
@@ -79,5 +84,6 @@ extern struct conffile conffile;
 
 int conf_file_read(char * fname);
 int conf_file_write(char * fname);
+int conf_file_fixup(void);
 
 #endif /* CONFFILE_H */

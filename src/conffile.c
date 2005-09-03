@@ -56,9 +56,82 @@
 #include "nngsmain.h"
 #include "utils.h"
 
+#define IFNULL(_p,_d) (_p)?(_p):(_d)
+struct confmatch {
+	int type;
+	const char *name;
+	void *ptr;
+	char *dflt;
+	};
+#define NUL2 NULL,NULL
+#define NUL3 NULL,NULL,NULL
+#define ZOMBIE(_n,_p,_d) {'Z',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
+#define CHPATH(_n,_p,_d) {'p',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
+#define NAME(_n,_p,_d) {'P',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
+#define MESSAGE(_m) {'m', (const char*)(_m),NUL2},
+
+static struct confmatch confmatchs[] = {
+ZOMBIE("version_string", &conffile.version_string, VERSION)
+MESSAGE("Leave chroot_dir empty if no chroot wanted.")
+MESSAGE("Note: chroot() itself needs root permissions.")
+MESSAGE("Note: chroot will cause the pathnames below to be")
+MESSAGE("changed automatically (prefix is stripped)")
+MESSAGE("Note: chroot also needs chroot_user && chroot_group to be set.")
+MESSAGE("Note: chroot does not work. :-)")
+MESSAGE("")
+NAME("chroot_dir", &conffile.chroot_dir, NULL)
+NAME("chroot_user", &conffile.chroot_user, NULL)
+NAME("chroot_group", &conffile.chroot_group, NULL)
+MESSAGE("Directory- and file-names are all absolute in the config file.")
+MESSAGE("They can be configured independently, but some combinations")
+MESSAGE("make no sense. (and will probably not work)")
+MESSAGE("")
+CHPATH("ahelp_dir", &conffile.ahelp_dir, AHELP_DIR)
+CHPATH("help_dir", &conffile.help_dir, HELP_DIR)
+CHPATH("mess_dir", &conffile.mess_dir, MESSAGE_DIR)
+CHPATH("info_dir", &conffile.info_dir, INFO_DIR)
+CHPATH("stats_dir", &conffile.stats_dir, STATS_DIR)
+CHPATH("player_dir", &conffile.player_dir, PLAYER_DIR)
+CHPATH("game_dir", &conffile.game_dir, GAME_DIR)
+CHPATH("cgame_dir", &conffile.cgame_dir, CGAME_DIR)
+CHPATH("problem_dir", &conffile.problem_dir, PROBLEM_DIR)
+CHPATH("lists_dir", &conffile.lists_dir, LIST_DIR)
+CHPATH("news_dir", &conffile.news_dir, NEWS_DIR)
+MESSAGE("")
+CHPATH("ratings_file", &conffile.ratings_file, RATINGS_FILE)
+CHPATH("nratings_file", &conffile.nratings_file, NRATINGS_FILE)
+CHPATH("intergo_file", &conffile.intergo_file, INTERGO_FILE)
+CHPATH("results_file", &conffile.results_file, RESULTS_FILE)
+CHPATH("nresults_file", &conffile.nresults_file, NRESULTS_FILE)
+CHPATH("emotes_file", &conffile.emotes_file, EMOTES_FILE)
+CHPATH("note_file", &conffile.note_file, NOTE_FILE)
+CHPATH("log_file", &conffile.log_file, LOG_FILE)
+CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
+CHPATH("ladder9_file", &conffile.ladder9_file, LADDER9_FILE)
+CHPATH("ladder19_file", &conffile.ladder19_file, LADDER19_FILE)
+MESSAGE("")
+
+NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
+
+NAME("server_name", &conffile.server_name, SERVER_NAME)
+NAME("server_address", &conffile.server_address, SERVER_ADDRESS)
+NAME("server_ports", &conffile.server_ports, SERVER_PORTS)
+NAME("server_http", &conffile.server_http, SERVER_HTTP)
+NAME("server_email", &conffile.server_email, SERVER_EMAIL)
+NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
+NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
+{ 0,  NUL3 } }; /* sentinel */
+#undef NUL2
+#undef NUL3
+#undef ZOMBIE
+#undef NAME
+#undef CHPATH
+#undef MESSAGE
+static struct confmatch *conf_find(char *name);
 static int conf_set_pair(char *name, char *value);
 static void config_fill_defaults(void);
 static void trimtrail(char *str);
+static int conf_file_fixup1(char * target, char *part, int len);
 
 int conf_file_read(char * fname)
 {
@@ -66,6 +139,18 @@ FILE *fp;
 char buff[100];
 char *name, *value;
 size_t len;
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+#define __USE_XOPEN 1
+#include <unistd.h>
+#undef __USE_XOPEN
+#include <errno.h>
+
+struct passwd *pp = NULL;
+struct group *gp = NULL;
+uid_t uid = -1;
+gid_t gid = -1;
 
 fp = fopen( fname, "r" );
 if (!fp) {
@@ -87,6 +172,47 @@ while (fgets(buff, sizeof buff, fp) ) {
 	conf_set_pair(name, value);
 	}
 fclose (fp);
+
+config_fill_defaults();
+if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
+if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
+
+if (!pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
+else { uid = pp->pw_uid; gid = pp->pw_gid; }
+if (!gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
+else gid = gp->gr_gid;
+
+if (conffile.chroot_dir) {
+        int rc;
+	rc = chdir(conffile.chroot_dir);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
+		, conffile.chroot_dir, rc, strerror(rc) );
+		}
+	rc = chroot(conffile.chroot_dir);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed chroot(%s): %d (%s)\n"
+		, conffile.chroot_dir, rc, strerror(rc) );
+		}
+	if (rc) return rc;
+	if (gid) rc = setgid(gid);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
+		, gid, conffile.chroot_group, rc, strerror(rc) );
+		}
+	if (uid) rc = setuid(uid);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
+		, uid, conffile.chroot_user, rc, strerror(rc) );
+		}
+	if (uid) setuid(uid);
+#if 1
+	if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+	if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+#endif
+	conf_file_fixup();
+	conf_file_write("written.cnf");
+	}
 return 0;
 }
 
@@ -102,97 +228,29 @@ while(len > 0) {
 	}
 }
 
-static int conf_set_pair(char *name, char *value)
-{
-char **target = NULL;
-
-if (!strcmp(name, "ahelp_dir") ) target = &conffile.ahelp_dir;
-else if (!strcmp(name, "help_dir") ) target = &conffile.help_dir;
-else if (!strcmp(name, "mess_dir") ) target = &conffile.mess_dir;
-else if (!strcmp(name, "info_dir") ) target = &conffile.info_dir;
-else if (!strcmp(name, "stats_dir") ) target = &conffile.stats_dir;
-else if (!strcmp(name, "player_dir") ) target = &conffile.player_dir;
-else if (!strcmp(name, "game_dir") ) target = &conffile.game_dir;
-else if (!strcmp(name, "cgame_dir") ) target = &conffile.cgame_dir;
-else if (!strcmp(name, "problem_dir") ) target = &conffile.problem_dir;
-else if (!strcmp(name, "lists_dir") ) target = &conffile.lists_dir;
-else if (!strcmp(name, "news_dir") ) target = &conffile.news_dir;
-
-else if (!strcmp(name, "ratings_file") ) target = &conffile.ratings_file;
-else if (!strcmp(name, "nratings_file") ) target = &conffile.nratings_file;
-else if (!strcmp(name, "intergo_file") ) target = &conffile.intergo_file;
-else if (!strcmp(name, "results_file") ) target = &conffile.results_file;
-else if (!strcmp(name, "nresults_file") ) target = &conffile.nresults_file;
-else if (!strcmp(name, "emotes_file") ) target = &conffile.emotes_file;
-else if (!strcmp(name, "note_file") ) target = &conffile.note_file;
-else if (!strcmp(name, "log_file") ) target = &conffile.log_file;
-else if (!strcmp(name, "logons_file") ) target = &conffile.logons_file;
-else if (!strcmp(name, "ladder9_file") ) target = &conffile.ladder9_file;
-else if (!strcmp(name, "ladder19_file") ) target = &conffile.ladder19_file;
-
-else if (!strcmp(name, "def_prompt") ) target = &conffile.def_prompt;
-
-else if (!strcmp(name, "server_name") ) target = &conffile.server_name;
-else if (!strcmp(name, "server_address") ) target = &conffile.server_address;
-else if (!strcmp(name, "server_http") ) target = &conffile.server_http;
-else if (!strcmp(name, "server_email") ) target = &conffile.server_email;
-else if (!strcmp(name, "geek_email") ) target = &conffile.geek_email;
-else if (!strcmp(name, "mail_program") ) target = &conffile.mail_program;
-
-else if (!strcmp(name, "version_string") ) target = &conffile.version_string;
-
-if (!target) { /* nametag Not found */
-	return -1;
-	}
-if (*target) free (*target);
-*target = mystrdup(value);
-
-return 0;
-}
-
 int conf_file_write(char *fname)
 {
 FILE *fp;
+struct confmatch *cp;
 
 fp = fopen( fname, "w" );
 if (!fp) return -1;
 
 fprintf(fp, "## Config generated Date %s UTC\n", strgtime(&globclock.time));
-fprintf(fp, "ahelp_dir=%s\n" , conffile.ahelp_dir);
-fprintf(fp, "help_dir=%s\n" , conffile.help_dir);
-fprintf(fp, "mess_dir=%s\n" , conffile.mess_dir);
-fprintf(fp, "info_dir=%s\n" , conffile.info_dir);
-fprintf(fp, "stats_dir=%s\n" , conffile.stats_dir);
-fprintf(fp, "player_dir=%s\n" , conffile.player_dir);
-fprintf(fp, "game_dir=%s\n" , conffile.game_dir);
-fprintf(fp, "cgame_dir=%s\n" , conffile.cgame_dir);
-fprintf(fp, "problem_dir=%s\n" , conffile.problem_dir);
-fprintf(fp, "lists_dir=%s\n" , conffile.lists_dir);
-fprintf(fp, "news_dir=%s\n" , conffile.news_dir);
-
-fprintf(fp, "ratings_file=%s\n" , conffile.ratings_file);
-fprintf(fp, "nratings_file=%s\n" , conffile.nratings_file);
-fprintf(fp, "intergo_file=%s\n" , conffile.intergo_file);
-fprintf(fp, "results_file=%s\n" , conffile.results_file);
-fprintf(fp, "nresults_file=%s\n" , conffile.nresults_file);
-fprintf(fp, "emotes_file=%s\n" , conffile.emotes_file);
-fprintf(fp, "note_file=%s\n" , conffile.note_file);
-fprintf(fp, "log_file=%s\n" , conffile.log_file);
-fprintf(fp, "logons_file=%s\n" , conffile.logons_file);
-fprintf(fp, "ladder9_file=%s\n" , conffile.ladder9_file);
-fprintf(fp, "ladder19_file=%s\n" , conffile.ladder19_file);
-
-fprintf(fp, "def_prompt=%s\n" , conffile.def_prompt);
-
-fprintf(fp, "server_name=%s\n" , conffile.server_name);
-fprintf(fp, "server_address=%s\n" , conffile.server_address);
-fprintf(fp, "server_email=%s\n" , conffile.server_email);
-fprintf(fp, "server_http=%s\n" , conffile.server_http);
-fprintf(fp, "geek_email=%s\n" , IFNULL(conffile.geek_email,"") );
-fprintf(fp, "mail_program=%s\n" , conffile.mail_program);
-
-fprintf(fp, "#version_string=%s\n" , conffile.version_string);
 fprintf(fp, "#compile_date=%s %s\n" , __DATE__ , __TIME__ );
+fprintf(fp, "#\n" );
+
+for (cp = confmatchs; cp->type; cp++) {
+	switch (cp->type) {
+	case 'm': fprintf(fp, "#%s\n", cp->name); break;
+	case 'Z' :
+	case 'P':
+	case 'p': fprintf(fp, "%s=%s\n"
+		, cp->name, IFNULL(*(char**)cp->ptr,"") ); break;
+	default: break;
+		}
+	}
+fprintf(fp, "#\n" );
 fprintf(fp, "## Eof\n" );
 
 fclose (fp);
@@ -202,41 +260,85 @@ return 0;
 
 static void config_fill_defaults(void)
 {
-if (!conffile.ahelp_dir) conffile.ahelp_dir = mystrdup(AHELP_DIR);
-if (!conffile.help_dir) conffile.help_dir = mystrdup(HELP_DIR);
-if (!conffile.mess_dir) conffile.mess_dir = mystrdup(MESSAGE_DIR);
-if (!conffile.info_dir) conffile.info_dir = mystrdup(INFO_DIR);
-if (!conffile.stats_dir) conffile.stats_dir = mystrdup(STATS_DIR);
-if (!conffile.player_dir) conffile.player_dir = mystrdup(PLAYER_DIR);
-if (!conffile.game_dir) conffile.game_dir = mystrdup(GAME_DIR);
-if (!conffile.cgame_dir) conffile.cgame_dir = mystrdup(CGAME_DIR);
-if (!conffile.problem_dir) conffile.problem_dir = mystrdup(PROBLEM_DIR);
-if (!conffile.lists_dir) conffile.lists_dir = mystrdup(LIST_DIR);
-if (!conffile.news_dir) conffile.news_dir = mystrdup(NEWS_DIR);
+struct confmatch *cp;
 
-if (!conffile.ratings_file) conffile.ratings_file = mystrdup(RATINGS_FILE);
-if (!conffile.nratings_file) conffile.nratings_file = mystrdup(NRATINGS_FILE);
-if (!conffile.intergo_file) conffile.intergo_file = mystrdup(INTERGO_FILE);
-if (!conffile.results_file) conffile.results_file = mystrdup(RESULTS_FILE);
-if (!conffile.nresults_file) conffile.nresults_file = mystrdup(NRESULTS_FILE);
-if (!conffile.emotes_file) conffile.emotes_file = mystrdup(EMOTES_FILE);
-if (!conffile.note_file) conffile.note_file = mystrdup(NOTE_FILE);
-
-if (!conffile.log_file) conffile.log_file = mystrdup(LOG_FILE);
-if (!conffile.logons_file) conffile.logons_file = mystrdup(LOGONS_FILE);
-if (!conffile.ladder9_file) conffile.ladder9_file = mystrdup(LADDER9_FILE);
-if (!conffile.ladder19_file) conffile.ladder19_file = mystrdup(LADDER19_FILE);
-
-if (!conffile.def_prompt) conffile.def_prompt = mystrdup(DEFAULT_PROMPT);
-
-if (!conffile.server_name) conffile.server_name = mystrdup(SERVER_NAME);
-if (!conffile.server_address) conffile.server_address = mystrdup(SERVER_ADDRESS);
-if (!conffile.server_email) conffile.server_email = mystrdup(SERVER_EMAIL);
-if (!conffile.server_http) conffile.server_http = mystrdup(SERVER_HTTP);
-if (!conffile.geek_email) conffile.geek_email = mystrdup(GEEK_EMAIL);
-if (!conffile.mail_program) conffile.mail_program = mystrdup(MAILPROGRAM);
-
-if (!conffile.version_string) conffile.version_string = mystrdup(VERSION);
-return;
+for (cp = confmatchs; cp->type; cp++) {
+	switch (cp->type) {
+	case 'Z':
+	case 'P':
+	case 'p': if (!*(char**)(cp->ptr) && cp->dflt) {
+		 *((char**)cp->ptr) = mystrdup (cp->dflt);
+		}
+	break;
+	case 'm': default: continue;
+		}
+	}
 }
 
+int conf_file_fixup(void)
+{
+int cnt=0, len;
+struct confmatch *cp;
+
+if (!conffile.chroot_dir) return 0;
+len = strlen(conffile.chroot_dir) ;
+if (len && conffile.chroot_dir[len-1] == '/') len--;
+
+#define DO_ONE(_s) cnt += conf_file_fixup1((_s), conffile.chroot_dir, len)
+
+for (cp = confmatchs; cp->type; cp++) {
+	switch (cp->type) {
+	case 'p': if (*(char**)(cp->ptr)) DO_ONE(*(char**)(cp->ptr) );
+	break;
+	case 'Z':
+	case 'P':
+	case 'm':
+	default: continue;
+		}
+	}
+#undef DO_ONE
+
+return cnt;
+}
+
+static int conf_file_fixup1(char * target, char *part, int len)
+{
+if (strncmp(target, part, len)) return 1; /* fail */
+
+while (target[0] = target[len]) target++;
+return 0;
+
+}
+
+
+static int conf_set_pair(char *name, char *value)
+{
+struct confmatch *cp;
+
+cp = conf_find(name);
+if (!cp) { /* nametag Not found */
+	return -1;
+	}
+switch (cp->type) {
+case 'p':
+case 'P':
+	if (*(char**)(cp->ptr)) free (*(char**)(cp->ptr));
+	*(char**)(cp->ptr) = (value) ? mystrdup(value): NULL;
+	break;
+case 'Z':
+default: return -1;
+	}
+
+return 0;
+}
+
+static struct confmatch *conf_find(char *name)
+{
+struct confmatch *cp;
+
+for (cp = confmatchs; cp->type; cp++) {
+	if (cp->type== 'm') continue;
+	if (!strcmp(cp->name, name) ) return cp;
+	}
+return NULL;
+}

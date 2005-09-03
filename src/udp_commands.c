@@ -262,6 +262,8 @@ size_t pos=0;
   if (len < 0) return pos; pos += len;
   len = snprintf(dst+pos, dstlen-pos, "Serveraddress: %s\n", conffile.server_address);
   if (len < 0) return pos; pos += len;
+  len = snprintf(dst+pos, dstlen-pos, "Serverports: %s\n", conffile.server_ports);
+  if (len < 0) return pos; pos += len;
   len = snprintf(dst+pos, dstlen-pos, "Version: %s\n", conffile.version_string);
   if (len < 0) return pos; pos += len;
 

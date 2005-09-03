@@ -11,7 +11,7 @@
   on the commandline.
   If no conffile is found, a nngs.cnf IS WRITTEN in the
   current directory. This will contain the "compiled in" pathnames.
-  This file is intended as a template first start for further customisation.
+  This file is intended to serve as a template for further customisation.
   Note: not all combinations of pathnames are valid, but it will now be
   -at least- possible to put the data and binary into separate locations
   , and split the data into 'constant' files (eg helpfiles) and

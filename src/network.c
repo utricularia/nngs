@@ -229,7 +229,7 @@ int net_init(int portnum)
   struct sockaddr_in  addr;
   struct linger  lingerOpt;
 
-  assert(COUNTOF(netarray) <= FD_SETSIZE);
+  /* assert(COUNTOF(netarray) <= FD_SETSIZE); bogus */
   if (!doneinit)  {
     doneinit = 1;
     (void) refetch_ticker();
@@ -256,7 +256,7 @@ int net_init(int portnum)
 
   assert(listen_count < LISTEN_COUNT); /* Bogus */
   /* Open a TCP socket (an Internet stream socket). */
-  if ((fd=socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if ((fd=socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     fprintf(stderr, "NNGS: can't create stream socket\n");
     return -1;
   }
@@ -280,8 +280,9 @@ int net_init(int portnum)
     setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof opt);
   }
 
-  if (bind(fd, (struct sockaddr *)&addr, sizeof addr) < 0)  {
-    fprintf(stderr, "NNGS: can't bind local address.  errno=%d\n", errno);
+  if (bind(fd, (struct sockaddr *)&addr, sizeof addr) == -1)  {
+    fprintf(stderr, "NNGS: can't bind local address. errno=%d(%s)\n"
+    , errno, strerror(errno));
     return -1;
   }
   set_nonblocking(fd);
@@ -296,9 +297,9 @@ int net_init(int portnum)
   {
   int val,rc;
 
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
   fprintf(stderr, "NNGS: can't create UDP socket.  errno=%d\n", errno);
-        return 0;
+        return 0; /* we want to ignore this error */
         }
                                                                                              
   val = 1;
@@ -306,13 +307,20 @@ int net_init(int portnum)
   if (rc < 0) { rc = errno;
     fprintf(stderr, "Tinker := %d(%s)\n" , rc, strerror(rc) );
     close (fd);
-    return 0;
+    return -1;
   }
 
-#ifndef __alpha /* Sorry, this is to minimize distribution errors */
+	/* Sorry, this is to minimize distribution errors.
+	** I test on an old alpha, and want to listen on 0.0.0.0
+	** Other people with alphas will probably want to block
+	** port 9696/udp.
+	** But (other) people with alphas have firewalls and know
+	** what they are doing, off course ...
+	*/
+#ifndef __alpha
   addr.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
 #endif
-  if (bind(fd, (struct sockaddr *) &addr, sizeof addr) < 0) {
+  if (bind(fd, (struct sockaddr *) &addr, sizeof addr) == -1) {
     fprintf(stderr
     , "bind() Fd %d, Family %d, Port %d, Addr %x fails:%s\n"
     , fd
@@ -322,6 +330,7 @@ int net_init(int portnum)
     , strerror(errno)
     );
     close(fd);
+    return -1;
     }
   netarray[fd].netstate = NETSTATE_UDP;
   if (fd > net_fd_top) net_fd_top = fd;

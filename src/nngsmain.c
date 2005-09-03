@@ -26,6 +26,16 @@
 #include <config.h>
 #endif
 
+#include <stdio.h>
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 #include <stdlib.h>
 
 #ifdef HAVE_SIGNAL_H
@@ -52,7 +62,7 @@
 #include "ip_ban.h"
 
 /* Arguments */
-int port, Ladder9, Ladder19, num_19, num_9, completed_games,
+int /* port, */ Ladder9, Ladder19, num_19, num_9, completed_games,
        num_logins, num_logouts, new_players, Debug;
 #if WANT_BYTE_COUNT
 unsigned long byte_count = 0L;
@@ -69,11 +79,11 @@ static void main_event_loop(void);
 static void TerminateServer(int sig);
 static void BrokenPipe(int sig);
 static void read_ban_ip_list(void);
+static int all_the_internets(void);
 
 
 static void usage(char *progname) {
-  fprintf(stderr, "Usage: %s [-p port] [-h]\n", progname);
-  fprintf(stderr, "\t\t-p port\t\tSpecify port. (Default=%d)\n", DEFAULT_PORT);
+  fprintf(stderr, "Usage: %s [-c <conffilename>] [-h]\n", progname);
   fprintf(stderr, "\t\t-h\t\tDisplay this information.\n");
   main_exit(1);
 }
@@ -82,17 +92,17 @@ static void GetArgs(int argc, char *argv[])
 {
   int i;
 
-  port = DEFAULT_PORT;
-
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       switch (argv[i][1]) {
+/*
       case 'p':
 	if (i == argc - 1) usage(argv[0]);
 	i++;
 	if (sscanf(argv[i], "%d", &port) != 1)
 	  usage(argv[0]);
 	break;
+*/
       case 'c':
 	if (i == argc - 1) usage(argv[0]);
 	i++;
@@ -157,8 +167,8 @@ int main(int argc, char *argv[])
   if (conf_file_read(confname)) {
     Logit("Failed to read config file \"%s\"", confname);
     strcpy(confname, "./nngs.cnf");
-    Logit("Created \"%s\"", confname);
     conf_file_write(confname);
+    Logit("Created \"%s\"", confname);
   }
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
@@ -168,8 +178,9 @@ int main(int argc, char *argv[])
   signal(SIGPIPE, BrokenPipe);
 #endif
   read_ban_ip_list();
-  if (net_init(port)) {
-    fprintf(stderr, "Network initialize failed on port %d.\n", port);
+  if (!all_the_internets() ) {
+    fprintf(stderr, "Network initialize failed on ports %s.\n"
+    , conffile.server_ports);
     main_exit(1);
   }
   startuptime = time(NULL);
@@ -183,7 +194,6 @@ int main(int argc, char *argv[])
 #ifdef SGI
   /*mallopt(100, 1);*/  /* Turn on malloc(3X) debugging (Irix only) */
 #endif
-  Logit("Initialized on port %d.", port);
   command_init();
   EmoteInit(conffile.emotes_file);
   help_init();
@@ -225,6 +235,26 @@ int main(int argc, char *argv[])
   net_closeAll();
   main_exit(0);
   return 0;
+}
+
+static int all_the_internets(void)
+{
+int port;
+char *cp;
+int pos, len, rc, cnt;
+
+  for(pos=cnt=0;conffile.server_ports[pos];pos += len	) {
+    rc = sscanf(conffile.server_ports+pos, "%d%n", &port, &len );
+    if (rc < 0) break;
+    if (rc < 1) { len=1; continue; }
+    if (net_init(port)) {
+      Logit("Init failed on port %d.", port);
+      continue;
+      }
+    Logit("Initialized on port %d.", port);
+    cnt++;
+  }
+return cnt;
 }
 
 void main_exit(int code)

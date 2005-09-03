@@ -69,8 +69,11 @@ struct mvinfo {
 extern int current_socket;
 
 /* Arguments */
+/*
 extern int port;
 extern int withConsole;
+*/
+
 extern int Ladder9;
 extern int Ladder19;
 extern int num_19;

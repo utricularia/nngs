@@ -91,6 +91,6 @@ main(int argc, char **argv)
     else
       printf("- %s\n", buf);
   }
-  main_exit(0);
+  exit(0);
 }
 #endif /* TEST */
