@@ -72,16 +72,20 @@ struct confmatch {
 
 static struct confmatch confmatchs[] = {
 ZOMBIE("version_string", &conffile.version_string, VERSION)
-MESSAGE("Leave chroot_dir empty if no chroot wanted.")
+MESSAGE("Leave chroot_dir empty if chroot() is not wanted.")
 MESSAGE("Note: chroot() itself needs root permissions.")
 MESSAGE("Note: chroot will cause the pathnames below to be")
 MESSAGE("changed automatically (prefix is stripped)")
-MESSAGE("Note: chroot also needs chroot_user && chroot_group to be set.")
-MESSAGE("Note: chroot does not work. :-)")
+MESSAGE("Stripped filenames will appear in written.cnf for verification." )
+MESSAGE("Note: chroot also :")
+MESSAGE(" * needs chroot_user && chroot_group to be set.")
+MESSAGE(" * needs mail to be sent by SMTP.")
+MESSAGE(" * causes tempnam() to fail, even if /tmp/ directory is present in jail.")
 MESSAGE("")
 NAME("chroot_dir", &conffile.chroot_dir, NULL)
 NAME("chroot_user", &conffile.chroot_user, NULL)
 NAME("chroot_group", &conffile.chroot_group, NULL)
+MESSAGE("")
 MESSAGE("Directory- and file-names are all absolute in the config file.")
 MESSAGE("They can be configured independently, but some combinations")
 MESSAGE("make no sense. (and will probably not work)")
@@ -97,6 +101,7 @@ CHPATH("cgame_dir", &conffile.cgame_dir, CGAME_DIR)
 CHPATH("problem_dir", &conffile.problem_dir, PROBLEM_DIR)
 CHPATH("lists_dir", &conffile.lists_dir, LIST_DIR)
 CHPATH("news_dir", &conffile.news_dir, NEWS_DIR)
+CHPATH("spool_dir", &conffile.spool_dir, SPOOL_DIR)
 MESSAGE("")
 CHPATH("ratings_file", &conffile.ratings_file, RATINGS_FILE)
 CHPATH("nratings_file", &conffile.nratings_file, NRATINGS_FILE)
@@ -119,7 +124,15 @@ NAME("server_ports", &conffile.server_ports, SERVER_PORTS)
 NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_email", &conffile.server_email, SERVER_EMAIL)
 NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
+MESSAGE("")
+MESSAGE("Set mail_program to empty, and fill in the smtp_* fields to send")
+MESSAGE("mail by SMTP-client. This is needed by chroot() installations.")
+MESSAGE("")
 NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
+NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
+NAME("smtp_reply_to", &conffile.server_email, SERVER_EMAIL)
+NAME("smtp_myhost", &conffile.smtp_myhost, "localhost")
+NAME("smtp_mta", &conffile.smtp_mta, "localhost")
 { 0,  NUL3 } }; /* sentinel */
 #undef NUL2
 #undef NUL3
@@ -149,7 +162,7 @@ size_t len;
 
 struct passwd *pp = NULL;
 struct group *gp = NULL;
-uid_t uid = -1;
+uid_t uid = -1, euid =0;
 gid_t gid = -1;
 
 fp = fopen( fname, "r" );
@@ -205,11 +218,15 @@ if (conffile.chroot_dir) {
 		fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
 		, uid, conffile.chroot_user, rc, strerror(rc) );
 		}
-	if (uid) setuid(uid);
 #if 1
 	if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
 	if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
 #endif
+	if (uid && (euid = geteuid()) !=uid) {
+		fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
+		, uid, conffile.chroot_user, euid );
+		main_exit(1);
+		}
 	conf_file_fixup();
 	conf_file_write("written.cnf");
 	}

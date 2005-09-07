@@ -131,6 +131,7 @@ AC_DEFINE_UNQUOTED(INFO_DIR,"$prefix/share/${PACKAGE}/info", [info directory])
 AC_DEFINE_UNQUOTED(MESSAGE_DIR,"$prefix/share/${PACKAGE}/messages", [message directory])
 AC_DEFINE_UNQUOTED(PLAYER_DIR,"$prefix/share/${PACKAGE}/players", [player dirs])
 AC_DEFINE_UNQUOTED(STATS_DIR,"$prefix/share/${PACKAGE}/stats", [message dir])
+AC_DEFINE_UNQUOTED(SPOOL_DIR,"$prefix/share/${PACKAGE}/spool", [spool dir])
 
 AC_DEFINE_UNQUOTED(GAME_DIR,"$prefix/share/${PACKAGE}/games", [games dir])
 AC_DEFINE_UNQUOTED(CGAME_DIR,"$prefix/share/${PACKAGE}/cgames", [cgames dir])

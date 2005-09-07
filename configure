@@ -6060,6 +6060,11 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+cat >>confdefs.h <<_ACEOF
+#define SPOOL_DIR "$prefix/share/${PACKAGE}/spool"
+_ACEOF
+
+
 
 cat >>confdefs.h <<_ACEOF
 #define GAME_DIR "$prefix/share/${PACKAGE}/games"

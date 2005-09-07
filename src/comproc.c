@@ -179,7 +179,7 @@ int com_register(int p, struct parameter * param)
 If any of this information is incorrect, please contact the administrator\n\
 to get it corrected at %s.\n\n\
 Please write down your password, as it will be your initial password\n\
-To access the server, telnet to %s\n\
+To access the server, telnet to %s\n\ port %s
 Please change your password after logging in.  See \"help password\"\n\
 For additional help, type \"help welcome\" while on the server.\n\n\
 On WWW, please try %s/\n\n\
@@ -191,7 +191,7 @@ NNGS admins\n\n--",
           dotQuad(parray[p].thisHost),
           parray[p].pname,
           conffile.server_email
-	, conffile.server_address
+	, conffile.server_address, conffile.server_ports
 	, conffile.server_http);
   sprintf(tmp, "%s Account Created (%s)"
 	, conffile.server_name, pname);

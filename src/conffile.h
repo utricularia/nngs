@@ -56,6 +56,7 @@ struct conffile {
   char *source_dir;
   char *lists_dir;
   char *news_dir;
+  char *spool_dir;
 
   char *intergo_file;
   char *ratings_file;

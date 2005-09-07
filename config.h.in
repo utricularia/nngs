@@ -284,6 +284,9 @@
 /* The size of a `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
+/* spool dir */
+#undef SPOOL_DIR
+
 /* message dir */
 #undef STATS_DIR
 

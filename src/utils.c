@@ -225,8 +225,7 @@ int mail_string_to_address(const char *addr, const char *subj, const char *str)
   sprintf(com, "%s -s \"%s\" %s", MAILPROGRAM, subj, addr);
   Logit("Mail command: %s",com);
   fp = popen(&com[0], "w");
-  if (!fp)
-    return -2;
+  if (!fp) return -2;
   fprintf(fp, "From: %s\n", conffile.server_email);
   fprintf(fp, "%s", str);
   pclose(fp);
@@ -399,6 +398,7 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
   if (!dummy) {
     char *name;
     name = tempnam(NULL, NULL);
+    if (!name) name = "vsnprintf.tmp" ;
     dummy = fopen(name, "w+");
     if (!dummy) Logit("Could not open tempfile '%s'", name);
     else Logit("Opened tempfile(%d) '%s'", fileno(dummy), name);
@@ -731,10 +731,8 @@ int xpsend_command(int p, const char *command, char *input, int num, ...)
     va_end(ap);
     return -1;
   }
-  /* AvK: added 1+, to guarantee writing a nul-terminated string */
-  if (input) {
-    fwrite(input, sizeof(char), 1+strlen(input), fp);
-  } else {
+  if (input) fwrite(input, sizeof(char), strlen(input), fp);
+  else {
     while ((cnt = fread(tmp, sizeof(char), sizeof tmp, fp))) {
       net_send(parray[p].session.socket, tmp, cnt);
     }
