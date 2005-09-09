@@ -114,5 +114,8 @@
 #define FILENAME_LIST_BAN 75
 
 #define FILENAME_PROBLEM_d 76
+#define FILENAME_SPOOL 80
+#define FILENAME_SPOOL_s 81
+#define FILENAME_SPOOL_sd 82
 
 #endif /* FILES_H */

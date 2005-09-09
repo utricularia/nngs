@@ -81,8 +81,10 @@ extern char *eatwhite(char *);
 /* Returns the next word in a given string >eatwhite(eatword(foo))< */
 extern char *nextword(char *);
 
-extern int mail_string_to_address(const char *, const char *, const char *);
-extern int mail_string_to_user(int, char *);
+extern int mail_pst(int, const char *, char *);
+extern int mail_psn(int, const char *, const char *);
+extern int mail_asn(const char *, const char *, const char *);
+extern int mail_ast(const char *, const char *, const char *);
 extern int pcommand(int, const char *, ...);
 extern int pprintf(int, const char *, ...);
 extern int cpprintf(int, int, const char *, ...);
@@ -103,7 +105,6 @@ extern int psend_file(int, const char *, const char *);
 extern int pxysend_raw_file(int, int, ...);
 extern int pxysend_file(int p, int num, ...);
 extern int pmore_file(int);
-extern int pmail_file(int, const char *, const char *);
 /* extern int psend_command(int, const char *, char *); */
 extern int xpsend_command(int, const char *, char *, int num, ...);
 

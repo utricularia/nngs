@@ -690,9 +690,8 @@ int game_read(struct game *gp, int wp, int bp)
   /* gp->gameNum = g0; */
 
   fp = xyfopen(FILENAME_GAMES_ws_s, "r", parray[wp].login, parray[bp].login);
-  if (!fp) {
-    return -1;
-  }
+  if (!fp) return -1;
+
   /* Read the game file here */
   while (fgets(line, sizeof line, fp)) {
     if ((len = strlen(line)) <= 1) continue;
@@ -769,6 +768,8 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   now = globclock.time;
 	/* This is ugly: depends on static/global last filename used */
   tmp = strrchr(filename(), '/');
+  if (!tmp) tmp = filename();
+  else if (*tmp == '/') tmp++;
   if (garray[g0].gresult == 0.0) sprintf(resu, "Resign");
   else if (garray[g0].gresult == -1.0) sprintf(resu, "Time");
   else sprintf(resu, "%.1f", garray[g0].gresult);
@@ -841,14 +842,22 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   fclose(fp);
   if (garray[g0].teach != 1)
     if (parray[wp].automail) {
-      sprintf(command, "%s -s \"%s\" %s < %s&", MAILPROGRAM,
-          tmp + 1, parray[wp].email, filename() );
-     system(command);
+#if 0
+      sprintf(command, "%s -s \"%s\" %s < %s&", conffile.mail_program,
+          tmp, parray[wp].email, filename() );
+      system(command);
+#else
+      mail_asn(parray[wp].email, tmp, filename() );
+#endif
     }
   if (parray[bp].automail) {
-    sprintf(command, "%s -s \"%s\" %s < %s&", MAILPROGRAM,
-        tmp + 1, parray[bp].email, filename() );
+#if 0
+    sprintf(command, "%s -s \"%s\" %s < %s&", conffile.mail_program,
+        tmp, parray[bp].email, filename() );
     system(command);
+#else
+    mail_asn(parray[wp].email, tmp, filename() );
+#endif
   }
 
   return 1;

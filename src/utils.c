@@ -110,6 +110,10 @@ static int lines_file(char *file);
 static FILE * vafopen(int num, const char * mode, va_list ap);
 static FILE * pvafopen(int p, int num, const char * mode, va_list ap);
 
+static int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname);
+static void mail_tempnam(char *buff);
+static int mail_one(const char *spool);
+
 extern int vfprintf(FILE *fp, const char *fmt, va_list ap);
 extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 extern int vsnprintf(char *dst, size_t dstlen, const char *fmt, va_list ap);
@@ -215,33 +219,131 @@ char *nextword(char *str)
   return eatwhite(eatword(str));
 }
 
-int mail_string_to_address(const char *addr, const char *subj, const char *str)
+int mail_ast(const char *addr, const char *subj, const char *text)
 {
-  char com[1000];
+  int ret;
+  char nbuf[1000];
+
+  Logit("Mail_ast(%s,%s,%s)", addr, subj, text);
+  if (!safestring(addr)) return -1;
+  ret = mail_spool(nbuf, addr , subj, text, NULL);
+  Logit("Mail_spool([%d]=%s)", ret, nbuf);
+  return ret;
+}
+
+int mail_pst(int p, const char *subj, char *text)
+{
+
+  Logit("Mail_pst(%d,%s,%s)", p, subj, text);
+  if (!parray[p].email[0]) return -1;
+  if (!subj) subj = "NNGS game report";
+  return mail_ast(parray[p].email, subj, text);
+}
+
+int mail_psn(int p, const char *subj, const char *fname)
+{
+
+  Logit("Mail_psn(%d,%s,%s)", p, subj, fname);
+
+  if (!parray[p].email[0] || !safestring(parray[p].email)) return -1;
+  return mail_asn(parray[p].email, subj, fname);
+}
+
+int mail_asn(const char *addr, const char *subj, const char *fname)
+{
+  char nbuf[MAX_STRING_LENGTH];
+  int ret;
+
+  ret = 0;
+
+  Logit("Mail_asn(%s,%s,%s)", addr, subj, fname);
+  if (!addr || !*addr || !safestring(addr)) return -1;
+
+  ret = mail_spool(nbuf, addr , subj, NULL, fname);
+ 
+  return ret;
+}
+
+static int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname)
+{
+  char buff[MAX_LINE_SIZE];
   FILE *fp;
 
-  if (!safestring(addr))
-    return -1;
-  sprintf(com, "%s -s \"%s\" %s", MAILPROGRAM, subj, addr);
-  Logit("Mail command: %s",com);
-  fp = popen(&com[0], "w");
-  if (!fp) return -2;
-  fprintf(fp, "From: %s\n", conffile.server_email);
-  fprintf(fp, "%s", str);
-  pclose(fp);
+  if (!to) return -1;
+  mail_tempnam(nbuff);
+  fp = fopen(buff, "w");
+  if (!fp) return -1;
+  fprintf(fp, "t %s\n", to);
+  if (subj) fprintf(fp, "s %s\n", subj);
+  fprintf(fp, "\n");
+  if (text) fprintf(fp, "%s\n", text);
+  if (fname) {
+    FILE *in;
+    in = fopen(fname, "r" );
+    if (!in) { fclose(fp); return -1; }
+    while (fgets(buff, sizeof buff, in)) fputs(buff,fp);
+    fclose(in);
+  }
+  fclose(fp);
+  if (conffile.mail_program) return mail_one(nbuff);
   return 0;
 }
 
-int mail_string_to_user(int p, char *str)
-{
 
-  if (parray[p].email[0]) {
-    return mail_string_to_address(parray[p].email, "NNGS game report", str);
-  } else {
-    return -1;
-  }
+static void mail_tempnam(char *buff)
+{
+  int now = globclock.time;
+  static int then = 0, seq=0;
+  char deet[40];
+  int siz;
+
+  if (now != then) seq = 0;
+  sprintf(deet, strtime_file((time_t *) &now));
+  siz = xyfilename(buff, FILENAME_SPOOL_sd, deet, seq);
+  Logit("Mail_tempnam() := [%d]%s", siz, buff);
+  then = now; seq++;
+  return;
 }
 
+
+static int mail_one(const char *spool)
+{
+  FILE *fp, *pipo;
+  char buff[MAX_LINE_SIZE];
+  char *to=NULL;
+  char *subj=NULL;
+
+  fp = fopen(spool, "r" );
+  if (!fp) return -1;
+
+  while(fgets(buff, sizeof buff, fp)) {
+    switch(buff[0]) {
+    case 't': to = mystrdup(buff+2); break;
+    case 's': subj = mystrdup(buff+2); break;
+    case '\0': case '\n': case ' ': goto body;
+    default: continue;
+  }}
+body:
+
+  if (!to) { fclose(fp); return -2;}
+
+  if (conffile.mail_program) {
+    if (subj) sprintf(buff, "%s -s \"%s\" %s", conffile.mail_program, subj, to);
+    else sprintf(buff, "%s %s", conffile.mail_program, to);
+    pipo = popen(buff, "w");
+    fprintf(pipo, "From: %s\n", conffile.server_email);
+    fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
+    fprintf(pipo, "\n");
+    while(fgets(buff, sizeof buff, fp)) fputs(buff, pipo);
+    fclose(pipo);
+  }
+  unlink(spool);
+  fclose(fp);
+
+  if (to) free(to);
+  if (subj) free(subj);
+  return 0;
+}
 /* Process a command for a user */
 int pcommand(int p, const char *comstr, ...)
 {
@@ -676,39 +778,6 @@ int pmore_file( int p )
   return 0;
 }
 
-int pmail_file(int p, const char *subj, const char *fname)
-{
-  FILE *infile, *outfile;
-  char buffer[MAX_STRING_LENGTH];
-  char com[MAX_STRING_LENGTH];
-  char subcopy[MAX_FILENAME_SIZE];
-  int num, ret;
-
-  ret = 0;
-
-  /* AvK: avoid writing const strings ... */
-  strcpy(subcopy,subj);
- 
-  Logit("pmail_file(%d,%s,%s)", p, subj, fname);
-  if (!(infile = xfopen(fname, "r")))
-    return -1;
-
-  if (parray[p].email[0] && safestring(parray[p].email)) {
-    sprintf(com, "%s -s \"%s\" %s", 
-                  MAILPROGRAM, eatwhite(subcopy), parray[p].email);
-    outfile = popen(&com[0], "w");
-    fputc('\n', outfile);
-    while ((num = fread(buffer, 1, 1000, infile))) {
-      fwrite(buffer, 1, num, outfile);
-    }
-    fwrite("\n\n---\n", 1, 6, outfile);
-    pclose(outfile);
-  }
-  else ret = -1;
-  fclose(infile);
-  return ret;
-}
-
 int xpsend_command(int p, const char *command, char *input, int num, ...)
 {
   va_list ap;
@@ -723,10 +792,8 @@ int xpsend_command(int p, const char *command, char *input, int num, ...)
   sprintf(cmdline,command,filename1);
   Logit("xpsend_command(%d,%s,%d):%s", p, IFNULL(input,"{Null}"), num, cmdline);
 
-  if (input)
-    fp = popen(&cmdline[0], "w");
-  else
-    fp = popen(&cmdline[0], "r");
+  if (input) fp = popen(&cmdline[0], "w");
+  else fp = popen(&cmdline[0], "r");
   if (!fp) {
     va_end(ap);
     return -1;
@@ -1884,6 +1951,18 @@ filename_ahelp_l_index_0:
   case FILENAME_PROBLEM_d :
     i1 = va_arg(ap,int);
     len = sprintf(buf, "%s/xxqj%d.sgf", conffile.problem_dir, i1);
+    break;
+  case FILENAME_SPOOL :
+    len = sprintf(buf, "%s", conffile.spool_dir);
+    break;
+  case FILENAME_SPOOL_s :
+    cp1 = va_arg(ap,char*);
+    len = sprintf(buf, "%s/%s", conffile.spool_dir, cp1);
+    break;
+  case FILENAME_SPOOL_sd :
+    cp1 = va_arg(ap,char*);
+    i1 = va_arg(ap,int);
+    len = sprintf(buf, "%s/%s%d", conffile.spool_dir, cp1, i1);
     break;
   default: /* this will fail on open, and show up in the log ... */
     len = sprintf(buf, "/There/was/a/default/filename:%d", num);

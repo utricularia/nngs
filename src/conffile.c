@@ -56,7 +56,9 @@
 #include "nngsmain.h"
 #include "utils.h"
 
+#ifndef IFNULL
 #define IFNULL(_p,_d) (_p)?(_p):(_d)
+#endif
 struct confmatch {
 	int type;
 	const char *name;
@@ -190,9 +192,9 @@ config_fill_defaults();
 if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
 if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
 
-if (!pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
+if (conffile.chroot_user && !pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
 else { uid = pp->pw_uid; gid = pp->pw_gid; }
-if (!gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
+if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
 else gid = gp->gr_gid;
 
 if (conffile.chroot_dir) {
@@ -254,12 +256,12 @@ fp = fopen( fname, "w" );
 if (!fp) return -1;
 
 fprintf(fp, "## Config generated Date %s UTC\n", strgtime(&globclock.time));
-fprintf(fp, "#compile_date=%s %s\n" , __DATE__ , __TIME__ );
+fprintf(fp, "# compile_date=%s %s\n" , __DATE__ , __TIME__ );
 fprintf(fp, "#\n" );
 
 for (cp = confmatchs; cp->type; cp++) {
 	switch (cp->type) {
-	case 'm': fprintf(fp, "#%s\n", cp->name); break;
+	case 'm': fprintf(fp, "# %s\n", cp->name); break;
 	case 'Z' :
 	case 'P':
 	case 'p': fprintf(fp, "%s=%s\n"

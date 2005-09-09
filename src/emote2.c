@@ -158,9 +158,7 @@ return cp;
 void EmoteInit(const char *path)
 {
   UNUSED(path);
-  /* AvK: do nothing.
-  emote_file = mystrdup(path);
-  */
+  /* AvK: do nothing.  */
 }
 
 int EmoteLook(const char *key)

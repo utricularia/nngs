@@ -179,7 +179,7 @@ int com_register(int p, struct parameter * param)
 If any of this information is incorrect, please contact the administrator\n\
 to get it corrected at %s.\n\n\
 Please write down your password, as it will be your initial password\n\
-To access the server, telnet to %s\n\ port %s
+To access the server, telnet to %s\n port %s\
 Please change your password after logging in.  See \"help password\"\n\
 For additional help, type \"help welcome\" while on the server.\n\n\
 On WWW, please try %s/\n\n\
@@ -195,8 +195,8 @@ NNGS admins\n\n--",
 	, conffile.server_http);
   sprintf(tmp, "%s Account Created (%s)"
 	, conffile.server_name, pname);
-  if ((idx = mail_string_to_address(email, tmp, text)) < 0)
-    Logit("mail_string_to_address(\"%s\", ...) returned %d", email, idx);
+  if ((idx = mail_ast(email, tmp, text)) < 0)
+    Logit("mail_ast(\"%s\", ...) returned %d", email, idx);
   sprintf(text, "\n\
   Login Name: %s\n\
   Full Name: %s\n\
@@ -207,8 +207,8 @@ NNGS admins\n\n--",
           dotQuad(parray[p].thisHost));
   /* Mail a copy to geek for testing / verification.  */
   if (conffile.geek_email) {
-    if ((idx = mail_string_to_address(conffile.geek_email, tmp, text)) < 0)
-      Logit("mail_string_to_address(\"%s\", ...) returned %d"
+    if ((idx = mail_ast(conffile.geek_email, tmp, text)) < 0)
+      Logit("mail_ast(\"%s\", ...) returned %d"
 	, conffile.geek_email, idx);
   }
   Logit("NewPlayer: %s [%s] %s (%s) by user %s",
@@ -4186,7 +4186,7 @@ int com_mailmess(int p, struct parameter * param)
   }
   xyfilename(fname, FILENAME_PLAYER_cs_MESSAGES, parray[p].login );
 
-  pmail_file(p, "NNGS Messages", fname);
+  mail_asn(parray[p].email, "NNGS Messages", fname);
   pcn_out(p, CODE_INFO, FORMAT_YOUR_MESSAGES_WERE_SENT_TO_sn, parray[p].email);
   return COM_OKN;
 }
@@ -4237,7 +4237,7 @@ int com_mailme(int p, struct parameter * param)
   }
   i = xyfilename(fname, FILENAME_CGAMES_cs, arg );
 
-  i = pmail_file(p, arg, fname);
+  i = mail_asn(parray[p].email, arg, fname);
   if (i == 0) {
     pcn_out(p,CODE_INFO, FORMAT_s_MAILED_TO_s_, arg, parray[p].email);
   }

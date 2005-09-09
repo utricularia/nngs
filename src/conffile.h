@@ -39,6 +39,10 @@ struct conffile {
   char *server_email;
   char *geek_email;
   char *mail_program;
+  char *smtp_from;
+  char *smtp_reply_to;
+  char *smtp_mta;
+  char *smtp_myhost;
 
   char *mess_dir;
   char *help_dir;
