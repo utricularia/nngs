@@ -842,22 +842,10 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   fclose(fp);
   if (garray[g0].teach != 1)
     if (parray[wp].automail) {
-#if 0
-      sprintf(command, "%s -s \"%s\" %s < %s&", conffile.mail_program,
-          tmp, parray[wp].email, filename() );
-      system(command);
-#else
       mail_asn(parray[wp].email, tmp, filename() );
-#endif
     }
   if (parray[bp].automail) {
-#if 0
-    sprintf(command, "%s -s \"%s\" %s < %s&", conffile.mail_program,
-        tmp, parray[bp].email, filename() );
-    system(command);
-#else
     mail_asn(parray[wp].email, tmp, filename() );
-#endif
   }
 
   return 1;

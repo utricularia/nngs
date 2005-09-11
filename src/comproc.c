@@ -197,31 +197,31 @@ NNGS admins\n\n--",
 	, conffile.server_name, pname);
   if ((idx = mail_ast(email, tmp, text)) < 0)
     Logit("mail_ast(\"%s\", ...) returned %d", email, idx);
-  sprintf(text, "\n\
-  Login Name: %s\n\
-  Full Name: %s\n\
-  Email Address: %s\n\
-  Initial Password: %s\n\
-  Host registered from: %s \n\n--",
-          pname, fullname, email, passwd,
-          dotQuad(parray[p].thisHost));
   /* Mail a copy to geek for testing / verification.  */
   if (conffile.geek_email) {
+    sprintf(text, "\n\
+Login Name: %s\n\
+Full Name: %s\n\
+Email Address: %s\n\
+Initial Password: %s\n\
+Host registered from: %s \n\n--"
+    , pname, fullname, email, passwd
+    , dotQuad(parray[p].thisHost));
     if ((idx = mail_ast(conffile.geek_email, tmp, text)) < 0)
       Logit("mail_ast(\"%s\", ...) returned %d"
-	, conffile.geek_email, idx);
+      , conffile.geek_email, idx);
   }
-  Logit("NewPlayer: %s [%s] %s (%s) by user %s",
-                   pname, email, fullname, passwd, parray[p].pname);
+  Logit("NewPlayer: %s [%s] %s (%s) by user %s"
+  , pname, email, fullname, passwd, parray[p].pname);
   pcn_out(p, CODE_INFO, FORMAT_YOU_ARE_NOW_REGISTERED_CONFIRMATION_TOGETHER_WITH_PASSWORD_IS_SENT_TO_YOURn);
   pcn_out_prompt(p, CODE_INFO, FORMAT_EMAIL_ADDRESS_sn, email);
   for (p2 = 0; p2 < parray_top; p2++) { /* Announce to all online admins */
     if (!parray[p2].slotstat.is_online) continue;
     if (parray[p2].adminLevel < ADMIN_ADMIN) continue;
-    pcn_out_prompt(p2, CODE_SHOUT, FORMAT_NEW_PLAYER_s_s_BY_ss_n,
-		   pname, email,
-		   (parray[p].slotstat.is_registered ? "" : "guest "),
-		   parray[p].pname);
+    pcn_out_prompt(p2, CODE_SHOUT, FORMAT_NEW_PLAYER_s_s_BY_ss_n
+    , pname, email
+    , (parray[p].slotstat.is_registered ? "" : "guest ")
+    , parray[p].pname);
   }
   new_players++;
   return COM_OK;
@@ -4222,7 +4222,7 @@ int com_mailhelp(int p, struct parameter * param)
 
 int com_mailme(int p, struct parameter * param)
 {
-  int i;
+  int ii;
   char *arg;
   char fname[MAX_FILENAME_SIZE];
 
@@ -4235,10 +4235,10 @@ int com_mailme(int p, struct parameter * param)
     pcn_out(p, CODE_ERROR, FORMAT_NO_YOU_DON_T_);
     return COM_OK;
   }
-  i = xyfilename(fname, FILENAME_CGAMES_cs, arg );
+  ii = xyfilename(fname, FILENAME_CGAMES_cs, arg );
 
-  i = mail_asn(parray[p].email, arg, fname);
-  if (i == 0) {
+  ii = mail_asn(parray[p].email, arg, fname);
+  if (!ii) {
     pcn_out(p,CODE_INFO, FORMAT_s_MAILED_TO_s_, arg, parray[p].email);
   }
   else {

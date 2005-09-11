@@ -42,7 +42,7 @@ struct conffile {
   char *smtp_from;
   char *smtp_reply_to;
   char *smtp_mta;
-  char *smtp_myhost;
+  char *smtp_helo;
 
   char *mess_dir;
   char *help_dir;

@@ -127,14 +127,20 @@ NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_email", &conffile.server_email, SERVER_EMAIL)
 NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
 MESSAGE("")
-MESSAGE("Set mail_program to empty, and fill in the smtp_* fields to send")
-MESSAGE("mail by SMTP-client. This is needed by chroot() installations.")
+MESSAGE("To send mail by SMTP: set mail_program to empty, and fill in the smtp_* fields.")
+MESSAGE("This is needed in chroot() installations, because /usr/bin/mail et.al.")
+MESSAGE("are unavailabls in a chroot() jail.")
+MESSAGE("The smtp_xxx - fields are used to fill the SMTP-request:")
+MESSAGE(" smtp_mta := mailer we want to use.")
+MESSAGE(" smtp_helo := what we put in the HELO line (this host).")
+MESSAGE(" smtp_from := what we put in the MAIL FROM: line (our address).")
+MESSAGE(" smtp_reply_to := what we put in the Reply-to: header (reply address).")
 MESSAGE("")
 NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
+NAME("smtp_mta", &conffile.smtp_mta, "localhost")
+NAME("smtp_helo", &conffile.smtp_helo, "localhost")
 NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
 NAME("smtp_reply_to", &conffile.server_email, SERVER_EMAIL)
-NAME("smtp_myhost", &conffile.smtp_myhost, "localhost")
-NAME("smtp_mta", &conffile.smtp_mta, "localhost")
 { 0,  NUL3 } }; /* sentinel */
 #undef NUL2
 #undef NUL3
@@ -154,6 +160,7 @@ FILE *fp;
 char buff[100];
 char *name, *value;
 size_t len;
+int rc;
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
@@ -198,7 +205,6 @@ if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", c
 else gid = gp->gr_gid;
 
 if (conffile.chroot_dir) {
-        int rc;
 	rc = chdir(conffile.chroot_dir);
 	if (rc==-1) { rc=errno;
 		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
@@ -210,25 +216,30 @@ if (conffile.chroot_dir) {
 		, conffile.chroot_dir, rc, strerror(rc) );
 		}
 	if (rc) return rc;
-	if (gid) rc = setgid(gid);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
-		, gid, conffile.chroot_group, rc, strerror(rc) );
-		}
-	if (uid) rc = setuid(uid);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
-		, uid, conffile.chroot_user, rc, strerror(rc) );
-		}
+	}
+
+if (gid) rc = setgid(gid);
+if (rc==-1) { rc=errno;
+	fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
+	, gid, conffile.chroot_group, rc, strerror(rc) );
+	}
+if (uid) rc = setuid(uid);
+if (rc==-1) { rc=errno;
+	fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
+	, uid, conffile.chroot_user, rc, strerror(rc) );
+	}
 #if 1
-	if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
-	if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
 #endif
-	if (uid && (euid = geteuid()) !=uid) {
-		fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
-		, uid, conffile.chroot_user, euid );
-		main_exit(1);
-		}
+
+if (uid && (euid = geteuid()) !=uid) {
+	fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
+	, uid, conffile.chroot_user, euid );
+	main_exit(1);
+	}
+
+if (conffile.chroot_dir) {
 	conf_file_fixup();
 	conf_file_write("written.cnf");
 	}

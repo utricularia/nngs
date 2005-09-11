@@ -1,0 +1,643 @@
+/* mailer.c
+ * Copyright (C) 2005 Adriaan W.D. van Kessel
+ */
+
+/*
+    NNGS - The No Name Go Server
+    Copyright (C) 1995-1996 Erik Van Riper (geek@nngs.cosmic.org)
+    and John Tromp (tromp@daisy.uwaterloo.ca/tromp@cwi.nl)
+
+    Adapted from:
+    fics - An internet chess server.
+    Copyright (C) 1993  Richard V. Nash
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
+
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#if 0
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
+#ifdef TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#endif
+
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
+
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
+
+#ifdef SGI
+#include <sex.h>
+#endif
+
+#ifdef USING_DMALLOC
+#include <dmalloc.h>
+#define DMALLOC_FUNC_CHECK 1
+#endif
+#endif
+
+#if WANT_MAIN
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include "mailer.h"
+#define MAX_LINE_SIZE 1024
+#else
+
+#include "missing.h"
+#include "nngsconfig.h"
+#include "conffile.h"
+#include "nngsmain.h"
+#include "utils.h"
+#include "common.h"
+#include "command.h"
+#include "mailer.h"
+#endif
+
+static void mail_tempnam(char *buff);
+static int mail_one(const char *spool);
+static int mail_child(const char *spool);
+static int child_perror(char *msg);
+static int smtp_mail(FILE *fp, char *to, char *subj);
+
+#ifndef WANT_MAIN
+int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname)
+{
+  char buff[MAX_LINE_SIZE];
+  FILE *fp;
+
+  if (!to) return -1;
+  mail_tempnam(nbuff);
+  fp = fopen(nbuff, "w");
+  if (!fp) {
+    Logit("Mail_spool(%s) : failed to open: %d(%s)"
+    , buff, errno, strerror(errno));
+    return -1;
+  }
+  fprintf(fp, "t %s\n", to);
+  if (subj) fprintf(fp, "s %s\n", subj);
+  fprintf(fp, "\n");
+  if (text) fprintf(fp, "%s\n", text);
+  if (fname) {
+    FILE *in;
+    in = fopen(fname, "r" );
+    if (!in) {
+      Logit("Mail_spool(%s) : failed to open \"%s\": %d(%s)"
+      , buff, fname, errno, strerror(errno));
+      fclose(fp); return -2; }
+    while (fgets(buff, sizeof buff, in)) fputs(buff,fp);
+    fclose(in);
+  }
+  fclose(fp);
+  return mail_child(nbuff);
+}
+
+
+static void mail_tempnam(char *buff)
+{
+  int now = globclock.time;
+  static int then = 0, seq=0;
+  char deet[40];
+  int siz;
+
+  if (now != then) seq = 0;
+  sprintf(deet, strtime_file((time_t *) &now));
+  siz = xyfilename(buff, FILENAME_SPOOL_sd, deet, seq);
+  Logit("Mail_tempnam() := [%d]%s", siz, buff);
+  then = now; seq++;
+  return;
+}
+
+
+static int mail_child(const char *spool)
+{
+#if WANT_MAIL_CHILD
+int pid;
+
+pid = fork();
+if (pid) {
+  Logit("Mail_child() =: %d", pid);
+  return pid;
+  }
+pid = mail_one(spool);
+Logit("Mail_one() =: %d", pid);
+exit(0);
+return -1;
+#else
+return mail_one(spool);
+#endif
+}
+
+static int mail_one(const char *spool)
+{
+  FILE *fp, *pipo;
+  char buff[MAX_LINE_SIZE];
+  char *to=NULL;
+  char *subj=NULL;
+  int rc;
+
+  fp = fopen(spool, "r" );
+  if (!fp) {
+    Logit("Mail_one(%s) : failed to open: %d(%s)"
+    , spool, errno, strerror(errno));
+    return -1;
+  }
+
+  while(fgets(buff, sizeof buff, fp)) {
+    switch(buff[0]) {
+    case 't': to = mystrdup(buff+2); break;
+    case 's': subj = mystrdup(buff+2); break;
+    case '\0': case '\n': case ' ': goto body;
+    default: continue;
+  }}
+body:
+
+  if (!to) {
+    Logit("Mail_one(%s) : no \"to:\"", spool);
+    fclose(fp);
+    return -2;}
+
+  if (conffile.mail_program) {
+    if (subj) sprintf(buff, "%s -s \"%s\" %s", conffile.mail_program, subj, to);
+    else sprintf(buff, "%s %s", conffile.mail_program, to);
+    pipo = popen(buff, "w");
+    fprintf(pipo, "From: %s\n", conffile.server_email);
+    fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
+    fprintf(pipo, "\n");
+    while(fgets(buff, sizeof buff, fp)) fputs(buff, pipo);
+    pclose(pipo);
+    rc = 0;
+  }
+  else {
+    rc =  smtp_mail(fp, to, subj);
+    Logit("Smtp_mail(to%s,Subj=%s) returned %d", to, subj, rc);
+  }
+  if (rc >= 0) unlink(spool);
+  fclose(fp);
+
+  if (to) free(to);
+  if (subj) free(subj);
+  return (rc>=0) ? 0: -1;
+}
+#endif
+
+/* smtp.c simple smtp client for use in a program
+*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
+
+#include <errno.h>
+
+#define WANT_DEBUG 7
+#define WANTED_PORT 25
+/* ---------------------------------------------------- */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
+static int pars_addr(struct sockaddr_in *dst, char * name);
+static int smtp_open(char *mtaname, char *myname);
+static int set_envelope(int fd, char *from, char *rcpt);
+static int add_header(int fd, char *name, char *value);
+static int set_data(int fd);
+static int add_data(int fd, char *buff, int len);
+
+static int do_ping_pong(int fd, char *buff, int len);
+static int wrap_read(int fd, char *buff, int len);
+static int wrap_write(int fd, char *buff, int len);
+static int wrap_line(int fd, char *buff, int len);
+/* ---------------------------------------------------- */
+static int smtp_open(char *mta, char *myname)
+{
+int fd = -1 , err=0, rc;
+struct sockaddr_in addr;
+char buff[1024];
+
+if (!mta) mta = "localhost";
+if (!myname) myname = "localhost";
+	/* get host && port number to connect to.
+	** If this fails, we have nothing to do
+	*/
+
+err = pars_addr(&addr , mta);
+if (err <0 ) goto quit;
+
+fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+if (fd < 0) {
+	err = errno;
+	goto quit;
+	}
+
+err = connect(fd, (struct sockaddr*) &addr , sizeof addr) ;
+if (err < 0) err = errno;
+
+#if (WANT_DEBUG &1)
+fprintf(stderr,"  [%d = Smtp_open()=%d(%s)]\n", fd , err, strerror(err));
+#endif
+
+rc = do_ping_pong(fd, NULL, 0);
+if (rc<0) {err = errno; goto quit; }
+
+rc = sprintf(buff, "HELO %s\n", myname);
+rc = do_ping_pong(fd, buff, rc);
+if (rc<0) {err = errno; goto quit; }
+
+quit:
+if (err) {
+	fprintf(stderr, "Failed connection to MTA=\"%s\" from \"%s\": %d (%s)\n"
+	, mta, myname, err, strerror(err) );
+	close(fd);
+	return -1;
+	}
+return fd;
+}
+/* -------------------------------------------------- */
+static int set_envelope(int fd, char *from, char *rcpt)
+{
+int rc;
+char buff[1024];
+
+#if (WANT_DEBUG &4)
+fprintf(stderr,"[Set_envelope(%s,%s)]\n", from , rcpt );
+#endif
+
+rc = sprintf(buff, "MAIL FROM:<%s>\n", from);
+rc = do_ping_pong(fd, buff, rc);
+if (rc < 0) {close(fd); return rc; }
+
+rc = sprintf(buff, "RCPT TO:<%s>\n", rcpt);
+rc = do_ping_pong(fd, buff, rc);
+
+return rc;
+}
+/* -------------------------------------------------- */
+static int set_data(int fd)
+{
+int rc;
+char buff[1024];
+
+#if (WANT_DEBUG &4)
+fprintf(stderr,"[Set_data(%d)]\n", fd);
+#endif
+
+rc = sprintf(buff, "DATA\n");
+rc = do_ping_pong(fd, buff, rc);
+if (rc== -3) rc = 0;
+
+return rc;
+}
+/* -------------------------------------------------- */
+static int add_header(int fd, char *name, char *value)
+{
+int rc;
+char buff[1024];
+
+#if (WANT_DEBUG &4)
+fprintf(stderr,"[Add_header(%s,%s)]\n", name?name :"Null", value?value:"Null" );
+#endif
+
+if (name) rc = sprintf(buff, "%s: %s\n", name, value);
+else memcpy(buff, "\n", rc = 1);
+rc = wrap_line(fd, buff, rc);
+if (rc < 0) {close(fd); return -1; }
+
+return rc;
+}
+/* -------------------------------------------------- */
+static int add_data(int fd, char *buff, int len)
+{
+int rc, idx;
+
+if (!buff ) {
+	char pipo[] = ".\r\n\0";
+	wrap_line(fd, NULL, 0); /* flush */
+	return wrap_write(fd, pipo, 3); /* writable strings ... avoid . -> .. */
+	}
+if (len <= 0) len = strlen(buff);
+
+for (idx=0; idx < len; idx += rc) {
+	rc = wrap_line(fd, buff+idx, len - idx);
+	if (rc < 0) {close(fd); return -1; }
+	}
+
+return idx;
+}
+/* -------------------------------------------------- */
+static int wrap_line(int fd, char *buff, int len)
+{
+static int done =0, state = 0;
+int rc, idx;
+static char temp[512];
+
+#if (WANT_DEBUG &2)
+fprintf(stderr, " [Wrap_line(%d,%p,%d)]\n", fd, buff, len);
+#endif
+
+if (!buff) {
+	len = 0;
+	if (state) { memcpy(temp+done, "\r\n", 2); done += 2; }
+	state = 0;
+	}
+else for (idx = 0; idx < len; idx++) {
+	switch(buff[idx] ) {
+	case '.' :
+		if (!state) temp[done++] = '.' ;
+		state = 1; goto dodo;
+	case '\r' :
+		break;
+	case '\n' :
+		temp[done++] = '\r' ;
+		state = 0; goto dodo;
+	default:
+		state = 1;
+	dodo:
+		temp[done++] = buff[idx];
+		}
+	if (done+2 < sizeof temp) continue;
+	rc = wrap_write(fd, temp, done);
+#if (WANT_DEBUG &2)
+	fprintf(stderr, " [Wrap_line(%d,%d) Loop :=%d,%d]\n", fd,len,done,rc);
+#endif
+	if (rc <=0) goto kut;
+	if (rc < done) memmove(temp, temp + rc, done - rc);
+	done -= rc;
+	}
+
+if (done)	{
+	rc = wrap_write(fd, temp, done);
+#if (WANT_DEBUG &2)
+	fprintf(stderr, " [Wrap_line(%d,%d) Flush :=%d,%d]\n"
+		, fd, len, done,rc);
+#endif
+	if (rc <=0) goto kut;
+	if (rc < done) memmove(temp, temp + rc, done - rc);
+	done -= rc;
+	}
+kut:
+#if (WANT_DEBUG &2)
+fprintf(stderr, " [Wrap_line(i=%d d=%d r=%d)]\n", idx, done, rc );
+/* sleep(1); */
+
+#endif
+
+return rc <= 0 ? -1 :idx;
+}
+/* -------------------------------------------------- */
+static int do_ping_pong(int fd, char *buff, int len)
+{
+int err,done;
+
+char temp[1024] ;
+
+#if (WANT_DEBUG &4)
+fprintf(stderr,"[do_ping_pong(%s,%d)]\n", buff?buff:"NULL", len);
+#endif
+if (buff && len) {
+	done = wrap_line(fd, buff, len);
+	if (done < 0) {close(fd); goto quit; }
+	}
+
+for (err=done=0; 1 ; done += len) {
+	len = wrap_read(fd, temp+done, sizeof temp -done);
+	if (len <= 0) {close(fd); err = -1; goto quit; }
+#if (WANT_DEBUG &2)
+	temp[done+len] = 0;
+	fprintf(stderr," [PartRead{%d+%d}{%02x|%02x}:\"%s\"]\n"
+	, done,len, temp[3], temp[done+len-1], temp+done);
+#endif
+	if (done+len < 3) continue;
+	if (temp[0] != '2') {err = '0' - temp[0]; break; }
+	if (temp[done+len-1] == '\n') {
+		if (temp[3] == '-') { done = 0; len = 0; continue; }
+		else { break; }
+		}
+	else { done = 4; len = 0; }
+	}
+
+quit:
+#if (WANT_DEBUG &4)
+fprintf(stderr,"[Do_ping_pong(%s) err=%d done=%d] :\"%s\"]\n"
+, buff, err, done, temp);
+#endif
+return (err) ? err : done;
+}
+/* -------------------------------------------------- */
+static int wrap_read(int fd, char *buff, int len)
+{
+int rc;
+
+for(	;1; ) {
+	rc = read(fd, buff, len);
+	if (rc < 0) switch(errno) {
+		case EAGAIN:
+		case EINTR: continue;
+		default : 
+			rc = errno;
+			fprintf(stderr,"[Wrap_read(%d]: %d(%s)"
+			, fd , rc, strerror(rc));
+			rc = -1; goto quit;
+		}
+	if (rc >= len) rc--;
+	buff[rc] = 0;
+	break;
+	}
+
+quit:
+#if (WANT_DEBUG &1)
+fprintf(stderr,"  [Read(%d) := %d	\"%s\"]\n", fd, rc, buff);
+#endif
+return rc;
+}
+/* -------------------------------------------------- */
+static int wrap_write(int fd, char *buff, int len)
+{
+int rc;
+
+while(1) {
+	rc = write(fd, buff, len);
+	if (rc < 0) switch(errno) {
+		case EAGAIN:
+		case EINTR: continue;
+		default : 
+			rc = errno;
+			fprintf(stderr,"[wrap_write(%d]: %d(%s)"
+			, fd , rc, strerror(rc));
+		rc = -1; goto quit;
+		}
+	break;
+	}
+
+quit:
+#if (WANT_DEBUG &1)
+if (rc >= 0 && rc < len) buff[rc] = 0; else buff[len-1] = 0;
+fprintf(stderr, "  [Write(%d) := %d	\"%s\"]\n", fd, rc, buff);
+#endif
+return rc;
+}
+/* -------------------------------------------------- */
+static int pars_addr(struct sockaddr_in *dst, char * name)
+{
+struct hostent *hp;
+char buffie[1024];
+unsigned char * cp;
+
+memset((char *)dst, 0, sizeof *dst);
+
+dst->sin_family = AF_INET;
+dst->sin_port = htons(WANTED_PORT);
+
+	hp = gethostbyname(name );
+	if (!hp) exit (1);
+	if (hp->h_addrtype != AF_INET ) exit (1);
+#if 0
+	{
+	int ii,jj;
+	for(ii = 0;cp = hp->h_addr_list[ii] ; ii++)	{
+		fprintf(stdout,"\n[%d]  ", ii);
+		for(jj = 0;jj < hp->h_length ; jj++)	{
+			fprintf(stdout,"%c%d", (jj) ? '.' : '=', *cp++);
+			}
+		}
+	}
+#endif
+#if WANT_DUMP_SOCKET
+	cp = hp->h_addr_list[0];
+	sprintf(buffie,"%d.%d.%d.%d"
+		, (int) cp[0], (int) cp[1],(int) cp[2],(int) cp[3]);
+	fprintf(stderr,"\nUsing[%s]->%s\n",name, buffie);
+#endif /* WANT_DUMP_SOCKET */
+	memcpy(&dst->sin_addr,hp->h_addr_list[0],sizeof dst->sin_addr);
+
+return 0;
+}
+/* ---------------------------------------------------- */
+
+#if WANT_MAIN
+int main()
+{
+int rc, fd;
+char buffie[512] ;
+
+fd = smtp_open(NULL, NULL );
+if (fd == -1) goto kut;
+
+set_envelope(fd, "nngs@localhost", "nngs@localhost");
+
+rc = set_data(fd);
+if (rc < 0) goto kut;
+add_header(fd, "Subject", "Kuttje (met twee thee)" );
+add_header(fd, "Reply-To", "nngs@localhost");
+add_header(fd, NULL, 0);
+
+add_data(fd, "En een droge sherry, alstublieft!\n", 0);
+
+while(fgets(buffie, sizeof buffie, stdin)) {
+	rc = add_data(fd, buffie, 0);
+	/* sleep(1); */
+	if (rc < 0) break;
+	}
+
+add_data(fd, NULL, 0);
+
+sleep(10);
+close(fd);
+kut:
+exit(0);
+}
+
+#else
+
+static int child_perror(char *msg)
+{
+int err;
+if (!msg) msg = "Message";
+err = errno;
+
+Logit("Child_perror, %s : %d(%s)", msg, err, strerror(err));
+return -1;
+}
+
+static int smtp_mail(FILE *fp, char *to, char *subj)
+{
+int rc, fd;
+char buffie[1024] ;
+
+fd = smtp_open(conffile.smtp_mta, conffile.smtp_helo );
+if (fd == -1) return child_perror("Smtp_open");
+
+rc = set_envelope(fd, conffile.smtp_from, to);
+if (rc < 0) return child_perror("Smtp_envelope");
+
+rc = set_data(fd);
+if (rc < 0) return child_perror("Smtp_data");
+if (subj) add_header(fd, "Subject", subj );
+add_header(fd, "Reply-To", conffile.smtp_reply_to );
+add_header(fd, NULL, 0);
+
+while(fgets(buffie, sizeof buffie, fp)) {
+	rc = add_data(fd, buffie, 0);
+	if (rc < 0) return child_perror("Smtp_loop");
+	}
+
+add_data(fd, NULL, 0);
+
+close(fd);
+return 0;
+}
+
+#endif
+

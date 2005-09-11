@@ -41,6 +41,8 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#include <sys/resource.h>
+#include <sys/wait.h>
 
 #ifdef USING_DMALLOC
 #include <dmalloc.h>
@@ -76,11 +78,13 @@ static void usage(char *);
 static void usage(char *progname);
 static void GetArgs(int argc, char *argv[]);
 static void main_event_loop(void);
-static void TerminateServer(int sig);
-static void BrokenPipe(int sig);
 static void read_ban_ip_list(void);
 static int all_the_internets(void);
 
+	/* signal handlers */
+static void TerminateServer(int sig);
+static void BrokenPipe(int sig);
+static void reapchild(int sig);
 
 static void usage(char *progname) {
   fprintf(stderr, "Usage: %s [-c <conffilename>] [-h]\n", progname);
@@ -135,6 +139,17 @@ static void TerminateServer(int sig)
   main_exit(1);
 }
 
+static void reapchild(int sig)
+{
+  int rc, pid, status;
+  struct rusage usag;
+  fprintf(stderr, "Got signal %d\n", sig);
+  pid = wait3(&status, WNOHANG, &usag);
+  Logit("Reaped Child %d", pid);
+	/* Obsolete: reinstall signal handler. Won't harm */
+  signal(SIGCHLD, reapchild);
+}
+
 
 static void BrokenPipe(int sig)
 {
@@ -177,6 +192,7 @@ int main(int argc, char *argv[])
 #else
   signal(SIGPIPE, BrokenPipe);
 #endif
+  signal(SIGCHLD, reapchild);
   read_ban_ip_list();
   if (!all_the_internets() ) {
     fprintf(stderr, "Network initialize failed on ports %s.\n"

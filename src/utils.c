@@ -95,6 +95,7 @@
 #include "multicol.h"
 #include "network.h"
 #include "language.h"
+#include "mailer.h"
 
 
 struct searchdata mysearchdata;
@@ -109,10 +110,6 @@ static size_t vafilename(char *buf,int num, va_list ap);
 static int lines_file(char *file);
 static FILE * vafopen(int num, const char * mode, va_list ap);
 static FILE * pvafopen(int p, int num, const char * mode, va_list ap);
-
-static int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname);
-static void mail_tempnam(char *buff);
-static int mail_one(const char *spool);
 
 extern int vfprintf(FILE *fp, const char *fmt, va_list ap);
 extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
@@ -227,7 +224,7 @@ int mail_ast(const char *addr, const char *subj, const char *text)
   Logit("Mail_ast(%s,%s,%s)", addr, subj, text);
   if (!safestring(addr)) return -1;
   ret = mail_spool(nbuf, addr , subj, text, NULL);
-  Logit("Mail_spool([%d]=%s)", ret, nbuf);
+  Logit("Mail_spool(%s) :=%d", nbuf, ret);
   return ret;
 }
 
@@ -263,88 +260,7 @@ int mail_asn(const char *addr, const char *subj, const char *fname)
  
   return ret;
 }
-
-static int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname)
-{
-  char buff[MAX_LINE_SIZE];
-  FILE *fp;
-
-  if (!to) return -1;
-  mail_tempnam(nbuff);
-  fp = fopen(buff, "w");
-  if (!fp) return -1;
-  fprintf(fp, "t %s\n", to);
-  if (subj) fprintf(fp, "s %s\n", subj);
-  fprintf(fp, "\n");
-  if (text) fprintf(fp, "%s\n", text);
-  if (fname) {
-    FILE *in;
-    in = fopen(fname, "r" );
-    if (!in) { fclose(fp); return -1; }
-    while (fgets(buff, sizeof buff, in)) fputs(buff,fp);
-    fclose(in);
-  }
-  fclose(fp);
-  if (conffile.mail_program) return mail_one(nbuff);
-  return 0;
-}
-
-
-static void mail_tempnam(char *buff)
-{
-  int now = globclock.time;
-  static int then = 0, seq=0;
-  char deet[40];
-  int siz;
-
-  if (now != then) seq = 0;
-  sprintf(deet, strtime_file((time_t *) &now));
-  siz = xyfilename(buff, FILENAME_SPOOL_sd, deet, seq);
-  Logit("Mail_tempnam() := [%d]%s", siz, buff);
-  then = now; seq++;
-  return;
-}
-
-
-static int mail_one(const char *spool)
-{
-  FILE *fp, *pipo;
-  char buff[MAX_LINE_SIZE];
-  char *to=NULL;
-  char *subj=NULL;
-
-  fp = fopen(spool, "r" );
-  if (!fp) return -1;
-
-  while(fgets(buff, sizeof buff, fp)) {
-    switch(buff[0]) {
-    case 't': to = mystrdup(buff+2); break;
-    case 's': subj = mystrdup(buff+2); break;
-    case '\0': case '\n': case ' ': goto body;
-    default: continue;
-  }}
-body:
-
-  if (!to) { fclose(fp); return -2;}
-
-  if (conffile.mail_program) {
-    if (subj) sprintf(buff, "%s -s \"%s\" %s", conffile.mail_program, subj, to);
-    else sprintf(buff, "%s %s", conffile.mail_program, to);
-    pipo = popen(buff, "w");
-    fprintf(pipo, "From: %s\n", conffile.server_email);
-    fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
-    fprintf(pipo, "\n");
-    while(fgets(buff, sizeof buff, fp)) fputs(buff, pipo);
-    fclose(pipo);
-  }
-  unlink(spool);
-  fclose(fp);
-
-  if (to) free(to);
-  if (subj) free(subj);
-  return 0;
-}
-/* Process a command for a user */
+/* Process a command, imposing as another user */
 int pcommand(int p, const char *comstr, ...)
 {
   va_list ap;

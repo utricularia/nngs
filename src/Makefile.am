@@ -39,7 +39,8 @@ nngssrv_SOURCES = \
 	emote2.c \
 	pending.c \
 	udp_commands.c \
-	conffile.c
+	conffile.c \
+	mailer.c
 
 noinst_HEADERS =
 
