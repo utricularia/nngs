@@ -206,22 +206,25 @@ body:
     fclose(fp);
     return -2;}
 
-  if (conffile.mail_program) {
+  to[strlen(to)-1] = 0;
+  if (subj) subj[strlen(subj)-1] = 0;
+
+  if (memcmp(conffile.mail_program, "SMTP", 4)) {
     if (subj) sprintf(buff, "%s -s \"%s\" %s", conffile.mail_program, subj, to);
     else sprintf(buff, "%s %s", conffile.mail_program, to);
+    Logit("Mail_one(%s) : opening pipe: \"%s\"", spool, buff);
     pipo = popen(buff, "w");
     fprintf(pipo, "From: %s\n", conffile.server_email);
-    fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
+    if (conffile.smtp_reply_to) fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
     fprintf(pipo, "\n");
     while(fgets(buff, sizeof buff, fp)) fputs(buff, pipo);
-    pclose(pipo);
+    fclose(pipo);
     rc = 0;
-  }
-  else {
+  } else {
     rc =  smtp_mail(fp, to, subj);
     Logit("Smtp_mail(to%s,Subj=%s) returned %d", to, subj, rc);
   }
-  if (rc >= 0) unlink(spool);
+  /* if (rc >= 0) unlink(spool); */
   fclose(fp);
 
   if (to) free(to);
@@ -241,7 +244,7 @@ body:
 #include <errno.h>
 
 #define WANT_DEBUG 7
-#define WANTED_PORT 25
+#define WANTED_SMTP_PORT 25
 /* ---------------------------------------------------- */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -283,11 +286,10 @@ if (fd < 0) {
 	}
 
 err = connect(fd, (struct sockaddr*) &addr , sizeof addr) ;
-if (err < 0) err = errno;
-
-#if (WANT_DEBUG &1)
-fprintf(stderr,"  [%d = Smtp_open()=%d(%s)]\n", fd , err, strerror(err));
-#endif
+if (err < 0) {
+	err = errno;
+	goto quit;
+	}
 
 rc = do_ping_pong(fd, NULL, 0);
 if (rc<0) {err = errno; goto quit; }
@@ -538,11 +540,12 @@ unsigned char * cp;
 memset((char *)dst, 0, sizeof *dst);
 
 dst->sin_family = AF_INET;
-dst->sin_port = htons(WANTED_PORT);
+dst->sin_port = htons(WANTED_SMTP_PORT);
 
-	hp = gethostbyname(name );
-	if (!hp) exit (1);
-	if (hp->h_addrtype != AF_INET ) exit (1);
+hp = gethostbyname(name );
+if (!hp || hp->h_addrtype != AF_INET ) {
+	return -1;
+	}
 #if 0
 	{
 	int ii,jj;
@@ -624,8 +627,8 @@ if (rc < 0) return child_perror("Smtp_envelope");
 
 rc = set_data(fd);
 if (rc < 0) return child_perror("Smtp_data");
-if (subj) add_header(fd, "Subject", subj );
-add_header(fd, "Reply-To", conffile.smtp_reply_to );
+if (subj) add_header(fd, "Subject", subj);
+if (conffile.smtp_reply_to) add_header(fd, "Reply-To", conffile.smtp_reply_to);
 add_header(fd, NULL, 0);
 
 while(fgets(buffie, sizeof buffie, fp)) {

@@ -67,6 +67,12 @@ struct confmatch {
 	};
 #define NUL2 NULL,NULL
 #define NUL3 NULL,NULL,NULL
+/* Behaviour of configuration items is differs:
+** ZOmbie is not read from file, even if present, so always is filled with the initial value
+** CHPATH is read from file, default wil be applied, and chroot will thim it.
+** Name is read from file, default wil be applied, but chroot will *not* alter it
+** Message just puts a comment in the output-config file
+*/
 #define ZOMBIE(_n,_p,_d) {'Z',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
 #define CHPATH(_n,_p,_d) {'p',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
 #define NAME(_n,_p,_d) {'P',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
@@ -74,6 +80,10 @@ struct confmatch {
 
 static struct confmatch confmatchs[] = {
 ZOMBIE("version_string", &conffile.version_string, VERSION)
+MESSAGE("")
+MESSAGE("Note: Don't put any spaces after the '='. Everything between the '='")
+MESSAGE("and the end-of-line is read into the variable.")
+MESSAGE("")
 MESSAGE("Leave chroot_dir empty if chroot() is not wanted.")
 MESSAGE("Note: chroot() itself needs root permissions.")
 MESSAGE("Note: chroot will cause the pathnames below to be")
@@ -112,10 +122,10 @@ CHPATH("results_file", &conffile.results_file, RESULTS_FILE)
 CHPATH("nresults_file", &conffile.nresults_file, NRESULTS_FILE)
 CHPATH("emotes_file", &conffile.emotes_file, EMOTES_FILE)
 CHPATH("note_file", &conffile.note_file, NOTE_FILE)
-CHPATH("log_file", &conffile.log_file, LOG_FILE)
-CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
 CHPATH("ladder9_file", &conffile.ladder9_file, LADDER9_FILE)
 CHPATH("ladder19_file", &conffile.ladder19_file, LADDER19_FILE)
+CHPATH("log_file", &conffile.log_file, LOG_FILE)
+CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
 MESSAGE("")
 
 NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
@@ -127,7 +137,7 @@ NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_email", &conffile.server_email, SERVER_EMAIL)
 NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
 MESSAGE("")
-MESSAGE("To send mail by SMTP: set mail_program to empty, and fill in the smtp_* fields.")
+MESSAGE("To send mail by SMTP: set mail_program to \"SMTP\", and fill in the smtp_* fields.")
 MESSAGE("This is needed in chroot() installations, because /usr/bin/mail et.al.")
 MESSAGE("are unavailabls in a chroot() jail.")
 MESSAGE("The smtp_xxx - fields are used to fill the SMTP-request:")
@@ -157,7 +167,7 @@ static int conf_file_fixup1(char * target, char *part, int len);
 int conf_file_read(char * fname)
 {
 FILE *fp;
-char buff[100];
+char buff[1024];
 char *name, *value;
 size_t len;
 int rc;
@@ -241,8 +251,8 @@ if (uid && (euid = geteuid()) !=uid) {
 
 if (conffile.chroot_dir) {
 	conf_file_fixup();
-	conf_file_write("written.cnf");
 	}
+conf_file_write("written.cnf");
 return 0;
 }
 
@@ -266,7 +276,7 @@ struct confmatch *cp;
 fp = fopen( fname, "w" );
 if (!fp) return -1;
 
-fprintf(fp, "## Config generated Date %s UTC\n", strgtime(&globclock.time));
+fprintf(fp, "## nngs.cnf Config generated Date %s UTC\n", strgtime(&globclock.time));
 fprintf(fp, "# compile_date=%s %s\n" , __DATE__ , __TIME__ );
 fprintf(fp, "#\n" );
 
@@ -356,6 +366,7 @@ case 'P':
 	*(char**)(cp->ptr) = (value) ? mystrdup(value): NULL;
 	break;
 case 'Z':
+case 'm':
 default: return -1;
 	}
 
