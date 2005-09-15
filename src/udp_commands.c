@@ -113,7 +113,7 @@ size_t pos=0;
   if (len < 0) return len; else pos = len;
   for (g0 = 0; g0 < garray_top; g0++) {
     if (pos+80 >= dstlen) break;
-    /* if (!garray[g0].gstatus != GSTATUS_ACTIVE) continue; */
+    /* if (garray[g0].gstatus != GSTATUS_ACTIVE) continue; */
     /* if (!garray[g0].slotstat.in_use) continue; */
     pb = garray[g0].black.pnum;
     pw = garray[g0].white.pnum;

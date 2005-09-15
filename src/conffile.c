@@ -215,6 +215,7 @@ if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", c
 else gid = gp->gr_gid;
 
 if (conffile.chroot_dir) {
+	(void) gethostbyname("localhost") ;
 	rc = chdir(conffile.chroot_dir);
 	if (rc==-1) { rc=errno;
 		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
