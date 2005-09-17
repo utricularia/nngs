@@ -63,23 +63,25 @@ struct confmatch {
 	int type;
 	const char *name;
 	void *ptr;
-	char *dflt;
+	const char *dflt;
 	};
 #define NUL2 NULL,NULL
-#define NUL3 NULL,NULL,NULL
 /* Behaviour of configuration items is differs:
-** ZOmbie is not read from file, even if present, so always is filled with the initial value
+** Zombie is not read from file, even if present, so always is filled with the initial value
 ** CHPATH is read from file, default wil be applied, and chroot will thim it.
 ** Name is read from file, default wil be applied, but chroot will *not* alter it
 ** Message just puts a comment in the output-config file
 */
-#define ZOMBIE(_n,_p,_d) {'Z',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
-#define CHPATH(_n,_p,_d) {'p',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
-#define NAME(_n,_p,_d) {'P',(const char*)(_n),(void*)((char**)(_p)),(const char*)(_d)},
-#define MESSAGE(_m) {'m', (const char*)(_m),NUL2},
+#define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
+#define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
+#define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
+#define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
+#define MESSAGE(_m) {'m', (_m),NUL2},
 
 static struct confmatch confmatchs[] = {
 ZOMBIE("version_string", &conffile.version_string, VERSION)
+ZOMBIE("compile_date", &conffile.compile_date, __DATE__ )
+ZOMBIE("compile_time", &conffile.compile_time, __TIME__)
 MESSAGE("")
 MESSAGE("Note: Don't put any spaces after the '='. Everything between the '='")
 MESSAGE("and the end-of-line is read into the variable.")
@@ -150,16 +152,22 @@ NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
 NAME("smtp_mta", &conffile.smtp_mta, "localhost")
 NAME("smtp_helo", &conffile.smtp_helo, "localhost")
 NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
-NAME("smtp_reply_to", &conffile.server_email, SERVER_EMAIL)
-{ 0,  NUL3 } }; /* sentinel */
+NAME("smtp_reply_to", &conffile.smtp_reply_to, SERVER_EMAIL)
+
+MESSAGE("")
+MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
+MESSAGE("")
+BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
+MESSAGE("")
+{ 0,  NULL,NULL,NULL } }; /* sentinel */
 #undef NUL2
 #undef NUL3
 #undef ZOMBIE
 #undef NAME
 #undef CHPATH
 #undef MESSAGE
-static struct confmatch *conf_find(char *name);
-static int conf_set_pair(char *name, char *value);
+static struct confmatch *conf_find(const char *name);
+static int conf_set_pair(const char *name, const char *value);
 static void config_fill_defaults(void);
 static void trimtrail(char *str);
 static int conf_file_fixup1(char * target, char *part, int len);
@@ -272,7 +280,7 @@ while(len > 0) {
 int conf_file_write(char *fname)
 {
 FILE *fp;
-struct confmatch *cp;
+struct confmatch *mp;
 
 fp = fopen( fname, "w" );
 if (!fp) return -1;
@@ -281,13 +289,18 @@ fprintf(fp, "## nngs.cnf Config generated Date %s UTC\n", strgtime(&globclock.ti
 fprintf(fp, "# compile_date=%s %s\n" , __DATE__ , __TIME__ );
 fprintf(fp, "#\n" );
 
-for (cp = confmatchs; cp->type; cp++) {
-	switch (cp->type) {
-	case 'm': fprintf(fp, "# %s\n", cp->name); break;
+for (mp = confmatchs; mp->type; mp++) {
+	switch (mp->type) {
+	case 'm': fprintf(fp, "# %s\n", mp->name);
+		break;
 	case 'Z' :
 	case 'P':
 	case 'p': fprintf(fp, "%s=%s\n"
-		, cp->name, IFNULL(*(char**)cp->ptr,"") ); break;
+		, mp->name, IFNULL(*(char**)mp->ptr,"") );
+		break;
+	case 'b': fprintf(fp, "%s=%s\n"
+		, mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
+		break;
 	default: break;
 		}
 	}
@@ -301,14 +314,17 @@ return 0;
 
 static void config_fill_defaults(void)
 {
-struct confmatch *cp;
+struct confmatch *mp;
 
-for (cp = confmatchs; cp->type; cp++) {
-	switch (cp->type) {
+for (mp = confmatchs; mp->type; mp++) {
+	switch (mp->type) {
+	case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+		break;
 	case 'Z':
 	case 'P':
-	case 'p': if (!*(char**)(cp->ptr) && cp->dflt) {
-		 *((char**)cp->ptr) = mystrdup (cp->dflt);
+	case 'p': if (!*(char**)(mp->ptr) && mp->dflt) {
+		 *((char**)mp->ptr) = mystrdup (mp->dflt);
+		break;
 		}
 	break;
 	case 'm': default: continue;
@@ -319,7 +335,7 @@ for (cp = confmatchs; cp->type; cp++) {
 int conf_file_fixup(void)
 {
 int cnt=0, len;
-struct confmatch *cp;
+struct confmatch *mp;
 
 if (!conffile.chroot_dir) return 0;
 len = strlen(conffile.chroot_dir) ;
@@ -327,13 +343,14 @@ if (len && conffile.chroot_dir[len-1] == '/') len--;
 
 #define DO_ONE(_s) cnt += conf_file_fixup1((_s), conffile.chroot_dir, len)
 
-for (cp = confmatchs; cp->type; cp++) {
-	switch (cp->type) {
-	case 'p': if (*(char**)(cp->ptr)) DO_ONE(*(char**)(cp->ptr) );
+for (mp = confmatchs; mp->type; mp++) {
+	switch (mp->type) {
+	case 'p': if (*(char**)(mp->ptr)) DO_ONE(*(char**)(mp->ptr) );
 	break;
 	case 'Z':
 	case 'P':
 	case 'm':
+	case 'b':
 	default: continue;
 		}
 	}
@@ -352,19 +369,33 @@ return 0;
 }
 
 
-static int conf_set_pair(char *name, char *value)
+static int conf_set_pair(const char *name, const char *value)
 {
-struct confmatch *cp;
+struct confmatch *mp;
 
-cp = conf_find(name);
-if (!cp) { /* nametag Not found */
+mp = conf_find(name);
+if (!mp) { /* nametag Not found */
 	return -1;
 	}
-switch (cp->type) {
+switch (mp->type) {
 case 'p':
 case 'P':
-	if (*(char**)(cp->ptr)) free (*(char**)(cp->ptr));
-	*(char**)(cp->ptr) = (value) ? mystrdup(value): NULL;
+	if (*(char**)(mp->ptr)) free (*(char**)(mp->ptr));
+	*(char**)(mp->ptr) = (value) ? mystrdup(value): NULL;
+	break;
+case 'b':
+	if (!value || !*value) value = "F";
+	switch (*value) {
+		case 't': case 'T':
+		case 'y': case 'Y':
+		case '+': case '1':
+	 	*((char*)(mp->ptr)) = 1; break;
+		case 'f': case 'F':
+		case 'n': case 'N':
+		case '-':
+		case '0':
+	 	*((char*)(mp->ptr)) = -1; break;
+		}
 	break;
 case 'Z':
 case 'm':
@@ -374,13 +405,13 @@ default: return -1;
 return 0;
 }
 
-static struct confmatch *conf_find(char *name)
+static struct confmatch *conf_find(const char *name)
 {
-struct confmatch *cp;
+struct confmatch *mp;
 
-for (cp = confmatchs; cp->type; cp++) {
-	if (cp->type== 'm') continue;
-	if (!strcmp(cp->name, name) ) return cp;
+for (mp = confmatchs; mp->type; mp++) {
+	if (mp->type== 'm') continue;
+	if (!strcmp(mp->name, name) ) return mp;
 	}
 return NULL;
 }

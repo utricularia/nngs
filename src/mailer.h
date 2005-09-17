@@ -1,6 +1,6 @@
 #ifndef MAILER_H
 #define MAILER_H
 
-int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname);
+int mail_spool(const char *nbuff, const char *to, const char *subj, const char *text, const char *fname);
 
 #endif

@@ -25,49 +25,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#if 0
-extern const char *mess_dir;
-extern const char *help_dir;
-extern const char *comhelp_dir;
-extern const char *info_dir;
-extern const char *ahelp_dir;
-extern const char *stats_dir;
-extern const char *config_dir;
-extern const char *player_dir;
-extern const char *game_dir;
-extern const char *cgame_dir;
-extern const char *problem_dir;
-extern const char *board_dir;
-extern const char *def_prompt;
-extern const char *source_dir;
-extern const char *lists_dir;
-extern const char *news_dir;
-
-extern const char *server_name;
-extern const char *server_address;
-extern const char *server_email;
-extern const char *server_http;
-extern const char *geek_email;
-
-extern const char *intergo_file;
-extern const char *ratings_file;
-extern const char *results_file;
-extern const char *nresults_file;
-extern const char *emotes_file;
-extern const char *note_file;
-extern const char *log_file;
-extern const char *ladder9_file;
-extern const char *ladder19_file;
-
-extern const char *stats_logons;
-extern const char *stats_messages;
-extern const char *stats_games;
-extern const char *stats_rgames;
-extern const char *stats_cgames;
-
-extern const char *version_string;
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif

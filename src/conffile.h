@@ -28,6 +28,7 @@
 struct conffile {
   char *version_string;
   char *compile_date;
+  char *compile_time;
   char *chroot_dir;
   char *chroot_user;
   char *chroot_group;
@@ -79,6 +80,7 @@ struct conffile {
   char *stats_rgames;
   char *stats_cgames;
 
+  char allow_unregistered;
   };
 
 #if CONFFILE_C

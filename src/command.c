@@ -76,50 +76,11 @@
 #include "rdbm.h"
 #endif /* WANT_NNGSRATED */
 
-#if 0
-const char *ahelp_dir = AHELP_DIR;
-const char *help_dir = HELP_DIR;
-const char *mess_dir = MESSAGE_DIR;
-const char *info_dir = INFO_DIR;
-const char *stats_dir = STATS_DIR;
-const char *player_dir = PLAYER_DIR;
-const char *game_dir = GAME_DIR;
-const char *cgame_dir = CGAME_DIR;
-const char *problem_dir = PROBLEM_DIR;
-const char *lists_dir = LIST_DIR;
-const char *news_dir = NEWS_DIR;
-
-const char *ratings_file = RATINGS_FILE;
-const char *intergo_file = INTERGO_FILE;
-const char *results_file = RESULTS_FILE;
-const char *nresults_file = NRESULTS_FILE;
-const char *emotes_file = EMOTES_FILE;
-const char *note_file = NOTE_FILE;
-const char *log_file = LOG_FILE;
-const char *ladder9_file = LADDER9_FILE;
-const char *ladder19_file = LADDER19_FILE;
-
-const char *stats_logons = STATS_LOGONS;
-const char *stats_messages = EXT_MESSAGES;
-const char *stats_games = STATS_GAMES;
-const char *stats_rgames = STATS_RGAMES;
-const char *stats_cgames = STATS_CGAMES;
-
-const char *def_prompt = DEFAULT_PROMPT;
-
-const char *server_name = SERVER_NAME;
-const char *server_address = SERVER_ADDRESS;
-const char *server_email = SERVER_EMAIL;
-const char *server_http = SERVER_HTTP;
-const char *geek_email = GEEK_EMAIL;
-
-const char *version_string = VERSION;
-#endif
-
 time_t startuptime;
 int player_high;
 int game_high;
 int MailGameResult;
+
 #ifndef MODE_FOR_DIR
 #define MODE_FOR_DIR 0
 #endif /* MODE_FOR_DIR */
@@ -522,11 +483,12 @@ static void process_login(int p, char *login)
       stolower(login);
       do_copy(parray[p].login,login,sizeof parray[p].login);
       if (player_read(p)) {
-#ifdef WANT_NOGUESTS
+/* #ifdef WANT_NOGUESTS */
+if (conffile.allow_unregistered <= 0) {
         Logit("LOGIN: Unknown userid: %s", login);
         pprintf(p, "\nUser unknown.  Send mail to %s", SERVER_EMAIL);
         pprintf(p, "\nfor registration information\n");
-#else
+} else  {
         failed = 0;
         parray[p].session.pstatus = PSTATUS_PASSWORD;
 	do_copy(parray[p].pname, login, sizeof parray[0].pname); 
@@ -538,7 +500,7 @@ static void process_login(int p, char *login)
 	channel_add(CHANNEL_LSHOUT, p);
 	channel_add(CHANNEL_LOGON, p);
 	channel_add(CHANNEL_GAME, p);
-#endif
+        }
       } else {
         failed = 0;
 	pprintf(p, "\n%s",parray[p].flags.is_client ? "1 1\n" : "Password: ");

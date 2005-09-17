@@ -590,7 +590,7 @@ static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char
     parray[p].automail = atoi(cp);
     cp = strtok(NULL, ":"); if (!cp) return 0;
     parray[p].adminLevel = atoi(cp);
-#ifdef EXISTING_USERS_ARE_REGISTERED
+#if EXISTING_USERS_ARE_REGISTERED
 	/* Silently convert users to registered users ... */
     if (parray[p].adminLevel <= ADMIN_USER)
       parray[p].adminLevel = ADMIN_REGISTERED_USER;

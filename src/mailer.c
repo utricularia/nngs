@@ -85,6 +85,7 @@
 #endif
 #endif
 
+#define WANT_MAIL_CHILD 1
 #if WANT_MAIN
 #include <string.h>
 #include <errno.h>
@@ -111,7 +112,7 @@ static int child_perror(char *msg);
 static int smtp_mail(FILE *fp, char *to, char *subj);
 
 #ifndef WANT_MAIN
-int mail_spool(char *nbuff, char *to, char *subj, char *text, char *fname)
+int mail_spool(const char *nbuff, const char *to, const char *subj, const char *text, const char *fname)
 {
   char buff[MAX_LINE_SIZE];
   FILE *fp;
@@ -244,7 +245,7 @@ body:
 
 #include <errno.h>
 
-#define WANT_DEBUG 7
+#define WANT_DEBUG 0
 #define WANTED_SMTP_PORT 25
 /* ---------------------------------------------------- */
 #include <sys/types.h>
@@ -617,7 +618,7 @@ int err;
 
 err = smtp_err;
 if (!msg) msg = "Message";
-Logit("Child_perror, %s : %d(%s)", msg, err, strerror(err));
+Logit("Child_perror; %s : %d(%s)", msg, err, strerror(err));
 return -1;
 }
 

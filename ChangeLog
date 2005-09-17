@@ -16,9 +16,9 @@
   because mail can block (either way ...) a separate spooling mechanism
   plus a child-process are needed.
 - new files : conffile.[ch].
-  All the pahnames/strings/configuration-items are now maintained
-  in a textfile. 
-  a Fixed filename 'nngs.cnf' is read (from current directory)
+  All the pahnames/strings/configuration-items are now kept
+  in a configfile (textfile) , which is read at startup.
+  a Fixed filename 'nngs.cnf' is assumed (from current directory)
   , an alternate path/file can be specified by a '-c path/file' option
   on the commandline.
   If no conffile is found, a nngs.cnf IS WRITTEN in the

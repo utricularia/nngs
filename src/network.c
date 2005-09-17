@@ -929,11 +929,16 @@ char * net_dumpslot(int fd)
 {
 static char buff[400];
 size_t pos;
+int rc;
+struct stat statje;
 
   if (fd < 0 || fd > net_fd_top) return NULL;
 
-  pos = sprintf(buff, "%d:%d:%x:%08x:%c:%c"
+  rc = fstat(fd, &statje);
+
+  pos = sprintf(buff, "%d:%d:%d:%x:%08x:%c:%c"
     , fd, netarray[fd].netstate, netarray[fd].telnetState
+    , rc
     , netarray[fd].fromHost
     , (netarray[fd].is_full) ? 'F' : '-'
     , (netarray[fd].is_throttled) ? 'T' : '-'
