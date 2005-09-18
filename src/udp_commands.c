@@ -130,7 +130,7 @@ size_t pos=0;
     if (len < 0) return pos; else pos += len;
     if (!garray[g0].minkg) continue;
     pos--;
-    mnum = movenum(garray[g0].minkg);
+    mnum = mink_movenum(garray[g0].minkg);
     len = snprintf(dst+pos, dstlen-pos , ":%d\n" , (int) mnum);
     if (len < 0) return pos; else pos += len;
 #if 0
@@ -171,7 +171,7 @@ if (gnum < 0 || gnum >= garray_top) {
 	return len;
 	}
 
-len = printboard_raw(dst+pos, dstlen-pos, garray[gnum].minkg);
+len = mink_printboard_raw(dst+pos, dstlen-pos, garray[gnum].minkg);
 if (len < 0) return pos; pos += len;
 
 return pos;

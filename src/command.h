@@ -115,19 +115,19 @@ struct alias_type {
 
 extern int commanding_player; /* The player whose command your in */
 
-extern int process_input(int fd, char *str);
-extern void process_new_connection(int fd, unsigned int addr);
-extern void process_disconnection(int fd);
-extern int process_incomplete(int fd, char * line);
-extern int process_heartbeat(int *fdp);
+int process_input(int fd, char *str);
+void process_new_connection(int fd, unsigned int addr);
+void process_disconnection(int fd);
+int process_incomplete(int fd, char * line);
+int process_heartbeat(int *fdp);
 
-extern void commands_init(void);
+void commands_init(void);
 
-extern void TerminateCleanup(void);
-extern int process_command(int, char *);
+void TerminateCleanup(void);
+int process_command(int, char *);
 
-extern void command_init(void);
-extern int command_admin_level(int c);
-extern int match_command(const char *);
+void command_init(void);
+int command_admin_level(int c);
+int match_command(const char *);
 
 #endif /* COMMAND_H */

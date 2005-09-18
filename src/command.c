@@ -438,7 +438,7 @@ int process_command(int p, char *com_string)
   stolower(comm);               /* All commands are case-insensitive */
 
   if (parray[p].session.gnum >= 0) {
-    if (go_move(garray[parray[p].session.gnum].minkg, comm)) {
+    if (mink_is_valid_move(garray[parray[p].session.gnum].minkg, comm)) {
       return COM_ISMOVE;
     }
   }

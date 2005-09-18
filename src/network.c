@@ -935,10 +935,10 @@ struct stat statje;
   if (fd < 0 || fd > net_fd_top) return NULL;
 
   rc = fstat(fd, &statje);
+  if (!rc) rc =statje.st_mode;
 
   pos = sprintf(buff, "%d:%d:%d:%x:%08x:%c:%c"
-    , fd, netarray[fd].netstate, netarray[fd].telnetState
-    , rc
+    , fd, netarray[fd].netstate, rc, netarray[fd].telnetState
     , netarray[fd].fromHost
     , (netarray[fd].is_full) ? 'F' : '-'
     , (netarray[fd].is_throttled) ? 'T' : '-'

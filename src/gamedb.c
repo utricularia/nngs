@@ -136,7 +136,6 @@ static int get_empty_game_slot(void)
     if (garray[i].slotstat.in_use) continue;
     /* if (garray[i].gstatus != GSTATUS_EMPTY) continue; */
 #if DEBUG_GAME_SLOT
-    /* if (Debug) */
       Logit("get_empty_game_slot:= %d/%d (Found one)", i, garray_top);
 #endif
     return i;
@@ -303,14 +302,14 @@ void send_go_board_to(int g0, int p)
   /*game_update_time(g0);*/
   bp = garray[g0].black.pnum;
   wp = garray[g0].white.pnum;
-  getcaps(garray[g0].minkg, &wc, &bc);
+  mink_getcaps(garray[g0].minkg, &wc, &bc);
   bbuf[0] = wbuf[0] = 0;
   if (parray[p].i_verbose) {
     if (garray[g0].black.byostones > 0) sprintf(bbuf, " B %d", garray[g0].black.byostones);
     if (garray[g0].white.byostones > 0) sprintf(wbuf, " B %d", garray[g0].white.byostones);
-    printboard(garray[g0].minkg, statstring);
-    count = movenum(garray[g0].minkg);
-    if (count > 0) listmove(garray[g0].minkg, count, buf);
+    mink_printboard(garray[g0].minkg, statstring);
+    count = mink_movenum(garray[g0].minkg);
+    if (count > 0) mink_listmove(garray[g0].minkg, count, buf);
     pcn_out(p, CODE_CR1|CODE_OBSERVE, FORMAT_GAME_d_I_s_ss_VS_s_ss_n,
                 /*SendCode(p, CODE_BEEP),*/
 		g0 + 1,
@@ -354,7 +353,7 @@ void send_go_board_to(int g0, int p)
       else if (yy>=10 && garray[g0].minkg->height > (yy - 1)) {
 	if (count > 1) {
 	  count--;
-          listmove(garray[g0].minkg, count, buf);
+          mink_listmove(garray[g0].minkg, count, buf);
           pcn_out(p, CODE_OBSERVE, FORMAT_s_c_d_sn, statstring[yy],
 		      buf[0], count, buf + 1);
 	}
@@ -371,8 +370,8 @@ void send_go_boards(int g0, int players_only)
   int p, bc, wc, wp, bp;
   char buf[20], outStr[1024];
 
-  listmove(garray[g0].minkg, movenum(garray[g0].minkg), buf); 
-  getcaps(garray[g0].minkg, &wc, &bc);
+  mink_listmove(garray[g0].minkg, mink_movenum(garray[g0].minkg), buf); 
+  mink_getcaps(garray[g0].minkg, &wc, &bc);
 
   bp = garray[g0].black.pnum;
   wp = garray[g0].white.pnum;
@@ -391,9 +390,9 @@ void send_go_boards(int g0, int players_only)
 
   else if (parray[wp].session.protostate != STAT_SCORING && garray[g0].teach != 1)  { 
     pcn_out(wp, CODE_MOVE, FORMAT_s,outStr);
-    if (movenum(garray[g0].minkg) - 1 >= 0) {
+    if (mink_movenum(garray[g0].minkg) - 1 >= 0) {
       pcn_out(wp, CODE_MOVE, FORMAT_d_c_sn,
-        movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
+        mink_movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
     }
     if (parray[wp].flags.want_bell) pcn_out_prompt(wp, CODE_CR1|CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(wp, CODE_CR1|CODE_NONE,FORMAT_n);
@@ -403,9 +402,9 @@ void send_go_boards(int g0, int players_only)
 
   else if (parray[bp].session.protostate != STAT_SCORING) {
     pcn_out(bp, CODE_MOVE, FORMAT_s, outStr);
-    if (movenum(garray[g0].minkg) - 1 >= 0) {
+    if (mink_movenum(garray[g0].minkg) - 1 >= 0) {
       pcn_out(bp, CODE_MOVE, FORMAT_d_c_sn,
-        movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
+        mink_movenum(garray[g0].minkg) - 1, buf[0], buf + 1); 
     }
     if (parray[bp].flags.want_bell) pcn_out_prompt(bp, CODE_BEEP, FORMAT_n);
     else pcn_out_prompt(bp, CODE_NONE, FORMAT_n);
@@ -421,7 +420,7 @@ void send_go_boards(int g0, int players_only)
     else {
       pcn_out(p, CODE_MOVE, FORMAT_s, outStr);
       pcn_out(p, CODE_MOVE, FORMAT_d_c_sn,
-         movenum(garray[g0].minkg) - 1, buf[0], buf + 1);
+         mink_movenum(garray[g0].minkg) - 1, buf[0], buf + 1);
       if (parray[p].flags.want_bell) pcn_out_prompt(p, CODE_BEEP, FORMAT_n);
       else pcn_out_prompt(p, CODE_NONE, FORMAT_n);
     }
@@ -589,7 +588,7 @@ static int got_attr_value(struct game *gp, char *attr, char *value, FILE * fp, c
     /*sethcap(gp->minkg, atoi(value))*/;
   } else if (!strcmp(attr, "size:")) {
     gp->size = atoi(value);
-    gp->minkg = initminkgame(gp->size, gp->size, gp->rules);
+    gp->minkg = mink_initgame(gp->size, gp->size, gp->rules);
   } else if (!strcmp(attr, "onmove:")) {
     ; /* PEM: Ignore. gp->onMove = atoi(value); */
   } else if (!strcmp(attr, "ladder9:")) {
@@ -657,7 +656,7 @@ static int got_attr_value(struct game *gp, char *attr, char *value, FILE * fp, c
     }
   } else if (!strcmp(attr, "movesrnext:")) {  /* value meaningless */
     /* PEM: Get the true onMove. */
-    switch (loadgame(fp, gp->minkg)) {
+    switch (mink_loadgame(fp, gp->minkg)) {
     case MINK_BLACK:
       gp->onMove = PLAYER_BLACK;
       break;
@@ -729,7 +728,7 @@ int game_read(struct game *gp, int wp, int bp)
 
   /* PEM: This used to be done when saving, but that broke things. */
   if (gp->num_pass >= 2) {
-    back(gp->minkg);
+    mink_back(gp->minkg);
     gp->num_pass = 1;
     if (gp->onMove == PLAYER_WHITE) gp->onMove = PLAYER_BLACK;
     else gp->onMove = PLAYER_WHITE;
@@ -812,7 +811,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g0].minkg->width,
      TICS2SECS(garray[g0].ts.totalticks), garray[g0].komi);
   if (Debug) Logit("garray[g0].nmvinfos = %d", garray[g0].nmvinfos);
-  savegame(fp, garray[g0].minkg, garray[g0].mvinfos, garray[g0].nmvinfos);
+  mink_savegame(fp, garray[g0].minkg, garray[g0].mvinfos, garray[g0].nmvinfos);
 
   fprintf(fp, ";");
   if (statstring) {   /* record territory in SGF file */
@@ -859,7 +858,7 @@ int game_save(int g0)
   wp = garray[g0].white.pnum;
   bp = garray[g0].black.pnum;
   
-  if (movenum(garray[g0].minkg) < 3) return 1;
+  if (mink_movenum(garray[g0].minkg) < 3) return 1;
   fp = xyfopen(FILENAME_GAMES_ws_s, "w",parray[wp].login,parray[bp].login);
   if (!fp) {
     return -1;
@@ -904,7 +903,7 @@ int game_save(int g0)
   fprintf(fp, "Ladder_Possible: %d\n", garray[g0].Ladder_Possible);
   fprintf(fp, "OnMove: %d\n", garray[g0].onMove);
   fprintf(fp, "MovesRNext: oinkoink\n");
-  savegame(fp, garray[g0].minkg,NULL,0);
+  mink_savegame(fp, garray[g0].minkg,NULL,0);
   savekib(fp, &garray[g0]);
   fclose(fp);
   return 0;
@@ -994,7 +993,7 @@ void game_write_complete(int g0, twodstring statstring)
 #ifdef WANT_PAIR
      && !paired(g0)
 #endif
-     && movenum(garray[g0].minkg) >= 20
+     && mink_movenum(garray[g0].minkg) >= 20
      && garray[g0].minkg->width == 19) {
     fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
     write_g_out(g0, fp, 23, fdate);
@@ -1015,7 +1014,7 @@ void game_write_complete(int g0, twodstring statstring)
 #ifdef WANT_PAIR
      || paired(g0)
 #endif
-     || movenum(garray[g0].minkg) <= 20
+     || mink_movenum(garray[g0].minkg) <= 20
      || garray[g0].minkg->width != 19)  return;
 
   fp = xyfopen(FILENAME_RESULTS, "a");

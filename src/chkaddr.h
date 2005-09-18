@@ -15,6 +15,6 @@
  * Returns 0 if it's not a likely email address,
  * 1 otherwise.
  */
-extern int chkaddr(const char *s);
+int chkaddr(const char *s);
 
 #endif /* chkaddr_h */

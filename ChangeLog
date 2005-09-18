@@ -4,7 +4,11 @@
 
 
 1.1.18avk2 2005-07-31 -2005-08-24  2005-09-07 AvK
+- removed unnecessary extern from function declarations in headers.
+- renamed globals in mink.c to mink_*
 - Added support for chroot(). Set CHROOT_DIR to empty if you don't want it.
+  - chroot/fork will probably only work on unix/linux platforms.
+    windows people don't need security, anyway.
   chroot() involves a lot of changes.
   - the tempfile-mechanism needs a /tmp/ subdirectory in jail.
   for safety: if chroot is wanted but impossible: nngssrv should fail.
@@ -28,6 +32,7 @@
   -at least- possible to put the data and binary into separate locations
   , and split the data into 'constant' files (eg helpfiles) and
   'variable' (players/games/results) parts.
+  - started to put boolean variables into conffile (allow_unregistered)
 - changed some of the configuration-items (filename-suffixes)
   to "non configurable", and dropped them from autoconf.
 - changed LOG_FILE//log_file to contain the full pathname. Now you can put

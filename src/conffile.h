@@ -43,6 +43,7 @@ struct conffile {
   char *smtp_from;
   char *smtp_reply_to;
   char *smtp_mta;
+  int smtp_portnum;
   char *smtp_helo;
 
   char *mess_dir;
@@ -81,6 +82,7 @@ struct conffile {
   char *stats_cgames;
 
   char allow_unregistered;
+  char unregs_can_shout;
   };
 
 #if CONFFILE_C

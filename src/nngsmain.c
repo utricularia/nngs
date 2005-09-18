@@ -80,6 +80,7 @@ static void GetArgs(int argc, char *argv[]);
 static void main_event_loop(void);
 static void read_ban_ip_list(void);
 static int all_the_internets(void);
+static int daemonise(void);
 
 	/* signal handlers */
 static void TerminateServer(int sig);
@@ -185,6 +186,8 @@ int main(int argc, char *argv[])
     conf_file_write(confname);
     Logit("Created \"%s\"", confname);
   }
+  daemonise();
+  conf_file_write("written.cnf");
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
 #if 0
@@ -244,7 +247,7 @@ int main(int argc, char *argv[])
     fclose(fp);
   }
 
-  initmink();
+  mink_init();
   Logit("Server up and running at");
   main_event_loop();
   Logit("Closing down.");
@@ -301,3 +304,74 @@ static void read_ban_ip_list(void)
   fclose(fp);
   Logit("Ipban: Read %d ranges from %s", cnt, filename() );
 }
+
+
+static int daemonise(void)
+{
+char *name, *value;
+size_t len;
+int rc;
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+#define __USE_XOPEN 1
+#include <unistd.h>
+#undef __USE_XOPEN
+#include <errno.h>
+
+struct passwd *pp = NULL;
+struct group *gp = NULL;
+uid_t uid = -1, euid =0;
+gid_t gid = -1;
+
+if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
+if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
+
+if (conffile.chroot_user && !pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
+else { uid = pp->pw_uid; gid = pp->pw_gid; }
+if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
+else gid = gp->gr_gid;
+
+if (conffile.chroot_dir) {
+	(void) gethostbyname("localhost") ;
+	rc = chdir(conffile.chroot_dir);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
+		, conffile.chroot_dir, rc, strerror(rc) );
+		}
+	rc = chroot(conffile.chroot_dir);
+	if (rc==-1) { rc=errno;
+		fprintf(stderr, "Failed chroot(%s): %d (%s)\n"
+		, conffile.chroot_dir, rc, strerror(rc) );
+		}
+	if (rc) return rc;
+	}
+
+if (gid) rc = setgid(gid);
+if (rc==-1) { rc=errno;
+	fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
+	, gid, conffile.chroot_group, rc, strerror(rc) );
+	}
+if (uid) rc = setuid(uid);
+if (rc==-1) { rc=errno;
+	fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
+	, uid, conffile.chroot_user, rc, strerror(rc) );
+	}
+#if 0
+if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+#endif
+
+if (uid && (euid = geteuid()) != uid) {
+	fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
+	, uid, conffile.chroot_user, euid );
+	main_exit(1);
+	}
+
+if (conffile.chroot_dir) {
+	conf_file_fixup();
+	conf_file_write("written.cnf");
+	}
+return 0;
+}
+

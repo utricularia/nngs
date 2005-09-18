@@ -134,19 +134,19 @@ struct game {
 extern struct game *garray;
 extern int garray_top;
 
-extern int game_new(int, int);
-extern int game_remove(int);
-extern int game_finish(int);
+int game_new(int, int);
+int game_remove(int);
+int game_finish(int);
 
-extern char *game_time_str(int, int, int, int);
-extern int game_isblitz(int, int, int, int, char *, char *);
+char *game_time_str(int, int, int, int);
+int game_isblitz(int, int, int, int, char *, char *);
 
-extern void add_kib(struct game *g, int movecnt, char *s);
+void add_kib(struct game *g, int movecnt, char *s);
 
-extern void send_go_board_to(int, int);
-extern void send_go_boards(int, int);
-extern void game_update_time(int);
-extern void game_update_times(void);
+void send_go_board_to(int, int);
+void send_go_boards(int, int);
+void game_update_time(int);
+void game_update_times(void);
 
 	/* This is the number of games that is kept in
 	** garray[], after they completed.
@@ -155,22 +155,22 @@ extern void game_update_times(void);
 	*/
 #define MAXOLDGAMES 50
 
-extern int FindOldGameFor(int);
-extern int RemoveOldGamesForPlayer(int);
-extern int ReallyRemoveOldGamesForPlayer(int);
-extern int NewOldGame(int);
+int FindOldGameFor(int);
+int RemoveOldGamesForPlayer(int);
+int ReallyRemoveOldGamesForPlayer(int);
+int NewOldGame(int);
 
-extern void game_disconnect(int, int);
+void game_disconnect(int, int);
 
-extern int game_read(struct game *, int, int);
-extern int game_delete(int, int);
-extern int game_save(int);
+int game_read(struct game *, int, int);
+int game_delete(int, int);
+int game_save(int);
 
-extern int pgames(int, FILE *);
-extern void game_write_complete(int, twodstring);
-extern int game_count(void);
-extern int game_get_num_ob(int);
-extern int write_g_out(int, FILE *, int, char *);
-extern int game_save_complete(int, FILE *, twodstring);
+int pgames(int, FILE *);
+void game_write_complete(int, twodstring);
+int game_count(void);
+int game_get_num_ob(int);
+int write_g_out(int, FILE *, int, char *);
+int game_save_complete(int, FILE *, twodstring);
 #endif /* GAMEDB_H_ */
 

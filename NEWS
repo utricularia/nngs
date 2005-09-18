@@ -37,3 +37,10 @@ Version 1.1.18 (2005 Jul 13)
 - fixed bug in player_find()
 - cleanup
 - network fixes.
+
+Version 1.1.19 (2005 Sep xx)
+- put configuration items into file, which is read at startup.
+- chroot() support
+- added smtp mailer, which is needed in chrooted environment.
+- added experimental udp-port, intended to be used by a web/PHP client.
+- cleanup

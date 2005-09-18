@@ -863,11 +863,11 @@ int com_shout(int p, struct parameter * param)
   int p1, i;
 
 #ifdef UNREGS_CANNOT_SHOUT
-  if (!parray[p].slotstat.is_registered) {
+#endif /* UNREGS_CANNOT_SHOUT */
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_SHOUT_COMMAND_);
     return COM_OK;
   }
-#endif /* UNREGS_CANNOT_SHOUT */
   if (parray[p].muzzled) {
     return COM_OK;
   }
@@ -980,11 +980,11 @@ int com_gshout(int p, struct parameter * param)
   int p1;
 
 #ifdef UNREGS_CANNOT_SHOUT
-  if (!parray[p].slotstat.is_registered) {
-    pcn_out(p, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_GSHOUT_COMMAND_);
+#endif /* UNREGS_CANNOT_SHOUT */
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+    pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_GSHOUT_COMMAND_);
     return COM_OK;
   }
-#endif /* UNREGS_CANNOT_SHOUT */
 
   if (parray[p].gmuzzled) {
     return COM_OK;
@@ -1011,11 +1011,11 @@ int com_it(int p, struct parameter * param)
   int why;
 
 #ifdef UNREGS_CANNOT_SHOUT
-  if (!parray[p].slotstat.is_registered) {
-    pcn_out(p, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
+#endif /* UNREGS_CANNOT_SHOUT */
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+    pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
     return COM_OK;
   }
-#endif /* UNREGS_CANNOT_SHOUT */
   if (parray[p].muzzled) return COM_OK;
 
   why=param[0].val.string[0];
@@ -1045,11 +1045,11 @@ int com_git(int p, struct parameter * param)
   int p1;
 
 #ifdef UNREGS_CANNOT_SHOUT
-  if (!parray[p].slotstat.is_registered) {
-    pcn_out(p, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
+#endif /* UNREGS_CANNOT_SHOUT */
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+    pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
     return COM_OK;
   }
-#endif /* UNREGS_CANNOT_SHOUT */
   if (parray[p].muzzled) {
     return COM_OK;
   }
@@ -1466,11 +1466,11 @@ int com_kibitz(int p, struct parameter * param)
   }
   if (param[0].type == TYPE_INT) {
     sprintf(tmp2, "%s (%d)", param[1].type == TYPE_NULL
-            ? "" : param[1].val.string, movenum(garray[g0].minkg));
+            ? "" : param[1].val.string, mink_movenum(garray[g0].minkg));
   } else {
     sprintf(tmp2, "%s %s (%d)", param[0].val.word,
             param[1].type == TYPE_NULL
-            ? "" : param[1].val.string, movenum(garray[g0].minkg));
+            ? "" : param[1].val.string, mink_movenum(garray[g0].minkg));
   }
 
   bp = garray[g0].black.pnum;
@@ -1537,11 +1537,11 @@ int com_kibitz(int p, struct parameter * param)
                 parray[p].srank,
                 parray[p].flags.is_rated ? "*" : " ",
                 tmp2);
-  add_kib(&garray[g0], movenum(garray[g0].minkg), tmp3);
+  add_kib(&garray[g0], mink_movenum(garray[g0].minkg), tmp3);
 #ifdef WANT_PAIR
   if (paired(g0)) {
     otherg = garray[g0].pairwith;
-    add_kib(&garray[otherg], movenum(garray[otherg].minkg), tmp3);
+    add_kib(&garray[otherg], mink_movenum(garray[otherg].minkg), tmp3);
   }
 #endif
   return COM_OK;
@@ -1653,7 +1653,7 @@ int com_say(int p, struct parameter * param)
                  parray[p].srank,
                  parray[p].flags.is_rated ? "*" : " ",
                  param[0].val.string);
-  add_kib(&garray[g0], movenum(garray[g0].minkg), tmp);
+  add_kib(&garray[g0], mink_movenum(garray[g0].minkg), tmp);
 
   return do_tell(p, parray[p].session.opponent, param[0].val.string, TELL_SAY, 0);
 }
@@ -3219,7 +3219,7 @@ int create_new_gomatch(int wp, int bp,
   if (g0 < 0) return COM_FAILED;
   if (size >= NUMLINES) return COM_FAILED;
 
-  garray[g0].minkg = initminkgame(size,size, rules);
+  garray[g0].minkg = mink_initgame(size,size, rules);
   garray[g0].gstatus = GSTATUS_ACTIVE;
   garray[g0].white.pnum = wp;
   garray[g0].black.pnum = bp;
@@ -3710,8 +3710,8 @@ int com_score(int p, struct parameter * param)
       }
     }
 
-    countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
-    getcaps(garray[g0].minkg, &wc, &bc);
+    mink_countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
+    mink_getcaps(garray[g0].minkg, &wc, &bc);
     if (garray[g0].komi > 0) {
       wscore = wterr + wocc + garray[g0].komi;
       bscore = bterr + bocc;
@@ -3741,8 +3741,8 @@ int com_score(int p, struct parameter * param)
       return COM_NOSUCHGAME;
     }
 
-    countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
-    getcaps(garray[g0].minkg, &wc, &bc);
+    mink_countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
+    mink_getcaps(garray[g0].minkg, &wc, &bc);
     if (garray[g0].komi > 0) {
       wscore = wterr + wocc + garray[g0].komi;
       bscore = bterr + bocc;
@@ -4208,14 +4208,24 @@ int com_mailhelp(int p, struct parameter * param)
 
   count = search_directory(buffer, sizeof buffer, param[0].val.word, FILENAME_HELP);
 
-  if (count == 1) {
-    sprintf(command, "/bin/mail -s \"NNGS helpfile: %s\" %s < %s%s&",
-            param[0].val.word, parray[p].email, filename() , param[0].val.word);
-    system(command);
-    pcn_out(p, CODE_INFO, FORMAT_THE_FILE_s_WAS_SENT_TO_sn,
-                param[0].val.word, parray[p].email);
-  } else
+  if (count != 1) {
     pcn_out(p, CODE_ERROR, FORMAT_FOUND_d_FILES_MATCHING_THAT_n, count);
+    return COM_OKN;
+  }
+#if 0
+  sprintf(command, "/bin/mail -s \"NNGS helpfile: %s\" %s < %s%s&"
+  , param[0].val.word, parray[p].email, filename() , param[0].val.word);
+  system(command);
+#else
+  {
+  char fname[MAX_FILENAME_SIZE];
+  sprintf(fname, "%s/%s", filename() , param[0].val.word);
+  sprintf(command, "NNGS helpfile: %s", param[0].val.word);
+  mail_asn(parray[p].email, command, fname);
+  }
+#endif
+  pcn_out(p, CODE_INFO, FORMAT_THE_FILE_s_WAS_SENT_TO_sn
+  , param[0].val.word, parray[p].email);
   return COM_OKN;
 
 }
@@ -4238,7 +4248,7 @@ int com_mailme(int p, struct parameter * param)
   ii = xyfilename(fname, FILENAME_CGAMES_cs, arg );
 
   ii = mail_asn(parray[p].email, arg, fname);
-  if (!ii) {
+  if (ii>=0) {
     pcn_out(p,CODE_INFO, FORMAT_s_MAILED_TO_s_, arg, parray[p].email);
   }
   else {

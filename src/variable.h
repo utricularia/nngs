@@ -35,7 +35,7 @@ struct var_list {
 #define VAR_BADVAL 2
 #define VAR_AMBIGUOUS 3
 
-extern int var_set(int, const char *, const char *, int *);
+int var_set(int, const char *, const char *, int *);
 
 extern struct var_list variables[];
 

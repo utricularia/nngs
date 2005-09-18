@@ -32,25 +32,26 @@
    ...get rid of stdincludes.h completely: just need to move ulong def.
 
 - Read configuration from .cnf file at startup
-
+  <<-- 1.1.19 done!
 - detach from ctty and fork twice to daemonise
-
+  <<-- 1.1.19 done!
 - get rid off excessive logging
 
 - clean up parray[].pstatus protostate - mess when restoring old games.
 
 - change ALL date/time (in filenames ...) to UTC: avoid foldover at DST-changes.
-
+  <<-- 1.1.1x done!
 >>FUNCTIONALITY
 - change mail queue: don't invoke sendmail, run a cron job?
 - for debug, don't use mailprog but give passwds out online?
 - autodetect mailer from configure scripts
-- call external program (Gnu Go ???) for final scoring.
+  <<-- 1.1.19 done!
 
 - for forgotten passwds, let people authenticate with user name and email
   address and get the passwd automatically mailed to them.
 
 - problem when entering dead groups in telnet mode
+- call external program (Gnu Go ???) for final scoring.
 - allow external program(gnugo) to estimate/recalculate final score.
   This will add some extra steps to the game-state, because we can't
   afford to wait() for the external process.

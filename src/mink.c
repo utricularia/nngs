@@ -19,7 +19,7 @@
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-extern int random(void);
+int random(void);
 #endif
 
 #include <assert.h>
@@ -46,7 +46,7 @@ extern int random(void);
 #include "mink.h"
 #include "utils.h"
 
-extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
+int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 
 #define MOVECOLOR(i)	(((i) & 1) ? MINK_BLACK : MINK_WHITE)
 #define LASTCOLOR(g)	MOVECOLOR((g)->movenr)
@@ -91,7 +91,7 @@ static const char *stars[] = {
 "",				/* 26 */
 };
 
-static void startgame(struct minkgame *gp)
+static void mink_startgame(struct minkgame *gp)
 {
   int x,y;
 
@@ -110,7 +110,7 @@ typedef xulong xulongpair[2];
 
 static xulongpair *Zob;
 
-void initmink()
+void mink_init(void)
 {
   int i,j;
 
@@ -121,7 +121,7 @@ void initmink()
 	        | (xulong)random();
 }
 
-struct minkgame *initminkgame(int width, int height, int rules)
+struct minkgame *mink_initgame(int width, int height, int rules)
 {
   struct minkgame *gp;
 
@@ -146,11 +146,11 @@ struct minkgame *initminkgame(int width, int height, int rules)
   gp->uflog = calloc(gp->logsize, sizeof *gp->uflog);
   assert(gp->uflog != NULL);
 /*  gp->nocaps = 0; */
-  startgame(gp);
+  mink_startgame(gp);
   return gp;
 }
 
-void savegame(FILE *fp, struct minkgame *gp, struct mvinfo *mi, int nmvinfos)
+void mink_savegame(FILE *fp, struct minkgame *gp, struct mvinfo *mi, int nmvinfos)
 {
   int i,j,k,n,p,x,y,max;
   const char *star;
@@ -213,53 +213,53 @@ void savegame(FILE *fp, struct minkgame *gp, struct mvinfo *mi, int nmvinfos)
     fprintf(fp,"\n");
 }
 
-int loadgame(FILE *fp, struct minkgame *gp)	/* return player_to_move if OK */
+int mink_loadgame(FILE *fp, struct minkgame *gp)	/* return player_to_move if OK */
 {
   char color, xx, yy;
 
   while (fscanf(fp, "; %c [ %c %c ] ", &color, &xx, &yy) == 3) {
     if (color != " WB"[LASTCOLOR(gp)]) return 0;
-    if (xx == 'z') sethcap(gp, yy - 'a');
-    else if (xx == 't' && yy == 't') pass(gp);
-    else if (play(gp, point(gp, xx - ('a'-1), gp->height - (yy - 'a')),0) == 0)
+    if (xx == 'z') mink_sethcap(gp, yy - 'a');
+    else if (xx == 't' && yy == 't') mink_pass(gp);
+    else if (mink_play(gp, mink_point(gp, xx - ('a'-1), gp->height - (yy - 'a')),0) == 0)
        return 0;
   }
   return gp->movenr & 1 ? MINK_WHITE: MINK_BLACK ;
 }
 
-int loadpos(FILE *fp, struct minkgame *gp)	/* return player_to_move if OK */
+int mink_loadpos(FILE *fp, struct minkgame *gp)	/* return player_to_move if OK */
 {
   char color, xx, yy;
 
   fscanf(fp, " ( ; Game[1]");
   while (fscanf(fp, " Add%c", &color) == 1) {
     while (fscanf(fp, " [ %c %c ] ", &xx, &yy) == 2) {
-      if (color != " WB"[LASTCOLOR(gp)]) pass(gp);
-      if (play(gp, point(gp, xx - ('a'-1), gp->height - (yy - 'a')),0) == 0)
+      if (color != " WB"[LASTCOLOR(gp)]) mink_pass(gp);
+      if (mink_play(gp, mink_point(gp, xx - ('a'-1), gp->height - (yy - 'a')),0) == 0)
         return 0;
     }
   }
   return gp->movenr & 1 ? MINK_WHITE: MINK_BLACK ;
 }
 
-xulong gethash(struct minkgame *gp)
+xulong mink_gethash(struct minkgame *gp)
 {
   return gp->hash;
 }
 
 #ifdef WANT_MINKKOMI
-void setkomi(struct minkgame *gp, float k)	/* set the komi */
+void mink_setkomi(struct minkgame *gp, float k)	/* set the komi */
 {
   gp->komi = k;
 }
 
-float getkomi(struct minkgame *gp)		/* set the komi */
+float mink_getkomi(struct minkgame *gp)		/* set the komi */
 {
   return gp->komi;
 }
 #endif
 
-int movenum(struct minkgame *gp)	/* return move number (#moves played in game) */
+int mink_movenum(struct minkgame *gp)	/* return move number (#moves played in game) */
 {
   return gp->movenr;
 }
@@ -278,7 +278,7 @@ void setnocaps(struct minkgame *gp, int value)
   gp->nocaps = value;
 }
 */
-int sethcap(struct minkgame *gp, int n)	/* returns 1 if succesful */
+int mink_sethcap(struct minkgame *gp, int n)	/* returns 1 if succesful */
 {
   int i,x,y,max;
   const char *star;
@@ -297,7 +297,7 @@ int sethcap(struct minkgame *gp, int n)	/* returns 1 if succesful */
         star = stars[gp->width]+(2*9-2);
       x = *star++ - 'a' + 1;
       y = *star++ - 'a' + 1;
-      play(gp,point(gp,x,y),0);
+      mink_play(gp,mink_point(gp,x,y),0);
       gp->movenr = 0;
     }
     gp->moves[gp->movenr = 1].point = -1-n;
@@ -417,7 +417,7 @@ static int neighbour(struct minkgame *gp, int p, int c)
   return 0;
 }
 
-int back(struct minkgame *gp)	/* return 1 on succes */
+int mink_back(struct minkgame *gp)	/* return 1 on succes */
 {
   int p,c,i;
   struct minkmove *mv;
@@ -428,7 +428,7 @@ int back(struct minkgame *gp)	/* return 1 on succes */
   mv = &(gp->moves[gp->movenr--]);
   p = mv->point;
   if (p < -1) {
-    startgame(gp);
+    mink_startgame(gp);
     return 1;
   }
   if (p == MINK_PASS)
@@ -453,13 +453,13 @@ int back(struct minkgame *gp)	/* return 1 on succes */
   return 1;
 }
 
-void forward(struct minkgame *gp)
+void mink_forward(struct minkgame *gp)
 {
   int p;
 
   if ((p = gp->moves[gp->movenr+1].point) == MINK_PASS)
     gp->movenr++;
-  else play(gp,p,0);
+  else mink_play(gp,p,0);
 }
 
 static void growmoves(struct minkgame *gp)
@@ -471,7 +471,7 @@ static void growmoves(struct minkgame *gp)
   }
 }
 
-int go_move(struct minkgame *gp, char *s)		/* return point != 0 if s is go_move */
+int mink_is_valid_move(struct minkgame *gp, char *s)		/* return point != 0 if s is go_move */
 {
   char xx;
   int yy;
@@ -486,15 +486,17 @@ int go_move(struct minkgame *gp, char *s)		/* return point != 0 if s is go_move 
   if (xx < 'a' || xx  == 'i') return 0;
   if (xx > 'i') xx--;
   if ((xx -= ('a'-1)) > gp->width || yy < 1 || yy > gp->height) return 0;
-  return point(gp,xx,yy);
+  return mink_point(gp,xx,yy);
 }
 
-int point(struct minkgame *gp, int xx, int yy)	/* convert coords to point */
+	/* convert coords to point */
+int mink_point(struct minkgame *gp, int xx, int yy)
 {
   return yy * VDIFF(gp) + xx;
 }
 
-static int superko(struct minkgame *gp) /* return whether current position repeats older one */
+	/* return whether current position repeats older one */
+static int mink_superko(struct minkgame *gp)
 {
   int *curboard,diff=1,i,j,n;
 
@@ -507,11 +509,11 @@ static int superko(struct minkgame *gp) /* return whether current position repea
       for (j=0; j<ESIZE(gp); j++)
         curboard[j] = gp->board[j];
       n = gp->movenr;
-      do back(gp); while (gp->movenr > i);
+      do mink_back(gp); while (gp->movenr > i);
       for (j=0; j<ESIZE(gp); j++)
         if ((diff = (curboard[j] != gp->board[j])))
           break;
-      do forward(gp); while (gp->movenr < n);
+      do mink_forward(gp); while (gp->movenr < n);
 /* only works if forward doesn't check for superko:( */
       free(curboard);
       if (!diff)
@@ -522,7 +524,7 @@ static int superko(struct minkgame *gp) /* return whether current position repea
   return 0;
 }
 
-int play(struct minkgame *gp, int p, int ko)	/* return whether move is legal */
+int mink_play(struct minkgame *gp, int p, int ko)	/* return whether move is legal */
 {
   int c;
   struct minkmove *mv;
@@ -548,13 +550,13 @@ int play(struct minkgame *gp, int p, int ko)	/* return whether move is legal */
     if ((mv->self = !gp->uf[gp->root])) {	/* suicide */
       capture(gp,p,c); 
       if (gp->rules == RULES_NET) {
-        back(gp);
+        mink_back(gp);
         return 0;				/* forbidden:( */
       }
     }
 /*  } */
-  if (ko && superko(gp)) {
-    back(gp);
+  if (ko && mink_superko(gp)) {
+    mink_back(gp);
     return 0;
   }
   mv->ko = gp->kostat;
@@ -562,7 +564,7 @@ int play(struct minkgame *gp, int p, int ko)	/* return whether move is legal */
   return 1;
 }
 
-int pass(struct minkgame *gp)	/* if pass is i'th consecutive one, return i */
+int mink_pass(struct minkgame *gp)	/* if pass is i'th consecutive one, return i */
 {
   int i;
 
@@ -577,7 +579,7 @@ int pass(struct minkgame *gp)	/* if pass is i'th consecutive one, return i */
 
 /* remove group of color c at p; return whether succesful */
 /* for NET compatibility, allow arbitrary removes for now */
-int removedead(struct minkgame *gp, int p, int c)
+int mink_removedead(struct minkgame *gp, int p, int c)
 {
   if (0 && gp->board[p] != c)
     return 0;
@@ -585,17 +587,17 @@ int removedead(struct minkgame *gp, int p, int c)
 }
 
 
-void replay(struct minkgame *gp)	/* replay game, e.g. to undo all removes */
+void mink_replay(struct minkgame *gp)	/* replay game, e.g. to undo all removes */
 {
   int p,movecnt = gp->movenr;
 
   Logit("replaying to move nr. %d.", movecnt);
-  startgame(gp);
+  mink_startgame(gp);
   if (movecnt && (p = gp->moves[1].point) < -1)
-    sethcap(gp,-1-p);
+    mink_sethcap(gp,-1-p);
   while (gp->movenr < movecnt) {
 /*    Logit("at move %d now.", gp->movenr); */
-    forward(gp);
+    mink_forward(gp);
   }
 }
 
@@ -603,7 +605,7 @@ void replay(struct minkgame *gp)	/* replay game, e.g. to undo all removes */
 #if 0
 static void showpass(struct minkgame *gp)
 {
-  pass(gp);
+  mink_pass(gp);
   printf("%c passes.\n",BOARDCHARS[LASTCOLOR(gp)]);
 }
 #endif
@@ -615,7 +617,7 @@ static char cnv_file2ch(int i)
 }
 
 
-void listmove(struct minkgame *gp, int i, char *buf)	/* list move i in game gp */
+void mink_listmove(struct minkgame *gp, int i, char *buf)	/* list move i in game gp */
 {
   int pt;
 
@@ -629,7 +631,7 @@ void listmove(struct minkgame *gp, int i, char *buf)	/* list move i in game gp *
 }
 
 
-void printboard(struct minkgame *gp, twodstring buf)
+void mink_printboard(struct minkgame *gp, twodstring buf)
 {
   int p,x,y,xpos;
   const char *star;
@@ -642,7 +644,7 @@ void printboard(struct minkgame *gp, twodstring buf)
     sprintf(buf[y],"%2d |", gp->height+1-y);
     for (x=1, xpos=4; ; x++)
     {
-      buf[y][xpos++] = BOARDCHARS[gp->board[point(gp,x,gp->height+1-y)]];
+      buf[y][xpos++] = BOARDCHARS[gp->board[mink_point(gp,x,gp->height+1-y)]];
       if (x == gp->width)
         break;
       buf[y][xpos++] = ' ';
@@ -668,13 +670,13 @@ void printboard(struct minkgame *gp, twodstring buf)
     {
       x = *star++ - 'a' + 1;
       y = *star++ - 'a' + 1;
-      if (gp->board[point(gp,x,y)] == MINK_EMPTY)
+      if (gp->board[mink_point(gp,x,y)] == MINK_EMPTY)
         buf[gp->height+1-y][x*2+2] = BOARDCHARS[8];
     }
   }
 }
 
-int printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
+int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
 {
   int x,y,len, pos;
 
@@ -692,9 +694,9 @@ int printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
   pos = 0;
   for (y=1; y <= gp->height; y++) {
     for (x=1; x <= gp->width ; x++) {
-      if (pos+2 >= buflen) break;
-      /* buff[done++] = BOARDCHARS[gp->board[point(gp,x,gp->height+1-y)]]; */
-      buff[pos++] = BOARDCHARS[gp->board[point(gp,x,y)]];
+      if (pos+2 >= (int)buflen) break;
+      /* buff[done++] = BOARDCHARS[gp->board[mink_point(gp,x,gp->height+1-y)]]; */
+      buff[pos++] = BOARDCHARS[gp->board[mink_point(gp,x,y)]];
     }
     buff[pos++] = '\n';
   }
@@ -702,20 +704,20 @@ int printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
   return pos;
 }
 
-void statusdims(struct minkgame *gp, int *width, int *height)
+void mink_statusdims(struct minkgame *gp, int *width, int *height)
 {
   *width = gp->width;
   *height = gp->height;
 }
 
 /* broken just like IGS protocol; only works for height==width */
-void boardstatus(struct minkgame *gp, twodstring buf)
+void mink_boardstatus(struct minkgame *gp, twodstring buf)
 {
   int x,y;
 
   for (y=0; y<gp->height; y++) {
     for (x=0; x < gp->width; x++)
-      buf[y][x] = "201 3543"[gp->board[point(gp,y+1,gp->height-x)]];
+      buf[y][x] = "201 3543"[gp->board[mink_point(gp,y+1,gp->height-x)]];
     buf[y][x] = '\0';
   }
 }
@@ -742,13 +744,13 @@ static void setowner(struct minkgame *gp, int p, int c)
   }
 }
 
-void getcaps(struct minkgame *gp, int *wh, int *bl)
+void mink_getcaps(struct minkgame *gp, int *wh, int *bl)
 {
   *wh = gp->caps[MINK_WHITE];
   *bl = gp->caps[MINK_BLACK];
 }
 
-void countscore(struct minkgame *gp, twodstring buf, int *wt, int *bt, int *wo, int *bo)
+void mink_countscore(struct minkgame *gp, twodstring buf, int *wt, int *bt, int *wo, int *bo)
 {
   int p,own;
 
@@ -767,7 +769,7 @@ void countscore(struct minkgame *gp, twodstring buf, int *wt, int *bt, int *wo, 
     else if (gp->board[p] == 4+MINK_WHITE)
       (*wt)++;
   }
-  boardstatus(gp, buf);
+  mink_boardstatus(gp, buf);
   for (p=VDIFF(gp)+1; p<ESIZE(gp)-VDIFF(gp); p++)
     if (gp->board[p] >= 4)
       gp->board[p] = MINK_EMPTY;

@@ -101,8 +101,8 @@ void game_ended(int g0, int winner, int why)
   switch (why) {
   case END_DONE:
     completed_games++;
-    getcaps(garray[g0].minkg, &wcaps, &bcaps);
-    countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
+    mink_getcaps(garray[g0].minkg, &wcaps, &bcaps);
+    mink_countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
     if (Debug)
       Logit("k=%.1f wtr=%d, btr=%d, wocc=%d, bocc=%d, wcaps=%d, bcaps=%d",
                  garray[g0].komi, wterr, bterr,  wocc, bocc, wcaps, bcaps);
@@ -462,7 +462,7 @@ void process_move(int p, char *command)
 */
   if (paired(g1) && original
       && parray[p].session.protostate != STAT_SCORING &&
-      ((movenum(garray[g1].minkg) & 3) / 2) != (garray[g1].pairstate == PAIR2)) {
+      ((mink_movenum(garray[g1].minkg) & 3) / 2) != (garray[g1].pairstate == PAIR2)) {
     pcn_out_prompt(p, CODE_ERROR, FORMAT_IT_IS_YOUR_PARTNER_S_MOVE_n);
     return;
   }
@@ -486,9 +486,9 @@ void process_move(int p, char *command)
     player_withdraw_offers(p, -1, PEND_DONE);
     player_withdraw_offers(parray[p].session.opponent, -1, PEND_DONE);
 
-/*    Logit("(Removing) g = %d, move = %d command = %s", g0, go_move(garray[g0].minkg, command), command); */
-    good = removedead(garray[g1].minkg, 
-                      go_move(garray[g1].minkg, command),
+/*    Logit("(Removing) g = %d, move = %d command = %s", g0, mink_is_valid_move(garray[g0].minkg, command), command); */
+    good = mink_removedead(garray[g1].minkg, 
+                      mink_is_valid_move(garray[g1].minkg, command),
                       p == pw ? MINK_WHITE : MINK_BLACK);
   /* We are scoring, and removed a stone */
     if (good) {
@@ -502,7 +502,7 @@ void process_move(int p, char *command)
   else {
     if (!strcmp(command, "pass")) {    /* User passes */
       /* pass is valid */
-      garray[g1].num_pass = pass(garray[g1].minkg); 
+      garray[g1].num_pass = mink_pass(garray[g1].minkg); 
       /* Check if we need to start scoring.... */
       if (garray[g1].teach != 1 && garray[g1].num_pass >= 2) {
         parray[pw].session.protostate = STAT_SCORING;
@@ -511,7 +511,7 @@ void process_move(int p, char *command)
         pcn_out_prompt(pb, CODE_INFO, FORMAT_YOU_CAN_CHECK_YOUR_SCORE_WITH_THE_SCORE_COMMAND_TYPE_DONE_WHEN_FINISHED_n);
       }
     }
-    else if (!play(garray[g1].minkg, go_move(garray[g1].minkg, command),1)) { 
+    else if (!mink_play(garray[g1].minkg, mink_is_valid_move(garray[g1].minkg, command),1)) { 
       pcn_out(p, CODE_ERROR, FORMAT_YOUR_MOVE_IS_NOT_VALID_n);
       pcn_out_prompt(p, CODE_ERROR, FORMAT_ILLEGAL_MOVE_n);
       return;
@@ -539,7 +539,7 @@ void process_move(int p, char *command)
   } 
 
   /* Check to see if we should be saving the game */
-  gmove = movenum(garray[g1].minkg);
+  gmove = mink_movenum(garray[g1].minkg);
   if (gmove) if ((gmove % SAVEFREQ) == 0) game_save(g1);
 
   /* send out the boards to everyone.... */
@@ -943,8 +943,8 @@ int com_status(int p, struct parameter * param)
     return COM_OK;
   }
 
-  getcaps(garray[g1].minkg, &wc, &bc);
-  boardstatus(garray[g1].minkg, statstring);
+  mink_getcaps(garray[g1].minkg, &wc, &bc);
+  mink_boardstatus(garray[g1].minkg, statstring);
 
   pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
 		parray[pw].pname,
@@ -1000,7 +1000,7 @@ int com_undo(int p, struct parameter * param)
 
   pb = garray[g1].black.pnum;
   pw = garray[g1].white.pnum;
-  gmove = movenum(garray[g1].minkg);
+  gmove = mink_movenum(garray[g1].minkg);
 #ifdef WANT_PAIR
   g2 = garray[g1].pairwith;
 
@@ -1009,7 +1009,7 @@ int com_undo(int p, struct parameter * param)
    player to move   B1  W1  B2  W2
 */
 
-  if (paired(g1) && gmove == movenum(garray[g2].minkg)
+  if (paired(g1) && gmove == mink_movenum(garray[g2].minkg)
       && ((gmove&3)/2) != (garray[g1].pairstate==PAIR2)) {
     pcn_out(p, CODE_ERROR, FORMAT_IT_IS_YOUR_PARTNER_S_MOVE_n);
     return COM_OK;
@@ -1020,7 +1020,7 @@ int com_undo(int p, struct parameter * param)
     parray[pw].session.protostate = STAT_PLAYING_GO;
     parray[pb].session.protostate = STAT_PLAYING_GO;
     garray[g1].num_pass = 1;
-    replay(garray[g1].minkg);
+    mink_replay(garray[g1].minkg);
   }
   player_remove_requests(parray[p].session.opponent, p, PEND_DONE);
   
@@ -1030,7 +1030,7 @@ int com_undo(int p, struct parameter * param)
       return COM_OK; 
     }
     if (!garray[g1].teach && x == 0) x = num;
-    listmove(garray[g1].minkg, gmove, buf);
+    mink_listmove(garray[g1].minkg, gmove, buf);
     pcn_out(garray[g1].black.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
@@ -1048,17 +1048,17 @@ int com_undo(int p, struct parameter * param)
             buf + 1);
       }
     }
-    back(garray[g1].minkg);
+    mink_back(garray[g1].minkg);
     garray[g1].lastMovetick = globclock.tick;
     garray[g1].onMove = PLAYER_BLACK+PLAYER_WHITE - garray[g1].onMove;
     send_go_boards(g1, 0);
-    gmove = movenum(garray[g1].minkg);
+    gmove = mink_movenum(garray[g1].minkg);
     if (gmove == 0) {
       garray[g1].minkg->handicap = 0;
     }
   }
 #ifdef WANT_PAIR
-  if (paired(g1) && gmove == movenum(garray[g2].minkg)) {
+  if (paired(g1) && gmove == mink_movenum(garray[g2].minkg)) {
     com_undo(garray[g1].onMove == PLAYER_WHITE
        ? garray[g2].black.pnum : garray[g2].white.pnum,
                  param);
@@ -1095,7 +1095,7 @@ int com_games(int p, struct parameter * param)
           && strncmp(s, parray[pb].login, slen))
       continue;  /* player names did not match */
     count++;
-    mnum = movenum(garray[i].minkg);
+    mnum = mink_movenum(garray[i].minkg);
     pcn_out(p, CODE_CR1|CODE_GAMES, FORMAT_d_s_ss_VS_s_ss_d_d_d_f_d_cc_d_,
             i + 1,
 	    parray[pw].pname,
@@ -1155,7 +1155,7 @@ int com_gomoves(int p, struct parameter * param)
     return COM_OK;
   }
 
-  getcaps(garray[g1].minkg, &wc, &bc);
+  mink_getcaps(garray[g1].minkg, &wc, &bc);
   sprintf(outStr, "Game %d %s: %s (%d %d %d) vs %s (%d %d %d)",
         g1 + 1, "I",
         parray[pw].pname, bc,
@@ -1164,14 +1164,14 @@ int com_gomoves(int p, struct parameter * param)
         parray[pb].pname, wc,
         TICS2SECS(garray[g1].black.ticksleft), garray[g1].black.byostones);
 
-  count = movenum(garray[g1].minkg);
+  count = mink_movenum(garray[g1].minkg);
   if (count == 0) {
     pcn_out_prompt(p, CODE_MOVE, FORMAT_sn, outStr);  
     return COM_OKN;
   }
   pcn_out(p, CODE_MOVE, FORMAT_sn, outStr);  
   for(ii = 0; ii < count; ii++) {
-    listmove(garray[g1].minkg, ii + 1, buf);
+    mink_listmove(garray[g1].minkg, ii + 1, buf);
     pcn_out(p, CODE_MOVE, FORMAT_d_c_sn, ii, buf[0], buf + 1);
   }
   return COM_OKN;
@@ -1204,10 +1204,10 @@ static int do_observe(int p, int obgame)
                   obgame + 1);
       g1 = obgame;
       sprintf(buf, " %s started observation.", parray[p].pname);
-      add_kib(&garray[g1], movenum(garray[g1].minkg), buf);
+      add_kib(&garray[g1], mink_movenum(garray[g1].minkg), buf);
       if (parray[p].flags.is_client) {
-        getcaps(garray[g1].minkg, &wc, &bc);
-        gmove = movenum(garray[obgame].minkg);
+        mink_getcaps(garray[g1].minkg, &wc, &bc);
+        gmove = mink_movenum(garray[obgame].minkg);
         pcn_out(p, CODE_MOVE, FORMAT_GAME_d_s_s_d_d_d_VS_s_d_d_d_n,
                     g1 + 1, "I",
                     parray[pw].pname, bc,
@@ -1218,7 +1218,7 @@ static int do_observe(int p, int obgame)
                     garray[g1].black.byostones);
 
         if (gmove) {
-          listmove(garray[g1].minkg, gmove, buf);
+          mink_listmove(garray[g1].minkg, gmove, buf);
           pcn_out(p, CODE_MOVE, FORMAT_d_c_s, 
                       gmove - 1, buf[0], buf + 1);
         }
@@ -1310,7 +1310,8 @@ int com_pair(int p, struct parameter * param)
     return COM_OK;
   }
 
-  gmove = movenum(garray[ourgame].minkg) - movenum(garray[theirgame].minkg);
+  gmove = mink_movenum(garray[ourgame].minkg) 
+	- mink_movenum(garray[theirgame].minkg);
   if (gmove != 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_MUST_PAIR_BEFORE_YOUR_FIRST_MOVE_OR_AT_EQUAL_MOVES_IN_A_MATCH);
     return COM_OK;
@@ -1631,7 +1632,7 @@ int com_load(int p, struct parameter * param)
     if (!parray[px].flags.want_gshouts) continue;
     pcn_out_prompt(px, CODE_SHOUT, FORMAT_GAME_d_s_VS_s_MOVE_d_n, 
                    g0+1, parray[pw].pname, parray[pb].pname, 
-                   movenum(garray[g0].minkg));
+                   mink_movenum(garray[g0].minkg));
   } 
   parray[pw].session.gnum = g0;
   parray[pw].session.opponent = pb;
@@ -1907,7 +1908,7 @@ int com_free(int p, struct parameter * param)
     return COM_OK;
   }
 
-  gmove = movenum(garray[g1].minkg);
+  gmove = mink_movenum(garray[g1].minkg);
   if (gmove > 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_VALID_AS_YOUR_FIRST_MOVE_);
     return COM_OK;
@@ -1938,7 +1939,7 @@ int com_unfree(int p, struct parameter * param)
     return COM_OK;
   }
 
-  gmove = movenum(garray[g1].minkg);
+  gmove = mink_movenum(garray[g1].minkg);
   if (gmove > 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_VALID_AS_YOUR_FIRST_MOVE_);
     return COM_OK;
@@ -1965,7 +1966,7 @@ int com_nocaps(int p, struct parameter * param)
     return COM_OK;
   }
 
-  gmove = movenum(garray[g1].minkg);
+  gmove = mink_movenum(garray[g1].minkg);
   if (gmove > 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_VALID_AS_YOUR_FIRST_MOVE);
     return COM_OK;
@@ -1978,13 +1979,13 @@ int com_nocaps(int p, struct parameter * param)
     return COM_OK;
   }
   
-  test = sethcap(garray[g1].minkg, handicap);
-  gmove = movenum(garray[g1].minkg);
+  test = mink_sethcap(garray[g1].minkg, handicap);
+  gmove = mink_movenum(garray[g1].minkg);
 
   garray[g1].onMove = PLAYER_WHITE;
   send_go_boards(g1, 0);
 #ifdef WANT_PAIR
-  if (paired(g1) && !movenum(garray[garray[g1].pairwith].minkg)) {
+  if (paired(g1) && !mink_movenum(garray[garray[g1].pairwith].minkg)) {
     com_handicap(garray[garray[g1].pairwith].black.pnum, param);
     Logit("DUPLICATING handicap");
   }
@@ -2020,7 +2021,7 @@ int com_handicap(int p, struct parameter * param)
   }
   g0 = parray[p].session.gnum;
 
-  gmove = movenum(garray[g0].minkg);
+  gmove = mink_movenum(garray[g0].minkg);
   if (gmove > 0) return COM_OK;
   
   if (handicap > 9) {
@@ -2033,13 +2034,13 @@ int com_handicap(int p, struct parameter * param)
     return COM_OK;
   }
   
-  test = sethcap(garray[g0].minkg, handicap);
-  gmove = movenum(garray[g0].minkg);
+  test = mink_sethcap(garray[g0].minkg, handicap);
+  gmove = mink_movenum(garray[g0].minkg);
 
   garray[g0].onMove = PLAYER_WHITE;
   send_go_boards(g0, 0);
 #ifdef WANT_PAIR
-  if (paired(g0) && !movenum(garray[garray[g0].pairwith].minkg)) {
+  if (paired(g0) && !mink_movenum(garray[garray[g0].pairwith].minkg)) {
     com_handicap(garray[garray[g0].pairwith].black.pnum, param);
     Logit("DUPLICATING handicap");
   }
@@ -2190,7 +2191,7 @@ void game_update_time(int g0)
 
   /* Courtesy to allow hcap setup, etc.... */
 #if WANT_HANDICAP_COURTESY
-  if (movenum(garray[g0].minkg < 2) {
+  if (mink_movenum(garray[g0].minkg < 2) {
     garray[g0].lastDectick = garray[g0].lastMovetick = now;
     return;
     }
@@ -2467,8 +2468,8 @@ int com_look(int p, struct parameter * param)
   }
   if (parray[p].i_verbose) send_go_board_to(g0, p);
   else {
-    getcaps(garray[g0].minkg, &wc, &bc);
-    boardstatus(garray[g0].minkg, statstring);
+    mink_getcaps(garray[g0].minkg, &wc, &bc);
+    mink_boardstatus(garray[g0].minkg, statstring);
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[pw].pname,
                 parray[pw].srank,
@@ -2525,19 +2526,19 @@ int com_problem(int p, struct parameter * param)
   }
   g0 = game_new(GAMETYPE_GO,19);
   garray[g0].size = 19;
-  garray[g0].minkg = initminkgame(19,19, RULES_NET);
+  garray[g0].minkg = mink_initgame(19,19, RULES_NET);
   garray[g0].white.ticksleft = SECS2TICS(600);
   garray[g0].black.ticksleft = SECS2TICS(600);
   garray[g0].gtitle = mystrdup("Black to play");
   garray[g0].white.pnum = p;
   garray[g0].black.pnum = p;
-  loadpos(fp, garray[g0].minkg);
+  mink_loadpos(fp, garray[g0].minkg);
   fclose(fp);
 
   if (parray[p].i_verbose) send_go_board_to(g0, p);
   else {
-    getcaps(garray[g0].minkg, &wc, &bc);
-    boardstatus(garray[g0].minkg, statstring);
+    mink_getcaps(garray[g0].minkg, &wc, &bc);
+    mink_boardstatus(garray[g0].minkg, statstring);
     pcn_out(p, CODE_STATUS, FORMAT_s_ss_d_d_d_T_f_dn,
                 parray[p].pname,
                 parray[p].srank,

@@ -7,23 +7,23 @@
 */
 
 /* Creates a censored list. */
-extern struct censor * censor_init(void);
+struct censor * censor_init(void);
 
 /* Returns the number of censored in list. */
-extern size_t censor_count(struct censor *p);
+size_t censor_count(struct censor *p);
 
 /* Returns a pointer to the censored 'c' if found, NULL otherwise. */
-extern char *censor_lookup(const char *c, struct censor *p);
+char *censor_lookup(const char *c, struct censor *p);
 
 /* Adds the censored 'c'. Returns 1 if it replaced an old entry,
 ** or 0 if it was a new entry.
 */
-extern int censor_add(const char *c, struct censor *p);
+int censor_add(const char *c, struct censor *p);
 
 /* Removes censored 'c' from list. Returns 1 if it was there,
 ** or 0 if it wasn't found.
 */
-extern int censor_rem(const char *c, struct censor *p);
+int censor_rem(const char *c, struct censor *p);
 
 /* Initiates an iteration through the list.
 ** A typical iteration (through the list 'cl') looks like this:
@@ -36,19 +36,19 @@ extern int censor_rem(const char *c, struct censor *p);
 **     do_something_with(c);
 ** }
 */
-extern void censor_start(struct censor *p);
+void censor_start(struct censor *p);
 
 /* Gives the next censored in turn.
 ** Returns 1 if there was one, 0 if we reached the end.
 */
-extern int censor_next(char **cp, struct censor *p);
+int censor_next(char **cp, struct censor *p);
 
 /* Clear the list
  */
-extern void censor_clear(struct censor *p);
+void censor_clear(struct censor *p);
 
 /* Destroy the list
 */
-extern void censor_free(struct censor *p);
+void censor_free(struct censor *p);
 
 #endif /* censor_h */

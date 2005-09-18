@@ -72,102 +72,102 @@
 #define IFNULL0(a,b) ((a)&&(a)[0]) ? (a) : (b)
 
 
-extern int iswhitespace(int);
-extern char *getword(char *);
+int iswhitespace(int);
+char *getword(char *);
 /* Returns a pointer to the first whitespace in the argument */
-extern char *eatword(char *);
+char *eatword(char *);
 /* Returns a pointer to the first non-whitespace char in the argument */
-extern char *eatwhite(char *);
+char *eatwhite(char *);
 /* Returns the next word in a given string >eatwhite(eatword(foo))< */
-extern char *nextword(char *);
+char *nextword(char *);
 
-extern int mail_pst(int, const char *, char *);
-extern int mail_psn(int, const char *, const char *);
-extern int mail_asn(const char *, const char *, const char *);
-extern int mail_ast(const char *, const char *, const char *);
-extern int pcommand(int, const char *, ...);
-extern int pprintf(int, const char *, ...);
-extern int cpprintf(int, int, const char *, ...);
-extern int pprintf2(int, int, const char *);
-extern int Logit(const char *, ...);
-extern int pprintf_prompt(int, const char *, ...);
-extern int cpprintf_prompt(int, int, const char *, ...);
-extern int my_vsnprintf(char *, size_t, const char *, va_list);
-extern int my_snprintf(char *, size_t, const char *, ...);
+int mail_pst(int, const char *, char *);
+int mail_psn(int, const char *, const char *);
+int mail_asn(const char *, const char *, const char *);
+int mail_ast(const char *, const char *, const char *);
+int pcommand(int, const char *, ...);
+int pprintf(int, const char *, ...);
+int cpprintf(int, int, const char *, ...);
+int pprintf2(int, int, const char *);
+int Logit(const char *, ...);
+int pprintf_prompt(int, const char *, ...);
+int cpprintf_prompt(int, int, const char *, ...);
+int my_vsnprintf(char *, size_t, const char *, va_list);
+int my_snprintf(char *, size_t, const char *, ...);
 #if (!HAVE_VSNPRINTF)
 #define vsnprintf my_vsnprintf
 #endif
 #if (!HAVE_SNPRINTF)
 #define snprintf my_snprintf
 #endif
-extern int psend_raw_file(int, const char *, const char *);
-extern int psend_file(int, const char *, const char *);
-extern int pxysend_raw_file(int, int, ...);
-extern int pxysend_file(int p, int num, ...);
-extern int pmore_file(int);
-/* extern int psend_command(int, const char *, char *); */
-extern int xpsend_command(int, const char *, char *, int num, ...);
+int psend_raw_file(int, const char *, const char *);
+int psend_file(int, const char *, const char *);
+int pxysend_raw_file(int, int, ...);
+int pxysend_file(int p, int num, ...);
+int pmore_file(int);
+/* int psend_command(int, const char *, char *); */
+int xpsend_command(int, const char *, char *, int num, ...);
 
-extern char *stolower(char *);
-extern char *stoupper(char *);
+char *stolower(char *);
+char *stoupper(char *);
 
-extern int safechar(int);
-extern int safestring(const char *);
-extern int safefilename(const char *path);
-extern int invalid_pname(const char *);
-extern int printablestring(const char *);
-extern char *mystrdup(const char *);
-extern char * mycrypt(const char *passwd, const char * salt);
+int safechar(int);
+int safestring(const char *);
+int safefilename(const char *path);
+int invalid_pname(const char *);
+int printablestring(const char *);
+char *mystrdup(const char *);
+char * mycrypt(const char *passwd, const char * salt);
 
-extern char *hms(int, int, int, int);
-extern char *newhms(int);
-extern char *strhms(int);
+char *hms(int, int, int, int);
+char *newhms(int);
+char *strhms(int);
 
-extern char *DTdate(const struct tm *);
-extern char *strDTtime(const time_t *);
-extern char *ResultsDate(char *);
-extern char *strltime(const time_t *);
-extern char *strgtime(const time_t *);
-extern char *strtime_file(const time_t *);
+char *DTdate(const struct tm *);
+char *strDTtime(const time_t *);
+char *ResultsDate(char *);
+char *strltime(const time_t *);
+char *strgtime(const time_t *);
+char *strtime_file(const time_t *);
 
-/* extern unsigned read_tick(void); */
-extern char *tenth_str(unsigned int, int);
-extern int untenths(unsigned int);
-extern int do_copy(char *, const char *, int);
+/* unsigned read_tick(void); */
+char *tenth_str(unsigned int, int);
+int untenths(unsigned int);
+int do_copy(char *, const char *, int);
 
-extern int truncate_file(char *, int);
+int truncate_file(char *, int);
 
-extern int file_has_pname(const char *, const char*);
-extern const char *file_wplayer(const char *);
-extern const char *file_bplayer(const char *);
+int file_has_pname(const char *, const char*);
+const char *file_wplayer(const char *);
+const char *file_bplayer(const char *);
 
-extern int xyfilename(char *dst, int num, ...);
-extern FILE * xfopen(const char *,const char *);
-extern FILE * xyfopen(int num, const char *, ...);
-extern FILE * pxyfopen(int p, int num, const char *, ...);
-extern int xyrename(int num1, int num2, ...);
-extern int xylines_file(int num, ...);
-extern int xylink(int num, ...);
-extern int xyunlink(int num, ...);
-extern int xystat(struct stat * sb, int num, ...);
-extern int xytouch(int num, ...);
-extern DIR * xyopendir(int num, ...);
-extern char * filename(void);
-extern int pcn_out(int, int, int, ...);
-extern int pcn_out_prompt(int p, int code, int num, ...);
+int xyfilename(char *dst, int num, ...);
+FILE * xfopen(const char *,const char *);
+FILE * xyfopen(int num, const char *, ...);
+FILE * pxyfopen(int p, int num, const char *, ...);
+int xyrename(int num1, int num2, ...);
+int xylines_file(int num, ...);
+int xylink(int num, ...);
+int xyunlink(int num, ...);
+int xystat(struct stat * sb, int num, ...);
+int xytouch(int num, ...);
+DIR * xyopendir(int num, ...);
+char * filename(void);
+int pcn_out(int, int, int, ...);
+int pcn_out_prompt(int p, int code, int num, ...);
 
-extern char *dotQuad(unsigned int);
+char *dotQuad(unsigned int);
 int asc2ipaddr(char *str, unsigned *add);
 
-extern int available_space(void);
-extern int file_exists(char *);
+int available_space(void);
+int file_exists(char *);
 
-extern int search_directory(char *, int, char *, int, ...);
-extern int display_directory(int, const char *, int);
-extern const char *SendCode(int, int);
-extern char *KillTrailWhiteSpace(char *str);
-extern char *strlwr(char *psz);
-extern void bldsearchdata(char *psz);
+int search_directory(char *, int, char *, int, ...);
+int display_directory(int, const char *, int);
+const char *SendCode(int, int);
+char *KillTrailWhiteSpace(char *str);
+char *strlwr(char *psz);
+void bldsearchdata(char *psz);
 
 int parse_rank(int num, int ch);
 

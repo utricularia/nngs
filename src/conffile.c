@@ -59,13 +59,17 @@
 #ifndef IFNULL
 #define IFNULL(_p,_d) (_p)?(_p):(_d)
 #endif
+	/* This is the mapping between names and variables.
+	** The ->ptr points to the actual storage,
+	** for ints, this is an (int*), for strings it is a (char **)
+	** dflt is a STRING, containing the default value.
+	*/
 struct confmatch {
 	int type;
 	const char *name;
 	void *ptr;
 	const char *dflt;
 	};
-#define NUL2 NULL,NULL
 /* Behaviour of configuration items is differs:
 ** Zombie is not read from file, even if present, so always is filled with the initial value
 ** CHPATH is read from file, default wil be applied, and chroot will thim it.
@@ -76,7 +80,8 @@ struct confmatch {
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
 #define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
-#define MESSAGE(_m) {'m', (_m),NUL2},
+#define INTEGER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
+#define MESSAGE(_m) {'m', (_m),NULL, NULL},
 
 static struct confmatch confmatchs[] = {
 ZOMBIE("version_string", &conffile.version_string, VERSION)
@@ -150,6 +155,7 @@ MESSAGE(" smtp_reply_to := what we put in the Reply-to: header (reply address)."
 MESSAGE("")
 NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
 NAME("smtp_mta", &conffile.smtp_mta, "localhost")
+INTEGER("smtp_portnum", &conffile.smtp_portnum, "25")
 NAME("smtp_helo", &conffile.smtp_helo, "localhost")
 NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
 NAME("smtp_reply_to", &conffile.smtp_reply_to, SERVER_EMAIL)
@@ -158,6 +164,7 @@ MESSAGE("")
 MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
 MESSAGE("")
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
+BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
 MESSAGE("")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
 #undef NUL2
@@ -214,54 +221,6 @@ while (fgets(buff, sizeof buff, fp) ) {
 fclose (fp);
 
 config_fill_defaults();
-if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
-if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
-
-if (conffile.chroot_user && !pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
-else { uid = pp->pw_uid; gid = pp->pw_gid; }
-if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
-else gid = gp->gr_gid;
-
-if (conffile.chroot_dir) {
-	(void) gethostbyname("localhost") ;
-	rc = chdir(conffile.chroot_dir);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
-		, conffile.chroot_dir, rc, strerror(rc) );
-		}
-	rc = chroot(conffile.chroot_dir);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed chroot(%s): %d (%s)\n"
-		, conffile.chroot_dir, rc, strerror(rc) );
-		}
-	if (rc) return rc;
-	}
-
-if (gid) rc = setgid(gid);
-if (rc==-1) { rc=errno;
-	fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
-	, gid, conffile.chroot_group, rc, strerror(rc) );
-	}
-if (uid) rc = setuid(uid);
-if (rc==-1) { rc=errno;
-	fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
-	, uid, conffile.chroot_user, rc, strerror(rc) );
-	}
-#if 1
-if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
-if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
-#endif
-
-if (uid && (euid = geteuid()) !=uid) {
-	fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
-	, uid, conffile.chroot_user, euid );
-	main_exit(1);
-	}
-
-if (conffile.chroot_dir) {
-	conf_file_fixup();
-	}
-conf_file_write("written.cnf");
 return 0;
 }
 
@@ -298,6 +257,8 @@ for (mp = confmatchs; mp->type; mp++) {
 	case 'p': fprintf(fp, "%s=%s\n"
 		, mp->name, IFNULL(*(char**)mp->ptr,"") );
 		break;
+	case 'i': fprintf(fp, "%s=%d\n", mp->name, (int) *((int*)mp->ptr) );
+		break;
 	case 'b': fprintf(fp, "%s=%s\n"
 		, mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
 		break;
@@ -318,6 +279,8 @@ struct confmatch *mp;
 
 for (mp = confmatchs; mp->type; mp++) {
 	switch (mp->type) {
+	case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+		break;
 	case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
 		break;
 	case 'Z':
@@ -351,6 +314,7 @@ for (mp = confmatchs; mp->type; mp++) {
 	case 'P':
 	case 'm':
 	case 'b':
+	case 'i':
 	default: continue;
 		}
 	}
@@ -382,6 +346,10 @@ case 'p':
 case 'P':
 	if (*(char**)(mp->ptr)) free (*(char**)(mp->ptr));
 	*(char**)(mp->ptr) = (value) ? mystrdup(value): NULL;
+	break;
+case 'i':
+	if (!value || !*value) value = "0";
+	sscanf(value, "%d", (int*)(mp->ptr) );
 	break;
 case 'b':
 	if (!value || !*value) value = "F";

@@ -68,41 +68,34 @@ struct minkgame {
 } ;
 
 /* public functions */
-extern void initmink(void);
-extern struct minkgame *initminkgame(int, int, int);	/* initialize game record */
-extern void savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos);
-extern int loadgame(FILE *fp, struct minkgame *g);	/* returns player_to_move if OK */
-extern void freeminkgame(struct minkgame *g);	/* frees up game record */
-extern int sethcap(struct minkgame *g, int n);     /* returns 1 if succesful */
-extern void setnocaps(struct minkgame *g, int val);     /* returns 1 if succesful */
-extern xulong gethash(struct minkgame *g); /* get a hashcode for current board */
+void mink_init(void);
+struct minkgame *mink_initgame(int, int, int);	/* initialize game record */
+void mink_savegame(FILE *fp, struct minkgame *g, struct mvinfo *mi, int nmvinfos);
+int mink_loadgame(FILE *fp, struct minkgame *g);	/* returns player_to_move if OK */
+void freeminkgame(struct minkgame *g);	/* frees up game record */
+int mink_sethcap(struct minkgame *g, int n);     /* returns 1 if succesful */
+void mink_setnocaps(struct minkgame *g, int val);     /* returns 1 if succesful */
+xulong mink_gethash(struct minkgame *g); /* get a hashcode for current board */
 #ifdef WANT_MINKKOMI
-extern void setkomi(struct minkgame *g, float k);      /* set the komi */
-extern float getkomi(struct minkgame *g);              /* get the komi */
+void mink_setkomi(struct minkgame *g, float k);      /* set the komi */
+float mink_getkomi(struct minkgame *g);              /* get the komi */
 #endif
-extern int movenum(struct minkgame *g);    /* return move number (#moves played in game) */
-extern int back(struct minkgame *g);	        /* take back last move */
-extern void forward(struct minkgame *g);	/* move forward one move */
-extern int go_move(struct minkgame *g, char *s);   /* return point != 0 if s is go_move */
-extern void listmove(struct minkgame *g, int i, char *buf);  /* list move i in game g */
-extern int point(struct minkgame *g, int x, int y);	/* convert coords to point */
-extern int play(struct minkgame *g, int p, int ko);	/* play at position p */
-extern int removedead(struct minkgame *g, int p, int c);
-extern void replay(struct minkgame *g);   /* replay game so as to undo all removes */
-extern int pass(struct minkgame *g);   /* if pass is i'th consecutive one, return i */
-extern void printboard(struct minkgame *g, twodstring buf); /* print ascii representation of go board */
-int printboard_raw(char * buff, size_t buflen, struct minkgame *g); /* idem, unformatted */
-extern void statusdims(struct minkgame *g, int *width, int *height);
-extern void boardstatus(struct minkgame *g, twodstring buf);
-extern void countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, int *bo);	/* count w/b territory and w/b occupied */
-extern void getcaps(struct minkgame *g, int *wh, int *bl); /* #w/b stones captured */
-extern int loadpos(FILE *, struct minkgame *);
-
-/* private functions */
-#ifdef MINK_C
-static char cnv_file2ch(int i);	/* convert file number 0-18 to character */
-static void ufmark(struct minkgame *g);/* put a move-marker on union-find log */
-#endif /* MINK_C */
-/* none of yer business:) */
+int mink_movenum(struct minkgame *g);    /* return move number (#moves played in game) */
+int mink_back(struct minkgame *g);	        /* take back last move */
+void mink_forward(struct minkgame *g);	/* move forward one move */
+int mink_is_valid_move(struct minkgame *g, char *s);   /* return point != 0 if s is go_move */
+void mink_listmove(struct minkgame *g, int i, char *buf);  /* list move i in game g */
+int mink_point(struct minkgame *g, int x, int y);	/* convert coords to point */
+int mink_play(struct minkgame *g, int p, int ko);	/* play at position p */
+int mink_removedead(struct minkgame *g, int p, int c);
+void mink_replay(struct minkgame *g);   /* replay game so as to undo all removes */
+int mink_pass(struct minkgame *g);   /* if pass is i'th consecutive one, return i */
+void mink_printboard(struct minkgame *g, twodstring buf); /* print ascii representation of go board */
+int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *g); /* idem, unformatted */
+void mink_statusdims(struct minkgame *g, int *width, int *height);
+void mink_boardstatus(struct minkgame *g, twodstring buf);
+void mink_countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, int *bo);	/* count w/b territory and w/b occupied */
+void mink_getcaps(struct minkgame *g, int *wh, int *bl); /* #w/b stones captured */
+int mink_loadpos(FILE *, struct minkgame *);
 
 #endif /* MINK_H */

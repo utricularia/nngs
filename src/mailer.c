@@ -226,7 +226,7 @@ body:
     rc =  smtp_mail(fp, to, subj);
     Logit("Smtp_mail(to=%s,Subj=%s) returned %d", to, subj, rc);
   }
-  /* if (rc >= 0) unlink(spool); */
+  if (rc >= 0) unlink(spool);
   fclose(fp);
 
   if (to) free(to);
@@ -254,8 +254,8 @@ body:
 #include <netdb.h>
 
 
-static int pars_addr(struct sockaddr_in *dst, char * name);
-static int smtp_open(char *mtaname, char *myname);
+static int pars_addr(struct sockaddr_in *dst, char * name, int port);
+static int smtp_open(char *mtaname, int port, char *myname);
 static int set_envelope(int fd, char *from, char *rcpt);
 static int add_header(int fd, char *name, char *value);
 static int set_data(int fd);
@@ -266,7 +266,7 @@ static int wrap_read(int fd, char *buff, int len);
 static int wrap_write(int fd, char *buff, int len);
 static int wrap_line(int fd, char *buff, int len);
 /* ---------------------------------------------------- */
-static int smtp_open(char *mta, char *myname)
+static int smtp_open(char *mta, int port, char *myname)
 {
 int fd = -1 , rc;
 struct sockaddr_in addr;
@@ -274,12 +274,12 @@ char buff[1024];
 
 if (!mta) mta = "localhost";
 if (!myname) myname = "localhost";
-	/* get host && port number to connect to.
+	/* get host to connect to.
 	** If this fails, we have nothing to do
 	*/
 
 smtp_err = 0;
-rc = pars_addr(&addr , mta);
+rc = pars_addr(&addr , mta, port);
 if (rc<0) { goto quit; }
 
 fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -528,7 +528,7 @@ fprintf(stderr, "  [Write(%d) := %d	\"%s\"]\n", fd, rc, buff);
 return rc;
 }
 /* -------------------------------------------------- */
-static int pars_addr(struct sockaddr_in *dst, char * name)
+static int pars_addr(struct sockaddr_in *dst, char * name, int port)
 {
 struct hostent *hp;
 unsigned char * cp;
@@ -536,7 +536,7 @@ unsigned char * cp;
 memset((char *)dst, 0, sizeof *dst);
 
 dst->sin_family = AF_INET;
-dst->sin_port = htons(WANTED_SMTP_PORT);
+dst->sin_port = htons(port);
 
 if (!name) name = "localhost";
 if (!strcmp(name , "localhost")) { /* this is ugly ... */
@@ -583,7 +583,8 @@ int main()
 int rc, fd;
 char buffie[512] ;
 
-fd = smtp_open(NULL, NULL);
+fd = smtp_open(NULL, WANTED_SMTP_PORT, NULL);
+
 if (fd < 0) goto kut;
 
 set_envelope(fd, "nngs@localhost", "nngs@localhost");
@@ -627,7 +628,7 @@ static int smtp_mail(FILE *fp, char *to, char *subj)
 int rc, fd;
 char buffie[1024] ;
 
-fd = smtp_open(conffile.smtp_mta, conffile.smtp_helo);
+fd = smtp_open(conffile.smtp_mta, conffile.smtp_portnum, conffile.smtp_helo);
 if (fd < 0) { return child_perror("Smtp_open"); }
 
 rc = set_envelope(fd, conffile.smtp_from, to);

@@ -68,17 +68,17 @@ extern int net_fd_count;
  *   incoming connections.
  * It returns 0 for success, -1 for error.
  */
-extern int  net_init(int portnum);
+int  net_init(int portnum);
 
 /*
  */
-extern void  net_select(int timeout);
+void  net_select(int timeout);
 
 /*
  * net_send sends the data in question out the file descriptor.  net_sendStr
  *   is a macro that sends a null-terminated ascii string.
  */
-extern int  net_send(int, const char *, int);
+int  net_send(int, const char *, int);
 #define  net_sendStr(fd, str)  \
   do  {  \
     const char  *net_strOut = (str);  \
@@ -88,15 +88,15 @@ extern int  net_send(int, const char *, int);
 /*
  * net_close  { flush fd; close it; cleanup netslot }
  */
-extern void  net_close(int);
+void  net_close(int);
 /*
  * net_closeAll will flush and close all fds.
  */
-extern void  net_closeAll(void);
+void  net_closeAll(void);
 
-extern int  net_connectedHost(int);
-extern void  net_echoOn(int);
-extern void  net_echoOff(int);
+int  net_connectedHost(int);
+void  net_echoOn(int);
+void  net_echoOff(int);
 /*
  * net_isalive() returns 1 if fd refers to an (active) client fd
  * , 0 otherwise

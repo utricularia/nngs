@@ -55,12 +55,12 @@ struct channel {
 	int *members;
 	} ;
 
-extern struct channel carray[MAX_OCHANNELS];
+struct channel carray[MAX_OCHANNELS];
 
-extern void channel_init(void);
-extern int on_channel(int, int);
-extern int channel_remove(int, int);
-extern int channel_add(int, int);
-extern int add_to_yell_stack(int, char *);
+void channel_init(void);
+int on_channel(int, int);
+int channel_remove(int, int);
+int channel_add(int, int);
+int add_to_yell_stack(int, char *);
 
 #endif /* CHANNEL_H */

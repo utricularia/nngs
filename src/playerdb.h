@@ -225,77 +225,77 @@ struct player_ {
 extern struct player_ parray[PARRAY_SIZE];
 extern int parray_top;
 
-extern void player_init(void);
-extern void player_array_init(void);
+void player_init(void);
+void player_array_init(void);
 
 char * player_dumpslot(int p);
 
-extern void player_unfix(int);
-extern void player_fix(int);
-extern int player_fetch(const char *);
-extern void player_dirty(int);
+void player_unfix(int);
+void player_fix(int);
+int player_fetch(const char *);
+void player_dirty(int);
 
-extern int player_new(void);
-extern int player_delete(int);
-extern int player_remove(int);
+int player_new(void);
+int player_delete(int);
+int player_remove(int);
 
-extern void player_clear(int);
-extern void player_disconnect(int p);
+void player_clear(int);
+void player_disconnect(int p);
 
-extern int player_markdeleted(int);
-extern int player_read(int);
-extern void player_save(int);
+int player_markdeleted(int);
+int player_read(int);
+void player_save(int);
 
-extern int player_find_fd(int);
-extern int player_find_login(const char *);
-extern int player_find_part_login(const char *);
-extern int player_find_sloppy(const char *);
+int player_find_fd(int);
+int player_find_login(const char *);
+int player_find_part_login(const char *);
+int player_find_sloppy(const char *);
 
-extern int player_censored(int, int);
-extern int check_censored(int, const char *);
-extern int player_notified(int, int);
-extern int player_notified_departure(int);
-extern int player_notify_present (int);
-extern int player_notify(int, char *, char *);
+int player_censored(int, int);
+int check_censored(int, const char *);
+int player_notified(int, int);
+int player_notified_departure(int);
+int player_notify_present (int);
+int player_notify(int, char *, char *);
 
-extern int player_count(void);
-extern int player_idle(int);
-extern int player_ontime(int);
+int player_count(void);
+int player_idle(int);
+int player_ontime(int);
 
-extern void player_write_loginout(int, int);
-extern time_t player_lastconnect(int);
-extern int player_lastdisconnect(int);
+void player_write_loginout(int, int);
+time_t player_lastconnect(int);
+int player_lastdisconnect(int);
 
-extern int player_cmp(int, int, int);
-extern void player_resort(void);
+int player_cmp(int, int, int);
+void player_resort(void);
 
-extern void player_pend_print(int, struct pending *);
+void player_pend_print(int, struct pending *);
 
 struct pending * player_pending_new(int from, int to, int type);
 void player_pending_delete(struct pending *ptr);
 
-extern int player_add_request(int, int, int, int);
-extern int player_remove_requests(int, int, int);
+int player_add_request(int, int, int, int);
+int player_remove_requests(int, int, int);
 
-extern int player_decline_offers(int, int, int);
-extern int player_withdraw_offers(int, int, int);
+int player_decline_offers(int, int, int);
+int player_withdraw_offers(int, int, int);
 
-extern int player_is_observe(int, int);
-extern int player_add_observe(int, int);
-extern int player_remove_observe(int, int);
-extern int player_game_ended(int);
+int player_is_observe(int, int);
+int player_add_observe(int, int);
+int player_remove_observe(int, int);
+int player_game_ended(int);
 
-extern int player_num_messages(int);
-extern int player_add_message(int, int, char *);
-extern int player_show_messages(int);
-extern int player_clear_messages(int);
+int player_num_messages(int);
+int player_add_message(int, int, char *);
+int player_show_messages(int);
+int player_clear_messages(int);
 
 extern int sort_alpha[];
 extern int sort_ladder9[];
 extern int sort_ladder19[];
 
-extern int player_kill(char *);
-extern int player_rename(char *, char *);
-extern int player_raise(char *);
+int player_kill(char *);
+int player_rename(char *, char *);
+int player_raise(char *);
 
 #endif /* PLAYERDB_H */

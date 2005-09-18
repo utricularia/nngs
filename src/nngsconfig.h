@@ -97,15 +97,15 @@
 
 /* May need this, like on SGI, for instance. */
 #ifdef SGI
-extern int   strcasecmp(const char *, const char *);
-extern int   strncasecmp(const char *, const char *, size_t);
-extern FILE *popen(const char *, const char *);
-extern int   pclose(FILE *);
-extern int gettimeofday(struct timeval *tp,...);
+int   strcasecmp(const char *, const char *);
+int   strncasecmp(const char *, const char *, size_t);
+FILE *popen(const char *, const char *);
+int   pclose(FILE *);
+int gettimeofday(struct timeval *tp,...);
 
  /* This should be in stdio.h */
 #ifdef HUH
-extern int      fileno(FILE *);
+int      fileno(FILE *);
 #endif
 
 #endif /* SGI */

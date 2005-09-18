@@ -711,6 +711,7 @@ int xpsend_command(int p, const char *command, char *input, int num, ...)
   if (input) fp = popen(&cmdline[0], "w");
   else fp = popen(&cmdline[0], "r");
   if (!fp) {
+    Logit("popen failed: %d:%s", errno, strerror(errno) );
     va_end(ap);
     return -1;
   }

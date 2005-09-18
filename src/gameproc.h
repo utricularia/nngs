@@ -31,54 +31,54 @@
 #define SAVEFREQ	5
 #endif
 
-extern void game_ended(int, int, int);
+void game_ended(int, int, int);
 
 #ifdef WANT_PAIR
-extern void process_move(int, char *, int);
-extern int paired(int);
+void process_move(int, char *, int);
+int paired(int);
 #else
-extern void process_move(int, char *);
+void process_move(int, char *);
 #endif /* WANT_PAIR */
 
-extern int com_resign(int, struct parameter *);
-extern int com_draw(int, struct parameter *);
-extern int com_pause(int, struct parameter *);
-extern int com_unpause(int, struct parameter *);
-extern int com_abort(int, struct parameter *);
-extern int com_games(int, struct parameter *);
-extern int com_handicap(int, struct parameter *);
-extern int com_observe(int, struct parameter *);
-extern int com_allob(int, struct parameter *);
-extern int com_moves(int, struct parameter *);
-extern int com_gomoves(int, struct parameter *);
-extern int com_mailmoves(int, struct parameter *);
-extern int com_oldmoves(int, struct parameter *);
-extern int com_mailoldm(int, struct parameter *);
-extern int com_komi(int, struct parameter *);
-extern int com_ladder(int, struct parameter *);
-extern int com_load(int, struct parameter *);
-extern int com_look(int, struct parameter *);
-extern int com_touch(int, struct parameter *);
-extern int com_stored(int, struct parameter *);
-extern int com_sgf(int, struct parameter *);
-extern int com_undo(int, struct parameter *);
-extern int com_adjourn(int, struct parameter *);
-extern int com_done(int, struct parameter *);
-extern int com_history(int, struct parameter *);
-extern int com_rhistory(int, struct parameter *);
-extern int com_time(int, struct parameter *);
-extern int com_title(int, struct parameter *);
-extern int com_event(int, struct parameter *);
-extern int com_status(int, struct parameter *);
-extern int com_save(int, struct parameter *);
-extern int com_pair(int, struct parameter *);
-extern int com_ginfo(int, struct parameter *);
-extern int com_sresign(int, struct parameter *);
-extern int com_problem(int, struct parameter *);
-extern int com_free(int, struct parameter *);
-extern int com_unfree(int, struct parameter *);
-extern int com_pteach(int, struct parameter *);
+int com_resign(int, struct parameter *);
+int com_draw(int, struct parameter *);
+int com_pause(int, struct parameter *);
+int com_unpause(int, struct parameter *);
+int com_abort(int, struct parameter *);
+int com_games(int, struct parameter *);
+int com_handicap(int, struct parameter *);
+int com_observe(int, struct parameter *);
+int com_allob(int, struct parameter *);
+int com_moves(int, struct parameter *);
+int com_gomoves(int, struct parameter *);
+int com_mailmoves(int, struct parameter *);
+int com_oldmoves(int, struct parameter *);
+int com_mailoldm(int, struct parameter *);
+int com_komi(int, struct parameter *);
+int com_ladder(int, struct parameter *);
+int com_load(int, struct parameter *);
+int com_look(int, struct parameter *);
+int com_touch(int, struct parameter *);
+int com_stored(int, struct parameter *);
+int com_sgf(int, struct parameter *);
+int com_undo(int, struct parameter *);
+int com_adjourn(int, struct parameter *);
+int com_done(int, struct parameter *);
+int com_history(int, struct parameter *);
+int com_rhistory(int, struct parameter *);
+int com_time(int, struct parameter *);
+int com_title(int, struct parameter *);
+int com_event(int, struct parameter *);
+int com_status(int, struct parameter *);
+int com_save(int, struct parameter *);
+int com_pair(int, struct parameter *);
+int com_ginfo(int, struct parameter *);
+int com_sresign(int, struct parameter *);
+int com_problem(int, struct parameter *);
+int com_free(int, struct parameter *);
+int com_unfree(int, struct parameter *);
+int com_pteach(int, struct parameter *);
 
-extern int com_moretime(int, struct parameter *);
+int com_moretime(int, struct parameter *);
 
 #endif /* GAMEPROC_H */
