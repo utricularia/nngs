@@ -806,7 +806,8 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
                parray[bp].pname, 
                parray[bp].slotstat.is_registered ? parray[bp].srank : "UR",
                parray[bp].flags.is_rated ? "*" : " ");
-  fprintf(fp, "PC[%s: %s]\n", conffile.server_name, conffile.server_address);
+  fprintf(fp, "PC[%s: %s %s]\n"
+  , conffile.server_name, conffile.server_address, conffile.server_ports);
   fprintf(fp, "DT[%s]\n", strDTtime(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g0].minkg->width,
      TICS2SECS(garray[g0].ts.totalticks), garray[g0].komi);
