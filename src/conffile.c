@@ -179,25 +179,12 @@ static void config_fill_defaults(void);
 static void trimtrail(char *str);
 static int conf_file_fixup1(char * target, char *part, int len);
 
-int conf_file_read(char * fname)
+int conf_file_read(const char * fname)
 {
 FILE *fp;
 char buff[1024];
 char *name, *value;
 size_t len;
-int rc;
-#include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
-#define __USE_XOPEN 1
-#include <unistd.h>
-#undef __USE_XOPEN
-#include <errno.h>
-
-struct passwd *pp = NULL;
-struct group *gp = NULL;
-uid_t uid = -1, euid =0;
-gid_t gid = -1;
 
 fp = fopen( fname, "r" );
 if (!fp) {
@@ -236,7 +223,7 @@ while(len > 0) {
 	}
 }
 
-int conf_file_write(char *fname)
+int conf_file_write(const char *fname)
 {
 FILE *fp;
 struct confmatch *mp;

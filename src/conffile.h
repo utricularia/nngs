@@ -91,8 +91,8 @@ struct conffile conffile;
 extern struct conffile conffile;
 #endif
 
-int conf_file_read(char * fname);
-int conf_file_write(char * fname);
+int conf_file_read(const char * fname);
+int conf_file_write(const char * fname);
 int conf_file_fixup(void);
 
 #endif /* CONFFILE_H */

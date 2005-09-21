@@ -41,8 +41,21 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+
+#include <errno.h>
+
+#include <sys/types.h>
+#include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+
+#include <pwd.h>
+#include <grp.h>
+#include <netdb.h>
+
+#define __USE_XOPEN 1
+#include <unistd.h>
+#undef __USE_XOPEN
 
 #ifdef USING_DMALLOC
 #include <dmalloc.h>
@@ -100,18 +113,10 @@ static void GetArgs(int argc, char *argv[])
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       switch (argv[i][1]) {
-/*
-      case 'p':
-	if (i == argc - 1) usage(argv[0]);
-	i++;
-	if (sscanf(argv[i], "%d", &port) != 1)
-	  usage(argv[0]);
-	break;
-*/
       case 'c':
 	if (i == argc - 1) usage(argv[0]);
 	i++;
-	if (sscanf(argv[i], "%s", &confname) != 1)
+	if (sscanf(argv[i], "%s", &confname[0]) != 1)
 	  usage(argv[0]);
 	break;
       case 'h':
@@ -142,7 +147,7 @@ static void TerminateServer(int sig)
 
 static void reapchild(int sig)
 {
-  int rc, pid, status;
+  int pid, status;
   struct rusage usag;
   fprintf(stderr, "Got signal %d\n", sig);
   pid = wait3(&status, WNOHANG, &usag);
@@ -186,7 +191,10 @@ int main(int argc, char *argv[])
     conf_file_write(confname);
     Logit("Created \"%s\"", confname);
   }
-  daemonise();
+  if (daemonise()) {
+    Logit("Failed to daemonise, giving up");
+    main_exit(1);
+  }
   conf_file_write("written.cnf");
   signal(SIGTERM, TerminateServer);
   signal(SIGINT, TerminateServer);
@@ -259,7 +267,6 @@ int main(int argc, char *argv[])
 static int all_the_internets(void)
 {
 int port;
-char *cp;
 int pos, len, rc, cnt;
 
   for(pos=cnt=0;conffile.server_ports[pos];pos += len	) {
@@ -308,22 +315,16 @@ static void read_ban_ip_list(void)
 
 static int daemonise(void)
 {
-char *name, *value;
-size_t len;
 int rc;
-#include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
-#define __USE_XOPEN 1
-#include <unistd.h>
-#undef __USE_XOPEN
-#include <errno.h>
 
 struct passwd *pp = NULL;
 struct group *gp = NULL;
 uid_t uid = -1, euid =0;
 gid_t gid = -1;
 
+	/* we do this before chroot()ing, because they need
+	** the /etc/directory
+	*/
 if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
 if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
 
@@ -351,13 +352,15 @@ if (gid) rc = setgid(gid);
 if (rc==-1) { rc=errno;
 	fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
 	, gid, conffile.chroot_group, rc, strerror(rc) );
+	return rc;
 	}
 if (uid) rc = setuid(uid);
 if (rc==-1) { rc=errno;
 	fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
 	, uid, conffile.chroot_user, rc, strerror(rc) );
+	return rc;
 	}
-#if 0
+#if 1
 if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
 if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
 #endif
@@ -365,10 +368,14 @@ if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
 if (uid && (euid = geteuid()) != uid) {
 	fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
 	, uid, conffile.chroot_user, euid );
-	main_exit(1);
+	return rc;
 	}
 
 if (conffile.chroot_dir) {
+	if (!uid || !(euid = geteuid()) ) {
+		fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n" );
+		return rc;
+		}
 	conf_file_fixup();
 	conf_file_write("written.cnf");
 	}

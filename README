@@ -17,11 +17,12 @@ You may also want to check config.h after running ./configure
 Configuration-method has changed!
 Most of the configuration items are kept in a single nngs.cnf -file.
 If not found, nngs *creates* this file, whith the current default-
-values in it. Edit and enjoy...
+values in it (which have been established by the ./configure ).
+Edit and enjoy...
 
 NNGS needs mlrate. Unfortunately, the original (pem's) mlrate
 is not autoconfd/automaked. If you can't get your hands on an
-AC/AM's cpy, you willll need to move all of it's
+AC/AM's copy, you will need to move all of it's
 source, into a src/ subdirectory, and you may need some
 minor changes.
 
@@ -66,6 +67,41 @@ files.  Copy them (or remame them) to remove the '.example'
 In $prefix/share/nngssrv/messages you will find default message
 files for login, logout, etc.  Rename them to remove the 'default.'
 part to activate them.
+
+>> SETTING UP ALTERNATE LOCATIONS.
+
+The config file mechanism enables you to change file locations
+without recompiling. You can also use separate locations for data
+and the nngssrv binary. (but I would advise you *not* to make too
+wild choices ;-)
+
+The easiest way to set things up is:
+1) do a configure&compile&and install of nngs
+2) start the binary, and kill it.
+3) edit the nngs.cnf, which will have been written in the current directory.
+   The config file contains enough comment to be self-explanatory.
+
+If you want nngs to run in a chroot()ed environment ('jail'), you'll
+have to do some manual tuning.
+1) the chroot() systemcall itself requires root privileges.
+   the program starts as root, then chdir()s, chroot()s, fork()s twice
+   , and changes gid and uid.
+   Currently, it does not close filedescriptors, change process group,
+   or detach from its CTTY. Just the two forks should do.
+2) Mail cannot be sent by /usr/bin/mail et.al. (unless a copy exists in the
+   jail, which will also need the loader, and part of the /lib/*so, and maybe
+   more)
+   setting the maile to SMTP, a built-in mailer is used.
+   this will only need gethostbyname(), which relies on /etc/hosts and/or
+   /etc/resolv.conf. *these need to be present in jail, or mail won't work*
+3) For safety: if anything fails (chroot, setuid, ...) the program will
+   refuse to work and exits.
+4) Maybe (?depending on platform?) other files (/dev/zero) are needed.
+5) As an aid in debugging, a file "written.cnf" is written in the
+   chroot() -jail. The pathnames in this file will be relative to the
+   chroot() directory. (so: just a bit snipped at the front)
+5) YMMV
+
 
 
 >> USERS AND ADMINS
