@@ -374,10 +374,10 @@ if (uid && (euid = geteuid()) != uid) {
 if (conffile.chroot_dir) {
 	if (!uid || !(euid = geteuid()) ) {
 		fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n" );
+		conf_file_write("refused.cnf");
 		return rc;
 		}
 	conf_file_fixup();
-	conf_file_write("written.cnf");
 	}
 return 0;
 }

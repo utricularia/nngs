@@ -106,7 +106,7 @@ int pxysend_raw_file(int, int, ...);
 int pxysend_file(int p, int num, ...);
 int pmore_file(int);
 /* int psend_command(int, const char *, char *); */
-int xpsend_command(int, const char *, char *, int num, ...);
+int xpsend_dir(int p, int num);
 
 char *stolower(char *);
 char *stoupper(char *);

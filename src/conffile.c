@@ -81,6 +81,7 @@ struct confmatch {
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
 #define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
 #define INTEGER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
+#define OCTAL(_n,_o,_d) {'o',(_n),(void*)(_o),(_d)},
 #define MESSAGE(_m) {'m', (_m),NULL, NULL},
 
 static struct confmatch confmatchs[] = {
@@ -135,8 +136,6 @@ CHPATH("log_file", &conffile.log_file, LOG_FILE)
 CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
 MESSAGE("")
 
-NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
-
 NAME("server_name", &conffile.server_name, SERVER_NAME)
 NAME("server_address", &conffile.server_address, SERVER_ADDRESS)
 NAME("server_ports", &conffile.server_ports, SERVER_PORTS)
@@ -161,18 +160,28 @@ NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
 NAME("smtp_reply_to", &conffile.smtp_reply_to, SERVER_EMAIL)
 
 MESSAGE("")
+MESSAGE("Set mode_for_dir to nonzero to create non-existant directories silently.")
+OCTAL("mode_for_dir", &conffile.mode_for_dir, 0)
+NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
+MESSAGE("")
 MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
+MESSAGE("")
+MESSAGE("Use with care...")
 MESSAGE("")
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
 BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
+
 MESSAGE("")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
 #undef NUL2
-#undef NUL3
 #undef ZOMBIE
 #undef NAME
 #undef CHPATH
 #undef MESSAGE
+#undef INTEGER
+#undef OCTAL
+#undef BOOL
+
 static struct confmatch *conf_find(const char *name);
 static int conf_set_pair(const char *name, const char *value);
 static void config_fill_defaults(void);
@@ -231,7 +240,7 @@ struct confmatch *mp;
 fp = fopen( fname, "w" );
 if (!fp) return -1;
 
-fprintf(fp, "## nngs.cnf Config generated Date %s UTC\n", strgtime(&globclock.time));
+fprintf(fp, "## %s, Generated %s UTC\n", fname, strgtime(&globclock.time));
 fprintf(fp, "# compile_date=%s %s\n" , __DATE__ , __TIME__ );
 fprintf(fp, "#\n" );
 
@@ -245,6 +254,8 @@ for (mp = confmatchs; mp->type; mp++) {
 		, mp->name, IFNULL(*(char**)mp->ptr,"") );
 		break;
 	case 'i': fprintf(fp, "%s=%d\n", mp->name, (int) *((int*)mp->ptr) );
+		break;
+	case 'o': fprintf(fp, "%s=%o\n", mp->name, (int) *((int*)mp->ptr) );
 		break;
 	case 'b': fprintf(fp, "%s=%s\n"
 		, mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
@@ -266,6 +277,7 @@ struct confmatch *mp;
 
 for (mp = confmatchs; mp->type; mp++) {
 	switch (mp->type) {
+	case 'o':
 	case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
 		break;
 	case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
@@ -302,6 +314,7 @@ for (mp = confmatchs; mp->type; mp++) {
 	case 'm':
 	case 'b':
 	case 'i':
+	case 'o':
 	default: continue;
 		}
 	}
@@ -333,6 +346,10 @@ case 'p':
 case 'P':
 	if (*(char**)(mp->ptr)) free (*(char**)(mp->ptr));
 	*(char**)(mp->ptr) = (value) ? mystrdup(value): NULL;
+	break;
+case 'o':
+	if (!value || !*value) value = "0";
+	sscanf(value, "%o", (int*)(mp->ptr) );
 	break;
 case 'i':
 	if (!value || !*value) value = "0";

@@ -4156,7 +4156,7 @@ int com_infor(int p, struct parameter * param)
   UNUSED(param);
 
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
-  xpsend_command(p, "ls -C %s", NULL, FILENAME_INFO);
+  xpsend_dir(p, FILENAME_INFO);
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   return COM_OK;
 }
@@ -4201,7 +4201,7 @@ int com_mailhelp(int p, struct parameter * param)
 
   if (param[0].type == TYPE_NULL) {
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
-    xpsend_command(p, "ls -C %s", NULL, FILENAME_HELP);
+    xpsend_dir(p, FILENAME_HELP_p /* , parray[p].language */ );
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }

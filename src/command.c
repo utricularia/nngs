@@ -79,12 +79,7 @@
 time_t startuptime;
 int player_high;
 int game_high;
-int MailGameResult;
 
-#ifndef MODE_FOR_DIR
-#define MODE_FOR_DIR 0
-#endif /* MODE_FOR_DIR */
-mode_t mode_for_dir = MODE_FOR_DIR;
 char orig_command[MAX_STRING_LENGTH];
 
 int commanding_player = -1;	/* The player whose command your in */

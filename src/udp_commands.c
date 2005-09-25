@@ -78,7 +78,7 @@ else if (!strcmp(src,"net")) len = udp_net(dst, dstlen);
 else if (!strcmp(src,"games")) len = udp_games(dst, dstlen);
 else if (!strncmp(src,"shutdown ", 9)) len = udp_shutdown(dst, dstlen, src+9);
 else if (1 == sscanf(src,"board %d", &opt)) len = udp_board(dst, dstlen, opt);
-else len = snprintf(dst ,dstlen, "Kuttje!:%s\n", src);
+else len = snprintf(dst, dstlen, "Kuttje!:%s\n", src);
 
 return len;
 }
@@ -117,8 +117,9 @@ size_t pos=0;
     /* if (!garray[g0].slotstat.in_use) continue; */
     pb = garray[g0].black.pnum;
     pw = garray[g0].white.pnum;
+    /* game# gstatus mink pb pw + bname brank wname wrank + movenum */
     len = snprintf(dst+pos, dstlen-pos, "%d:%d:%p:%d:%d\n"
-      , g0+1, (int) garray[g0].gstatus, (void*) garray[g0].minkg, pb+1, pw+1);
+      , g0, (int) garray[g0].gstatus, (void*) garray[g0].minkg, pb, pw);
     if (len < 0) break; else pos += len;
     if (pb < 0 || pw < 0) continue;
     if (pb >= parray_top || pw >= parray_top) continue;
@@ -159,7 +160,6 @@ int len;
 size_t pos=0;
 
 len = snprintf(dst, dstlen, "Board %d\n", gnum);
-gnum -= 1;
 
 if (len < 0) return len; pos = len;
 if (pos >= dstlen) {
@@ -213,7 +213,7 @@ for (idx=0; idx < parray_top; idx++) {
 	if (pos +40 > dstlen) break;
 	if (!parray[idx].slotstat.is_inuse) continue;
 	if (!parray[idx].slotstat.is_online) continue;
-	len = snprintf(dst+pos, dstlen-pos, "%d:%s", idx+1, parray[idx].pname);
+	len = snprintf(dst+pos, dstlen-pos, "%d:%s", idx, parray[idx].pname);
 	if (len < 0) return pos; pos += len;
 	len = snprintf(dst+pos, dstlen-pos, ":%s:%s:%s:%d"
 	, parray[idx].srank
@@ -274,7 +274,6 @@ size_t pos=0;
   len = snprintf(dst+pos, dstlen-pos, "Startuptime(local): %s\n", strltime(&startuptime));
   if (len < 0) return pos; pos += len;
 
-  /* Does this break any clients? */
   if (uptime > 86400)
     len = snprintf(dst+pos, dstlen-pos, "Uptime: %d days,%s\n", 
 	    uptime/86400, strhms(uptime%86400));

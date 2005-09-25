@@ -420,7 +420,7 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
     dummy = fopen(name, "w+");
     if (!dummy) Logit("Could not open tempfile '%s'", name);
     else Logit("Opened tempfile(%d) '%s'", fileno(dummy), name);
-    /* unlink(name); */
+    unlink(name);
   }
   rewind(dummy);
   wlen = vfprintf(dummy, format, ap);
@@ -694,36 +694,28 @@ int pmore_file( int p )
   return 0;
 }
 
-int xpsend_command(int p, const char *command, char *input, int num, ...)
+int xpsend_dir(int p, int num)
 {
-  va_list ap;
-  FILE *fp;
-  char tmp[MAX_LINE_SIZE];
-  char cmdline[MAX_FILENAME_SIZE];
   int cnt;
+  DIR *dp;
+  struct dirent *ep;
 
-  va_start(ap, num);
-  memset(filename1,0,sizeof filename1);
-  vafilename(filename1,num, ap);
-  sprintf(cmdline,command,filename1);
-  Logit("xpsend_command(%d,%s,%d):%s", p, IFNULL(input,"{Null}"), num, cmdline);
 
-  if (input) fp = popen(&cmdline[0], "w");
-  else fp = popen(&cmdline[0], "r");
-  if (!fp) {
-    Logit("popen failed: %d:%s", errno, strerror(errno) );
-    va_end(ap);
+  dp = xyopendir(num, p);
+
+  Logit("xpsend_dir(%d,%d):%p", p, num, (void*)dp);
+
+  if (!dp) {
+    Logit("diropen failed: %d:%s", errno, strerror(errno) );
     return -1;
   }
-  if (input) fwrite(input, sizeof(char), strlen(input), fp);
-  else {
-    while ((cnt = fread(tmp, sizeof(char), sizeof tmp, fp))) {
-      net_send(parray[p].session.socket, tmp, cnt);
-    }
+  for (cnt = 0; ep = readdir(dp); ) {
+    if (ep->d_name[0] == '.') continue;
+    pprintf(p, "%s%c", ep->d_name,  (++cnt % 4)  ? "\t": "\n" );
   }
-  pclose(fp);
-  va_end(ap);
-  return 0;
+  if (cnt % 4) pprintf(p, "\n" );
+  closedir(dp);
+  return cnt;
 }
 
 char *stoupper(char *str)
@@ -1451,7 +1443,7 @@ FILE * xfopen(const char * name, const char * mode)
 
     switch(err) {
     case ENOENT:
-      if (mode_for_dir) {
+      if (conffile.mode_for_dir) {
         err =mkdir_p(name);
         if (err> 0) continue;
 	}
@@ -1929,20 +1921,20 @@ static int mkdir_p(const char * name)
     rc = stat(buff, &statbuff);
     if (!rc) err =EEXIST; /* this is used to skip existing prefix */
     else {
-      rc = mkdir(buff, mode_for_dir);
+      rc = mkdir(buff, conffile.mode_for_dir);
       err = (rc) ? errno: 0;
       }
     switch(err) {
     case 0:
       cnt++;
-      Logit("Mkdir_p[%d](\"%s\", %04o) := Ok", cnt, buff, mode_for_dir );
+      Logit("Mkdir_p[%d](\"%s\", %04o) := Ok", cnt, buff, conffile.mode_for_dir );
     case EEXIST: 
       break;
     case ENOTDIR: 
     case EACCES: 
     default:
       Logit("Mkdir_p(\"%s\", %04o) := [rc=%d] Err= %d (%s)"
-           , buff, mode_for_dir, rc, err, strerror(err) );
+           , buff, conffile.mode_for_dir, rc, err, strerror(err) );
       *slash = '/' ;
       goto quit;
     }
@@ -2032,7 +2024,7 @@ int xytouch(int num, ...)
 
   va_start(ap, num);
 
-  memset(filename1,0,sizeof filename1);
+  /* memset(filename1,0,sizeof filename1); */
   vafilename(filename1,num, ap);
   rc = utime(filename1, NULL);
 
@@ -2047,7 +2039,6 @@ DIR * xyopendir(int num, ...)
 
   va_start(ap, num);
 
-  memset(filename1,0,sizeof filename1);
   vafilename(filename1,num, ap);
   dirp = opendir(filename1);
 

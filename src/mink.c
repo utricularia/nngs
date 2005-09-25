@@ -134,16 +134,16 @@ struct minkgame *mink_initgame(int width, int height, int rules)
 #ifdef WANT_MINKKOMI
   gp->komi = MINK_KOMI;
 #endif
-  gp->board = calloc(ESIZE(gp), sizeof *gp->board);
+  gp->board = malloc(ESIZE(gp) * sizeof *gp->board);
   assert(gp->board != NULL);
   gp->mvsize = ESIZE(gp)/2;		/* need at least 1 for 0x0 board:) */
-  gp->moves = calloc(gp->mvsize, sizeof *gp->moves);
+  gp->moves = malloc(gp->mvsize * sizeof *gp->moves);
   assert(gp->moves != NULL);
   gp->moves[0].hash = 0L;
-  gp->uf = calloc(ESIZE(gp), sizeof *gp->uf);
+  gp->uf = malloc(ESIZE(gp) * sizeof *gp->uf);
   assert(gp->uf != NULL);
   gp->logsize = ESIZE(gp);
-  gp->uflog = calloc(gp->logsize, sizeof *gp->uflog);
+  gp->uflog = malloc(gp->logsize * sizeof *gp->uflog);
   assert(gp->uflog != NULL);
 /*  gp->nocaps = 0; */
   mink_startgame(gp);
@@ -505,7 +505,7 @@ static int mink_superko(struct minkgame *gp)
 #if HASHFAITH
       return 1;
 #else
-      curboard = calloc(ESIZE(gp), sizeof *curboard);
+      curboard = malloc(ESIZE(gp) * sizeof *curboard);
       for (j=0; j<ESIZE(gp); j++)
         curboard[j] = gp->board[j];
       n = gp->movenr;
@@ -684,13 +684,12 @@ int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
   if (!gp) return pos;
   pos--;
   len = snprintf(buff+pos, buflen-pos, ":%d:%d:%d:%d:%d\n"
-	, (int)gp->height, (int) gp->width
+	, (int)gp->height, (int)gp->width
 	, (int)gp->rules, (int)gp->handicap, (int)gp->mvsize 
 	);
   if (len < 0) return pos;
   pos += len;
-  return pos;
-  if (!gp || !gp->board) return 0;
+  if (!gp || !gp->board) return pos;
   pos = 0;
   for (y=1; y <= gp->height; y++) {
     for (x=1; x <= gp->width ; x++) {

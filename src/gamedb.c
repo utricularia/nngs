@@ -751,7 +751,6 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   time_t now;
   int wp, bp, owp = 0, obp = 0;	/* Init. to shut up warnings. */
   char resu[10];
-  char command[MAX_FILENAME_SIZE];
   char *tmp;
 
   if (!fp) return -1;
@@ -861,9 +860,8 @@ int game_save(int g0)
   
   if (mink_movenum(garray[g0].minkg) < 3) return 1;
   fp = xyfopen(FILENAME_GAMES_ws_s, "w",parray[wp].login,parray[bp].login);
-  if (!fp) {
-    return -1;
-  }
+  if (!fp) return -1;
+
   /* Create link for easier stored game finding */
   if (wp!=bp)
     xylink(FILENAME_GAMES_bs_s, parray[wp].login,parray[bp].login);

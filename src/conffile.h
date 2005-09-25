@@ -58,7 +58,6 @@ struct conffile {
   char *cgame_dir;
   char *problem_dir;
   char *board_dir;
-  char *def_prompt;
   char *source_dir;
   char *lists_dir;
   char *news_dir;
@@ -83,6 +82,9 @@ struct conffile {
 
   char allow_unregistered;
   char unregs_can_shout;
+
+  char *def_prompt;
+  unsigned mode_for_dir;
   };
 
 #if CONFFILE_C
