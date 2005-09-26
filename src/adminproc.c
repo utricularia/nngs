@@ -164,11 +164,11 @@ int com_anews(int p, struct parameter* param)
       junkp=nextword(junkp); 
       junkp=nextword(junkp);
       if (param[0].type==TYPE_WORD && !strcmp(param[0].val.word,"all")) {
-        pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
+        pprintf(p, "%3s (%s) %s\n", count, time2str_local(&crtime), junkp);
         flag=1;
       } else {
         if (crtime - player_lastconnect(p) > 0) {
-          pprintf(p, "%3s (%s) %s\n", count, strltime(&crtime), junkp);
+          pprintf(p, "%3s (%s) %s\n", count, time2str_local(&crtime), junkp);
           flag=1;
 	}
       }
@@ -176,7 +176,7 @@ int com_anews(int p, struct parameter* param)
     fclose(fp);
     crtime = player_lastconnect(p);
     if (!flag) {
-      pprintf(p, "There is no news since your last login (%s).\n",strltime(&crtime));
+      pprintf(p, "There is no news since your last login (%s).\n",time2str_local(&crtime));
     } else {
       pprintf(p, "%s\n",
                 parray[p].flags.is_client ? "6 Info" : "");
@@ -197,7 +197,7 @@ int com_anews(int p, struct parameter* param)
       if (!strcmp(count,param[0].val.word)) {
         junkp=nextword(junkp); 
         junkp=nextword(junkp);
-        pprintf(p, "\nNEWS %3s (%s)\n\n         %s\n\n", count, strltime(&crtime), junkp);
+        pprintf(p, "\nNEWS %3s (%s)\n\n         %s\n\n", count, time2str_local(&crtime), junkp);
         break;
       }
     }
@@ -466,9 +466,9 @@ void ShutDown()
   }
   TerminateCleanup();
 #if 0
-  fprintf(stderr, "Shutdown ordered at %s by %s.\n", strltime(&shuttime), downer);
+  fprintf(stderr, "Shutdown ordered at %s by %s.\n", time2str_local(&shuttime), downer);
 #endif
-  Logit("Shutdown ordered at %s by %s.", strltime(&shuttime), downer);
+  Logit("Shutdown ordered at %s (Local) by %s.", time2str_local(&shuttime), downer);
   net_closeAll();
   system("touch .shutdown");
   main_exit(0);

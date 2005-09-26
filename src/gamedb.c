@@ -331,13 +331,15 @@ void send_go_board_to(int g0, int p)
       else if (yy==2)
 	pcn_out(p, CODE_OBSERVE, FORMAT_s_CAPTURED_BY_O_dn, statstring[yy], bc);
       else if (yy==4 && garray[g0].minkg->height > 3)
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn,
-                statstring[yy], hms(TICS2SECS(garray[g0].white.ticksleft), 1, 1, 0),
-                wbuf );
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_WH_TIME_ssn
+               , statstring[yy]
+               , secs2hms_mask(TICS2SECS(garray[g0].white.ticksleft), 7)
+               , wbuf );
       else if (yy==5 && garray[g0].minkg->height > 4)
-	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn,
-                statstring[yy], hms(TICS2SECS(garray[g0].black.ticksleft), 1, 1, 0),
-                bbuf);
+	pcn_out(p, CODE_OBSERVE, FORMAT_s_BL_TIME_ssn
+               , statstring[yy]
+               , secs2hms_mask(TICS2SECS(garray[g0].black.ticksleft), 7)
+               , bbuf);
       else if (yy==7 && garray[g0].minkg->height > 6)
 	if (count == 0)
 	  pcn_out(p, CODE_OBSERVE, FORMAT_s_LAST_MOVE_n, statstring[yy]);
@@ -807,7 +809,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
                parray[bp].flags.is_rated ? "*" : " ");
   fprintf(fp, "PC[%s: %s %s]\n"
   , conffile.server_name, conffile.server_address, conffile.server_ports);
-  fprintf(fp, "DT[%s]\n", strDTtime(&now));
+  fprintf(fp, "DT[%s]\n", time2str_sgf(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g0].minkg->width,
      TICS2SECS(garray[g0].ts.totalticks), garray[g0].komi);
   if (Debug) Logit("garray[g0].nmvinfos = %d", garray[g0].nmvinfos);
@@ -978,7 +980,7 @@ void game_write_complete(int g0, twodstring statstring)
 
   stolower(wname);
   stolower(bname);
-  sprintf(fdate, strtime_file((time_t *) &now));
+  sprintf(fdate, time2str_file((time_t *) &now));
   fp = xyfopen(FILENAME_PLAYER_cs_GAMES, "a", wname);
   write_g_out(g0, fp, 23, fdate);
   if (wp != bp) {

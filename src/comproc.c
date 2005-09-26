@@ -155,7 +155,7 @@ int com_register(int p, struct parameter * param)
   do_copy(parray[p1].srank, "NR", sizeof parray[0].srank);
   do_copy(parray[p1].fullname, fullname, sizeof parray[0].fullname);
   do_copy(parray[p1].email, email, sizeof parray[0].email);
-  do_copy(parray[p1].RegDate, strltime(&shuttime), sizeof parray[0].RegDate);
+  do_copy(parray[p1].RegDate, time2str_local(&shuttime), sizeof parray[0].RegDate);
   for (idx = 0; idx < PASSLEN; idx++) {
     passwd[idx] = 'a' + rand() % 26;
   }
@@ -277,11 +277,11 @@ int com_news(int p, struct parameter * param)
       junkp=nextword(junkp);
       junkp=nextword(junkp);
       if (param[0].type==TYPE_WORD && !strcmp(param[0].val.word,"all")) {
-        pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
+        pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, time2str_local(&crtime), junkp);
         flag=1;
       } else {
         if (crtime - player_lastconnect(p) > 0) {
-          pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, strltime(&crtime), junkp);
+          pcn_out(p,CODE_INFO, FORMAT_s_s_sn, count, time2str_local(&crtime), junkp);
 	flag=1;
 	}
       }
@@ -289,7 +289,7 @@ int com_news(int p, struct parameter * param)
     fclose(fp);
     crtime=player_lastconnect(p);
     if (!flag) {
-      pcn_out(p,CODE_INFO, FORMAT_THERE_IS_NO_NEWS_SINCE_YOUR_LAST_LOGIN_s_n, strltime(&crtime));
+      pcn_out(p,CODE_INFO, FORMAT_THERE_IS_NO_NEWS_SINCE_YOUR_LAST_LOGIN_s_n, time2str_local(&crtime));
     } else {
       pcn_out(p,CODE_INFO, FORMAT_n);
     }
@@ -308,7 +308,7 @@ int com_news(int p, struct parameter * param)
       if (!strcmp(count,param[0].val.word)) {
         junkp=nextword(junkp);
         junkp=nextword(junkp);
-        pcn_out(p,CODE_INFO, FORMAT_NEWS_s_s_nn_sn, count, strltime(&crtime), junkp);
+        pcn_out(p,CODE_INFO, FORMAT_NEWS_s_s_nn_sn, count, time2str_local(&crtime), junkp);
 	break;
       }
     }
@@ -348,7 +348,7 @@ int com_note(int p, struct parameter * param)
   }
   fputs(parray[p].pname, fp);
   fputs(" on ",fp);
-  fputs(strgtime(&tt),fp);
+  fputs(time2str_utc(&tt),fp);
   fputs(": \n '",fp);
   fputs(param[0].val.string, fp);
   fputs("'\n\n",fp);
@@ -674,7 +674,7 @@ int com_best(int p, struct parameter * param)
     else
       LadderPlayer = PlayerAt(Ladder19, i);
     cp = LadderPlayer->tLast 
-       ? strgtime((const time_t *) &LadderPlayer->tLast)
+       ? time2str_utc((const time_t *) &LadderPlayer->tLast)
        : "---" ;
     pcn_out(p, CODE_INFO, FORMAT_d_s_d_d_sn,
       i+1,
@@ -1376,10 +1376,10 @@ static int do_beep(int p, int p1)
   if (parray[p1].flags.want_bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
   pcn_out_prompt(p1, CODE_CR1|CODE_INFO, FORMAT_s_IS_BEEPING_YOU_n, parray[p].pname);
   if (parray[p1].busy[0]) {
-    sprintf(tmp,"beeped %s's console who %s (idle: %s)", parray[p1].pname, parray[p1].busy, hms(player_idle(p1), 1, 0, 0));
+    sprintf(tmp,"beeped %s's console who %s (idle: %s)", parray[p1].pname, parray[p1].busy, secs2hms_mask(player_idle(p1), 6));
   } else {
     if (((player_idle(p1)%3600)/60) > 2) {
-      sprintf(tmp,"%s has been idle %s", parray[p1].pname, hms(player_idle(p1), 1, 0, 0));
+      sprintf(tmp,"%s has been idle %s", parray[p1].pname, secs2hms_mask(player_idle(p1), 6));
     }
     else sprintf(tmp,"beeped %s's console.", parray[p1].pname);
   }
@@ -1710,13 +1710,13 @@ int com_stats(int p, struct parameter * param)
   if (!parray[p1].slotstat.is_online) {
     tt = player_lastdisconnect(p1);
     pcn_out(p, CODE_INFO, FORMAT_LAST_ACCESS_GMT_NOT_ON_sn,
-                tt ? strgtime(&tt) : "Never connected.");
+                tt ? time2str_utc(&tt) : "Never connected.");
     pcn_out(p,CODE_INFO,  FORMAT_LAST_ACCESS_LOCAL_NOT_ON_sn,
-                tt ? strltime(&tt) : "Never connected.");
+                tt ? time2str_local(&tt) : "Never connected.");
   }
   else {
     pcn_out(p,CODE_INFO,  FORMAT_IDLE_TIME_ON_SERVER_sn,
-                hms(player_idle(p1), 1, 1, 0));
+                secs2hms_mask(player_idle(p1), 7));
     if (parray[p1].session.gnum >= 0)
       pcn_out(p,CODE_INFO,  FORMAT_PLAYING_IN_GAME_d_I_n,
                 (parray[p1].session.gnum) + 1);
@@ -2005,17 +2005,17 @@ int com_uptime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_SERVER_ADDRESS_sn, conffile.server_address);
   pcn_out(p, CODE_INFO, FORMAT_SERVER_VERSION_sn, conffile.version_string);
 
-  pcn_out(p, CODE_INFO, FORMAT_CURRENT_TIME_GMT_sn, strgtime(&now));
-  pcn_out(p, CODE_INFO, FORMAT_CURRENT_LOCAL_TIME_sn, strltime(&now));
+  pcn_out(p, CODE_INFO, FORMAT_CURRENT_TIME_GMT_sn, time2str_utc(&now));
+  pcn_out(p, CODE_INFO, FORMAT_CURRENT_LOCAL_TIME_sn, time2str_local(&now));
   pcn_out(p, CODE_INFO, FORMAT_THE_SERVER_HAS_BEEN_RUNNING_SINCE_s_GMT_n,
-                          strltime(&startuptime));
+                          time2str_local(&startuptime));
 
   /* Does this break any clients? */
   if (uptime > 86400)
     pcn_out(p, CODE_INFO, FORMAT_SERVER_UPTIME_u_DAYS_sn, 
-	    uptime/86400, strhms(uptime%86400));
+	    uptime/86400, secs2hms_long(uptime%86400));
   else
-    pcn_out(p, CODE_INFO, FORMAT_SERVER_UPTIME_sn, strhms(uptime));
+    pcn_out(p, CODE_INFO, FORMAT_SERVER_UPTIME_sn, secs2hms_long(uptime));
 
   pcn_out(p, CODE_INFO, FORMAT_PLAYER_LIMIT_dn, net_fd_count);
   pcn_out(p, CODE_INFO, FORMAT_MOVE_LIMIT_2_147_483_648n);
@@ -2053,8 +2053,8 @@ int com_date(int p, struct parameter * param)
   time_t tt = globclock.time;
   UNUSED(param);
 
-  pcn_out(p,CODE_INFO, FORMAT_LOCAL_TIME_sn, strltime(&tt));
-  pcn_out(p,CODE_INFO, FORMAT_GREENWICH_TIME_sn, strgtime(&tt));
+  pcn_out(p,CODE_INFO, FORMAT_LOCAL_TIME_sn, time2str_local(&tt));
+  pcn_out(p,CODE_INFO, FORMAT_GREENWICH_TIME_sn, time2str_utc(&tt));
   return COM_OK;
 }
 
@@ -2082,7 +2082,7 @@ int plogins(int p, FILE *fp)
     }
 
     pcn_out(p, CODE_INFO, FORMAT_s_s_s,
-               strltime(&thetime), loginName, inout_string[inout]);
+               time2str_local(&thetime), loginName, inout_string[inout]);
 
     if (parray[p].adminLevel >= ADMIN_ADMIN) {
       pprintf( p, " from %s\n", ipstr );
@@ -2291,7 +2291,7 @@ static void a_who(int p, int cnt, int *plist)
               parray[p1].flags.is_rated ? "*" : parray[p1].rating > 1 ? "?" : " ",
               pos19,
               pos9,
-              newhms(player_idle(p1)),
+              secs2str_short(player_idle(p1)),
               rtemp);
     pcn_out(p,CODE_INFO, FORMAT_sn, line);
   }
@@ -2329,7 +2329,7 @@ static void who_terse(int p, int num, int *plist, int type)
     pcn_out(p, (left? CODE_WHO: CODE_NONE), FORMAT_s_s_s_s_s_s_s_s,
               flags, otemp, gtemp,
               parray[p1].pname,
-	      newhms(player_idle(p1)),
+	      secs2str_short(player_idle(p1)),
               parray[p1].srank,
               parray[p1].flags.is_rated ? "*" : " ",
 #if MIMIC_NNGS_1205
@@ -4195,18 +4195,19 @@ int com_mailmess(int p, struct parameter * param)
 int com_mailhelp(int p, struct parameter * param)
 {				/* Sparky  */
   char buffer[10000];
-  char command[MAX_FILENAME_SIZE+10];
+  char subj[MAX_FILENAME_SIZE+10];
+  char fname[MAX_FILENAME_SIZE];
   int count;
   UNUSED(param);
 
   if (param[0].type == TYPE_NULL) {
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
-    xpsend_dir(p, FILENAME_HELP_p /* , parray[p].language */ );
+    xpsend_dir(p, FILENAME_HELP_p);
     if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
     return COM_OK;
   }
 
-  count = search_directory(buffer, sizeof buffer, param[0].val.word, FILENAME_HELP);
+  count = search_directory(buffer, sizeof buffer, param[0].val.word, FILENAME_HELP_p);
 
   if (count != 1) {
     pcn_out(p, CODE_ERROR, FORMAT_FOUND_d_FILES_MATCHING_THAT_n, count);
@@ -4218,10 +4219,9 @@ int com_mailhelp(int p, struct parameter * param)
   system(command);
 #else
   {
-  char fname[MAX_FILENAME_SIZE];
-  sprintf(fname, "%s/%s", filename() , param[0].val.word);
-  sprintf(command, "NNGS helpfile: %s", param[0].val.word);
-  mail_asn(parray[p].email, command, fname);
+  sprintf(fname, "%s/%s", filename() , buffer);
+  sprintf(subj, "NNGS helpfile: %s", buffer);
+  mail_asn(parray[p].email, subj, fname);
   }
 #endif
   pcn_out(p, CODE_INFO, FORMAT_THE_FILE_s_WAS_SENT_TO_sn

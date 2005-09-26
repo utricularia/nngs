@@ -240,8 +240,8 @@ struct confmatch *mp;
 fp = fopen( fname, "w" );
 if (!fp) return -1;
 
-fprintf(fp, "## %s, Generated %s UTC\n", fname, strgtime(&globclock.time));
-fprintf(fp, "# compile_date=%s %s\n" , __DATE__ , __TIME__ );
+fprintf(fp, "## %s, Generated %s UTC\n", fname, time2str_utc(&globclock.time));
+fprintf(fp, "# compile_date=%s %s (local)\n" , __DATE__ , __TIME__ );
 fprintf(fp, "#\n" );
 
 for (mp = confmatchs; mp->type; mp++) {

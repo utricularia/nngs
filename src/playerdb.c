@@ -864,7 +864,7 @@ skip_fysical_read:
   }
   if (!parray[p].RegDate[0]) {
     player_dirty(p);
-    do_copy(parray[p].RegDate, strltime(&tt), sizeof parray[p].RegDate);
+    do_copy(parray[p].RegDate, time2str_utc(&tt), sizeof parray[p].RegDate);
   }
 #ifdef WANT_NNGSRATED
   if (!strcasecmp(parray[p].ranked, "NR") ) {
@@ -1628,7 +1628,7 @@ int player_add_message(int top, int fromp, char *message)
     return -1;
   fp = xyfopen(FILENAME_PLAYER_cs_MESSAGES, "a", parray[top].login);
   if (!fp) return -1;
-  fprintf(fp, "%s at %s GMT: %s\n", parray[fromp].pname, strgtime(&tt), message);
+  fprintf(fp, "%s at %s UTC: %s\n", parray[fromp].pname, time2str_utc(&tt), message);
   fclose(fp);
   return 0;
 }

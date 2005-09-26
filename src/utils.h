@@ -100,12 +100,11 @@ int my_snprintf(char *, size_t, const char *, ...);
 #if (!HAVE_SNPRINTF)
 #define snprintf my_snprintf
 #endif
-int psend_raw_file(int, const char *, const char *);
-int psend_file(int, const char *, const char *);
-int pxysend_raw_file(int, int, ...);
+int psend_raw_file(int p, const char *, const char *);
+int psend_file(int p, const char *, const char *);
+int pxysend_raw_file(int p, int num, ...);
 int pxysend_file(int p, int num, ...);
-int pmore_file(int);
-/* int psend_command(int, const char *, char *); */
+int pmore_file(int p);
 int xpsend_dir(int p, int num);
 
 char *stolower(char *);
@@ -119,16 +118,16 @@ int printablestring(const char *);
 char *mystrdup(const char *);
 char * mycrypt(const char *passwd, const char * salt);
 
-char *hms(int, int, int, int);
-char *newhms(int);
-char *strhms(int);
+char *secs2hms_mask(int secs, int mask);
+char *secs2str_short(int secs);
+char *secs2hms_long(int secs);
 
-char *DTdate(const struct tm *);
-char *strDTtime(const time_t *);
+char *tm2str_ccyy_mm_dd(const struct tm *);
+char *time2str_sgf(const time_t *);
 char *ResultsDate(char *);
-char *strltime(const time_t *);
-char *strgtime(const time_t *);
-char *strtime_file(const time_t *);
+char *time2str_local(const time_t *);
+char *time2str_utc(const time_t *);
+char *time2str_file(const time_t *);
 
 /* unsigned read_tick(void); */
 char *tenth_str(unsigned int, int);

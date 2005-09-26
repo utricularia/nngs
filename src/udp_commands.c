@@ -267,18 +267,18 @@ size_t pos=0;
   len = snprintf(dst+pos, dstlen-pos, "Version: %s\n", conffile.version_string);
   if (len < 0) return pos; pos += len;
 
-  len = snprintf(dst+pos, dstlen-pos, "Date(UTC): %s\n", strgtime(&now));
+  len = snprintf(dst+pos, dstlen-pos, "Date(UTC): %s\n", time2str_utc(&now));
   if (len < 0) return pos; pos += len;
-  len = snprintf(dst+pos, dstlen-pos, "Date(local): %s\n", strltime(&now));
+  len = snprintf(dst+pos, dstlen-pos, "Date(local): %s\n", time2str_local(&now));
   if (len < 0) return pos; pos += len;
-  len = snprintf(dst+pos, dstlen-pos, "Startuptime(local): %s\n", strltime(&startuptime));
+  len = snprintf(dst+pos, dstlen-pos, "Startuptime(local): %s\n", time2str_local(&startuptime));
   if (len < 0) return pos; pos += len;
 
   if (uptime > 86400)
     len = snprintf(dst+pos, dstlen-pos, "Uptime: %d days,%s\n", 
-	    uptime/86400, strhms(uptime%86400));
+	    uptime/86400, secs2hms_long(uptime%86400));
   else
-    len = snprintf(dst+pos, dstlen-pos, "Uptime: %s\n", strhms(uptime));
+    len = snprintf(dst+pos, dstlen-pos, "Uptime: %s\n", secs2hms_long(uptime));
   if (len < 0) return pos; pos += len;
 
   len = snprintf(dst+pos, dstlen-pos, "Fd_count: %d\n", net_fd_count);

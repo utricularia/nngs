@@ -335,14 +335,17 @@ int pprintf(int p, const char *format, ...)
   int retval;
   size_t len;
   va_start(ap, format);
-	/* AvK: the strlen could be avoided
-	** if we could trust stdlib on all platforms 
+	/* AvK: the strlen can be avoided if we can trust stdlib.
 	** (the printf() family _is_supposed_ to return 
 	** the strlen() of the resulting string, or -1 on error )
 	*/
   retval = vsprintf(tmp, format, ap);
-  if ((len = strlen(tmp)) >= sizeof tmp) {
-    Logit("pprintf buffer overflow");
+#if 0
+  retval = strlen(tmp);
+#endif
+  len = retval;
+  if (retval < 0 || retval >= sizeof tmp) {
+    Logit("pprintf buffer overflow: %d > %u", retval, (unsigned) sizeof tmp);
     len = sizeof tmp -1; tmp[len] = 0;
   }
   net_send(parray[p].session.socket, tmp, len);
@@ -832,7 +835,7 @@ char * mystrdup(const char *str)
   return tmp;
 }
 
-char *newhms(int t)
+char *secs2str_short(int t)
 {
   static char tstr[20];
   int h, m, s;
@@ -842,17 +845,14 @@ char *newhms(int t)
   m = t / 60;
   s = t % 60;
   if (h > 99) h = 99;
-  if (h) {
-      sprintf(tstr, "%dh", h);
-  } else if (m) {
-    sprintf(tstr, "%dm", m);
-  } else {
-      sprintf(tstr, "%ds", s);
-  }
+  if (h) sprintf(tstr, "%dh", h);
+  else if (m) sprintf(tstr, "%dm", m);
+  else sprintf(tstr, "%ds", s);
+
   return tstr;
 }
 
-char *strhms(int t)
+char *secs2hms_long(int t)
 {
   static char tstr[60];
   int h, m, s;
@@ -866,30 +866,27 @@ char *strhms(int t)
   return tstr;
 }
 
-char *hms(int t, int showhour, int showseconds, int spaces)
+char *secs2hms_mask(int t, int mask)
 {
   static char tstr[20];
-  char tmp[10];
   int h, m, s;
+  int pos = 0;
 
   h = t / 3600;
   t = t % 3600;
   m = t / 60;
   s = t % 60;
-  if (h && showhour) {
-    if (spaces)
-      sprintf(tstr, "%d : %02d", h, m);
-    else
-      sprintf(tstr, "%d:%02d", h, m);
-  } else {
-    sprintf(tstr, "%d", m);
+  if (h && (mask&4)) {
+    if (mask&8) pos += sprintf(tstr+pos, "%d :", h);
+    else pos += sprintf(tstr+pos, "%d:", h);
   }
-  if (showseconds) {
-    if (spaces)
-      sprintf(tmp, " : %02d", s);
-    else
-      sprintf(tmp, ":%02d", s);
-    strcat(tstr, tmp);
+  if (mask&2) {
+    if (mask&8) pos += sprintf(tstr+pos, " %d", m);
+    else pos += sprintf(tstr+pos, "%02d", m);
+  }
+  if (mask&1) {
+    if (mask&8) pos += sprintf(tstr+pos, " : %02d", s);
+    else pos += sprintf(tstr+pos, ":%02d", s);
   }
   return tstr;
 }
@@ -902,7 +899,7 @@ static const char *montharray[] =
 {"Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug",
 "Sep", "Oct", "Nov", "Dec"};
 
-static char *strtime(struct tm * stm)
+static char *tm2str(struct tm * stm)
 {
   static char tstr[100];
 
@@ -917,7 +914,7 @@ static char *strtime(struct tm * stm)
   return tstr;
 }
 
-char *DTdate(const struct tm * stm)
+char *tm2str_ccyy_mm_dd(const struct tm * stm)
 {
   static char tstr[12];
 
@@ -938,7 +935,7 @@ char *ResultsDate(char *fdate)
   return tstr;
 }
 
-char *strtime_file(const time_t * clk)
+char *time2str_file(const time_t * clk)
 {
   static char tstr[14];
   struct tm *stm = gmtime(clk);
@@ -952,22 +949,22 @@ char *strtime_file(const time_t * clk)
   return tstr;
 }
 
-char *strDTtime(const time_t * clk)
-{
-  struct tm *stm = localtime(clk);
-  return DTdate(stm);
-}
-
-char *strltime(const time_t * clk)
-{
-  struct tm *stm = localtime(clk);
-  return strtime(stm);
-}
-
-char *strgtime(const time_t * clk)
+char *time2str_sgf(const time_t * clk)
 {
   struct tm *stm = gmtime(clk);
-  return strtime(stm);
+  return tm2str_ccyy_mm_dd(stm);
+}
+
+char *time2str_local(const time_t * clk)
+{
+  struct tm *stm = localtime(clk);
+  return tm2str(stm);
+}
+
+char *time2str_utc(const time_t * clk)
+{
+  struct tm *stm = gmtime(clk);
+  return tm2str(stm);
 }
 
 /*
@@ -1023,7 +1020,7 @@ int untenths(unsigned int tenths)
 
 char *tenth_str(unsigned int t, int spaces)
 {
-  return hms((t + 5) / 10, 0, 1, spaces);	/* Round it */
+  return secs2hms_mask((t + 5) / 10, 0, 1, spaces);	/* Round it */
 }
 #endif
 
@@ -1255,61 +1252,61 @@ int file_exists(char *fname)
 }
 #endif /* OBSOLETE_SOURCE */
 
-/* read a directory into memory. Strings are stored successively in buffer */
+/* read a directory into memory. Strings are stored successively in buff */
 /* returns -1 on error, or a count of strings stored */
 /* A filter can be passed too */
-int search_directory(char *buffer, int buffersize, char *filter, int num, ...)
+int search_directory(char *buff, int bufsiz, char *filter, int num, ...)
 {
   va_list ap;
-  FILE *fp;
-  char command[MAX_FILENAME_SIZE];
-  char temp[MAX_LINE_SIZE];
-  char *s = buffer;
-  int count = 0;
-  int bytecount = 0;
+  int cnt = 0;
+  int pos = 0;
   int filtlen;
   int len;
   int diff;
+  DIR * dp;
+  struct dirent *ep;
 
   va_start(ap, num);
 
-  memset(filename1,0,sizeof filename1);
+/**
+  dp = xyopendir(num, p);
+**/
   vafilename(filename1,num, ap);
+  dp = opendir(filename1);
 
-  sprintf(command, "ls -1 %s", filename1);
-  fp = popen( &command[0] , "r");
-  if (!fp) {
-    va_end(ap);
-    return -1;
-    }
-  filtlen = strlen(filter);
-  while (fgets(temp, sizeof temp, fp)) {
-    len = strlen(temp);
-    if (bytecount + len >= buffersize) { break; }
-    diff = filter ? strncmp(filter, temp, filtlen) :0;
-    if (diff<0) { break; } /* already past filenames that could match */
-    if (diff>0) { continue; }
-    strcpy(s, temp);
-    count++;
-    bytecount += len;
-    s += len;
-    *(s - 1) = '\0';
-  }
-  pclose(fp);
   va_end(ap);
-  return count;
+
+  Logit("Search_directory(%d):%s", num, (char*)filename1);
+
+  if (!dp) {
+    Logit("diropen failed: %d:%s", errno, strerror(errno) );
+    return -1;
+  }
+
+  filtlen = strlen(filter);
+  for (pos = cnt = 0; ep = readdir(dp); ) {
+    if (ep->d_name[0] == '.') continue;
+    len = 1+strlen(ep->d_name);
+    if (pos + len >= bufsiz) { break; }
+    diff = filter ? strncmp(filter, ep->d_name, filtlen) :0;
+    if (diff) continue;
+    memcpy(buff+pos, ep->d_name, len);
+    pos += len;
+    cnt++;
+  }
+  return cnt;
 }
 
-int display_directory(int p, const char *buffer, int count)
-/* buffer contains 'count' 0-terminated strings in succession. */
+int display_directory(int p, const char *buff, int cnt)
+/* buff contains 'cnt' 0-terminated strings in succession. */
 {
 #define MAX_DISP 800		/* max. no. filenames to display */
 
-  const char *s = buffer;
+  const char *s = buff;
   struct multicol *m = multicol_start(MAX_DISP);
   int i;
 
-  for (i = 0; (i < count && i < MAX_DISP); i++) {
+  for (i = 0; (i < cnt && i < MAX_DISP); i++) {
     multicol_store(m, s);
     s += strlen(s) + 1;
   }

@@ -152,7 +152,7 @@ static void mail_tempnam(char *buff)
   int siz;
 
   if (now != then) seq = 0;
-  sprintf(deet, strtime_file((time_t *) &now));
+  sprintf(deet, time2str_file((time_t *) &now));
   siz = xyfilename(buff, FILENAME_SPOOL_sd, deet, seq);
   Logit("Mail_tempnam() := [%d]%s", siz, buff);
   then = now; seq++;
