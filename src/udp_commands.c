@@ -302,7 +302,10 @@ size_t pos=0;
   len = snprintf(dst+pos, dstlen-pos, "Game_high: %d\n", game_high);
   if (len < 0) return pos; pos += len;
 
-  len = snprintf(dst+pos, dstlen-pos, "Byte_count: %d\n", byte_count);
+  len = snprintf(dst+pos, dstlen-pos, "Bytes_received: %d\n", bytes_received);
+  if (len < 0) return pos; pos += len;
+
+  len = snprintf(dst+pos, dstlen-pos, "Bytes_sent: %d\n", bytes_sent);
   if (len < 0) return pos; pos += len;
 
 return pos;

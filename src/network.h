@@ -68,7 +68,7 @@ extern int net_fd_count;
  *   incoming connections.
  * It returns 0 for success, -1 for error.
  */
-int  net_init(int portnum);
+int  net_init(int portnum, int want_udp);
 
 /*
  */
@@ -81,8 +81,8 @@ void  net_select(int timeout);
 int  net_send(int, const char *, int);
 #define  net_sendStr(fd, str)  \
   do  {  \
-    const char  *net_strOut = (str);  \
-    net_send(fd, net_strOut, strlen(net_strOut));  \
+    const char *ttmp = (str);  \
+    net_send(fd, ttmp, strlen(ttmp));  \
   } while(0)
 
 /*

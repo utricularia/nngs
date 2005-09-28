@@ -274,7 +274,7 @@ void game_ended(int g0, int winner, int why)
       player_remove_observe(p, g0); 
   }
 
-  if (winner == pb && rate_change == 1) {
+  if (winner == pb && rate_change) {
     player_resort();
     if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
       if (garray[g0].Ladder9 == 1) {
@@ -337,7 +337,7 @@ void game_ended(int g0, int winner, int why)
       }
     }
   }
-  else if (winner == pw && rate_change == 1) {
+  else if (winner == pw && rate_change) {
     if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
       if (garray[g0].Ladder9 == 1) {
         Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);

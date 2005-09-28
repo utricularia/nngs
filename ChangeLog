@@ -3,7 +3,7 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.18avk2 2005-07-31 -2005-08-24  2005-09-07 AvK
+1.1.18avk2 2005-07-31 -2005-08-24  2005-09-28 AvK
 - removed unnecessary extern from function declarations in headers.
 - renamed globals in mink.c to mink_*
 - Added support for chroot(). Set CHROOT_DIR to empty if you don't want it.
@@ -16,10 +16,12 @@
   a direct client to a SMTP 'mta' needs to be set up. (the mail-binary needs
   access to the / or /usr filesystem anyway.
   - sending mail by SMTP needs gethostbyname(), which needs /etc/resolv.conf
-  and/or/ /etc/hosts, which should be present in the jail.
+  and/or/ /etc/hosts, which should be present in the jail, and need to
+  be copied there. a working DNS will also be needed, if mail is
+  realayed to any other MTA than "localhost"
   because mail can block (either way ...) a separate spooling mechanism
   plus a child-process are needed.
-  - chroot/smtp will probably not work on windows.
+  - chroot/smtp will *probably not work on windows*.
 - new files : conffile.[ch].
   All the pahnames/strings/configuration-items are now kept
   in a configfile (textfile) , which is read at startup.

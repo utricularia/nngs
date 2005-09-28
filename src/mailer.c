@@ -3,6 +3,7 @@
  */
 
 /*
+    Part of:
     NNGS - The No Name Go Server
     Copyright (C) 1995-1996 Erik Van Riper (geek@nngs.cosmic.org)
     and John Tromp (tromp@daisy.uwaterloo.ca/tromp@cwi.nl)
@@ -112,7 +113,7 @@ static int child_perror(char *msg);
 static int smtp_mail(FILE *fp, char *to, char *subj);
 
 #ifndef WANT_MAIN
-int mail_spool(const char *nbuff, const char *to, const char *subj, const char *text, const char *fname)
+int mail_spool(char *nbuff, const char *to, const char *subj, const char *text, const char *fname)
 {
   char buff[MAX_LINE_SIZE];
   FILE *fp;

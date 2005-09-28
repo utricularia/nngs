@@ -59,28 +59,38 @@
 #ifndef IFNULL
 #define IFNULL(_p,_d) (_p)?(_p):(_d)
 #endif
+
 	/* This is the mapping between names and variables.
 	** The ->ptr points to the actual storage,
 	** for ints, this is an (int*), for strings it is a (char **)
 	** dflt is a STRING, containing the default value.
 	*/
 struct confmatch {
-	int type;
-	const char *name;
-	void *ptr;
-	const char *dflt;
-	};
-/* Behaviour of configuration items is differs:
-** Zombie is not read from file, even if present, so always is filled with the initial value
-** CHPATH is read from file, default wil be applied, and chroot will thim it.
-** Name is read from file, default wil be applied, but chroot will *not* alter it
-** Message just puts a comment in the output-config file
-*/
+  int type;
+  const char *name;
+  void *ptr;
+  const char *dflt;
+  };
+
+	/* Behaviour of configuration items differs:
+	** MESSAGE is ignored, but written (as a comment) into configfile.
+	** ZOMBIE is not read from file, even if present, so is
+	** always filled with the initial value.
+	** CHPATH is read from file, default wil be applied,
+	** and chroot will trim it's prefix off.
+	** NAME is read from file, default wil be applied,
+	** but chroot will *not* alter it.
+	** MESSAGE just puts a comment in the output-config file
+	** NUMBER is a decimal integer. Not altered by program.
+	** OCTAL is like number, but represented in octal.
+	** BOOL is a character used as a boolean value.
+	** 0 := False, > 0 := True; <0 := missing/NULL
+	*/
 #define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
 #define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
-#define INTEGER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
+#define NUMBER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
 #define OCTAL(_n,_o,_d) {'o',(_n),(void*)(_o),(_d)},
 #define MESSAGE(_m) {'m', (_m),NULL, NULL},
 
@@ -134,12 +144,15 @@ CHPATH("ladder9_file", &conffile.ladder9_file, LADDER9_FILE)
 CHPATH("ladder19_file", &conffile.ladder19_file, LADDER19_FILE)
 CHPATH("log_file", &conffile.log_file, LOG_FILE)
 CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
+
+MESSAGE("")
+MESSAGE("These entries define how the server will present itself.")
 MESSAGE("")
 
 NAME("server_name", &conffile.server_name, SERVER_NAME)
+NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_address", &conffile.server_address, SERVER_ADDRESS)
 NAME("server_ports", &conffile.server_ports, SERVER_PORTS)
-NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_email", &conffile.server_email, SERVER_EMAIL)
 NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
 MESSAGE("")
@@ -147,6 +160,7 @@ MESSAGE("To send mail by SMTP: set mail_program to \"SMTP\", and fill in the smt
 MESSAGE("This is needed in chroot() installations, because /usr/bin/mail et.al.")
 MESSAGE("are unavailabls in a chroot() jail.")
 MESSAGE("The smtp_xxx - fields are used to fill the SMTP-request:")
+MESSAGE("")
 MESSAGE(" smtp_mta := mailer we want to use.")
 MESSAGE(" smtp_helo := what we put in the HELO line (this host).")
 MESSAGE(" smtp_from := what we put in the MAIL FROM: line (our address).")
@@ -154,22 +168,24 @@ MESSAGE(" smtp_reply_to := what we put in the Reply-to: header (reply address)."
 MESSAGE("")
 NAME("mail_program", &conffile.mail_program, MAILPROGRAM)
 NAME("smtp_mta", &conffile.smtp_mta, "localhost")
-INTEGER("smtp_portnum", &conffile.smtp_portnum, "25")
+NUMBER("smtp_portnum", &conffile.smtp_portnum, "25")
 NAME("smtp_helo", &conffile.smtp_helo, "localhost")
 NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
 NAME("smtp_reply_to", &conffile.smtp_reply_to, SERVER_EMAIL)
 
 MESSAGE("")
 MESSAGE("Set mode_for_dir to nonzero to create non-existant directories silently.")
+MESSAGE("Use with care...")
+MESSAGE("")
 OCTAL("mode_for_dir", &conffile.mode_for_dir, 0)
+MESSAGE("")
 NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
 MESSAGE("")
 MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
 MESSAGE("")
-MESSAGE("Use with care...")
-MESSAGE("")
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
 BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
+BOOL("want_udp_port", &conffile.want_udp_port, "No" )
 
 MESSAGE("")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
@@ -178,7 +194,7 @@ MESSAGE("")
 #undef NAME
 #undef CHPATH
 #undef MESSAGE
-#undef INTEGER
+#undef NUMBER
 #undef OCTAL
 #undef BOOL
 
@@ -190,200 +206,204 @@ static int conf_file_fixup1(char * target, char *part, int len);
 
 int conf_file_read(const char * fname)
 {
-FILE *fp;
-char buff[1024];
-char *name, *value;
-size_t len;
+  FILE *fp;
+  char buff[1024];
+  char *name, *value;
+  size_t len;
 
-fp = fopen( fname, "r" );
-if (!fp) {
-	config_fill_defaults();
-	return -1;
-	}
+  fp = fopen( fname, "r" );
+  if (!fp) {
+    config_fill_defaults();
+    return -1;
+  }
 
-while (fgets(buff, sizeof buff, fp) ) {
-	len = strspn(buff, " \t\n" );
-	name = buff + len;
-	if (!*name) continue;
-	if (*name == '#' ) continue;
-	len = strcspn(name, "=");
-	if (name[len] != '=') continue;
-	name[len] = 0; value = name + len + 1;
-	if (!*value) continue;
-	trimtrail(name);
-	trimtrail(value);
-	conf_set_pair(name, value);
-	}
-fclose (fp);
+  while (fgets(buff, sizeof buff, fp) ) {
+    len = strspn(buff, " \t\n" );
+    name = buff + len;
+    if (!*name) continue;
+    if (*name == '#' ) continue;
+    len = strcspn(name, "=");
+    if (name[len] != '=') continue;
+    name[len] = 0; value = name + len + 1;
+    if (!*value) continue;
+    trimtrail(name);
+    trimtrail(value);
+    conf_set_pair(name, value);
+  }
+  fclose (fp);
 
-config_fill_defaults();
-return 0;
+  config_fill_defaults();
+  return 0;
 }
 
 static void trimtrail(char *str)
 {
-size_t len;
-len = strlen(str);
-while(len > 0) {
-	if (str[len-1] == ' '
-	|| str[len-1] == '\t'
-	|| str[len-1] == '\n') str[--len] = 0 ;
-	else break;
-	}
+  size_t len;
+  len = strlen(str);
+  while(len > 0) {
+    switch (str[len-1]) {
+    case ' ':
+    case '\t':
+    case '\n': str[--len] = 0 ; continue;
+    default: return;
+    }
+  }
 }
 
 int conf_file_write(const char *fname)
 {
-FILE *fp;
-struct confmatch *mp;
+  FILE *fp;
+  struct confmatch *mp;
 
-fp = fopen( fname, "w" );
-if (!fp) return -1;
+  fp = fopen( fname, "w" );
+  if (!fp) return -1;
 
-fprintf(fp, "## %s, Generated %s UTC\n", fname, time2str_utc(&globclock.time));
-fprintf(fp, "# compile_date=%s %s (local)\n" , __DATE__ , __TIME__ );
-fprintf(fp, "#\n" );
+  fprintf(fp, "## %s, Generated %s UTC\n", fname, time2str_utc(&globclock.time));
+  fprintf(fp, "# compile_date=%s %s (local)\n" , __DATE__ , __TIME__ );
+  fprintf(fp, "#\n" );
 
-for (mp = confmatchs; mp->type; mp++) {
-	switch (mp->type) {
-	case 'm': fprintf(fp, "# %s\n", mp->name);
-		break;
-	case 'Z' :
-	case 'P':
-	case 'p': fprintf(fp, "%s=%s\n"
-		, mp->name, IFNULL(*(char**)mp->ptr,"") );
-		break;
-	case 'i': fprintf(fp, "%s=%d\n", mp->name, (int) *((int*)mp->ptr) );
-		break;
-	case 'o': fprintf(fp, "%s=%o\n", mp->name, (int) *((int*)mp->ptr) );
-		break;
-	case 'b': fprintf(fp, "%s=%s\n"
-		, mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
-		break;
-	default: break;
-		}
-	}
-fprintf(fp, "#\n" );
-fprintf(fp, "## Eof\n" );
+  for (mp = confmatchs; mp->type; mp++) {
+    switch (mp->type) {
+    case 'm': fprintf(fp, "# %s\n", mp->name);
+      break;
+    case 'Z' :
+    case 'P':
+    case 'p': fprintf(fp, "%s=%s\n"
+      , mp->name, IFNULL(*(char**)mp->ptr,"") );
+      break;
+    case 'i': fprintf(fp, "%s=%d\n", mp->name, (int) *((int*)mp->ptr) );
+      break;
+    case 'o': fprintf(fp, "%s=%o\n", mp->name, (int) *((int*)mp->ptr) );
+      break;
+    case 'b': fprintf(fp, "%s=%s\n"
+      , mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
+      break;
+    default: break;
+    }
+  }
+  fprintf(fp, "#\n" );
+  fprintf(fp, "## Eof\n" );
 
-fclose (fp);
-return 0;
+  fclose (fp);
+  return 0;
 }
 
 
 static void config_fill_defaults(void)
 {
-struct confmatch *mp;
+  struct confmatch *mp;
 
-for (mp = confmatchs; mp->type; mp++) {
-	switch (mp->type) {
-	case 'o':
-	case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
-		break;
-	case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
-		break;
-	case 'Z':
-	case 'P':
-	case 'p': if (!*(char**)(mp->ptr) && mp->dflt) {
-		 *((char**)mp->ptr) = mystrdup (mp->dflt);
-		break;
-		}
-	break;
-	case 'm': default: continue;
-		}
-	}
+  for (mp = confmatchs; mp->type; mp++) {
+    switch (mp->type) {
+    case 'o':
+    case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+      break;
+    case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+      break;
+    case 'Z':
+    case 'P':
+    case 'p': if (!*(char**)(mp->ptr) && mp->dflt) {
+       *((char**)mp->ptr) = mystrdup (mp->dflt);
+      break;
+      }
+    break;
+    case 'm': default: continue;
+    }
+  }
 }
+
 
 int conf_file_fixup(void)
 {
-int cnt=0, len;
-struct confmatch *mp;
+  int cnt=0, len;
+  struct confmatch *mp;
 
-if (!conffile.chroot_dir) return 0;
-len = strlen(conffile.chroot_dir) ;
-if (len && conffile.chroot_dir[len-1] == '/') len--;
+  if (!conffile.chroot_dir) return 0;
+  len = strlen(conffile.chroot_dir) ;
+  if (len && conffile.chroot_dir[len-1] == '/') len--;
 
 #define DO_ONE(_s) cnt += conf_file_fixup1((_s), conffile.chroot_dir, len)
 
-for (mp = confmatchs; mp->type; mp++) {
-	switch (mp->type) {
-	case 'p': if (*(char**)(mp->ptr)) DO_ONE(*(char**)(mp->ptr) );
-	break;
-	case 'Z':
-	case 'P':
-	case 'm':
-	case 'b':
-	case 'i':
-	case 'o':
-	default: continue;
-		}
-	}
+  for (mp = confmatchs; mp->type; mp++) {
+    switch (mp->type) {
+    case 'p': if (*(char**)(mp->ptr)) DO_ONE(*(char**)(mp->ptr) );
+      break;
+    case 'Z':
+    case 'P':
+    case 'm':
+    case 'b':
+    case 'i':
+    case 'o':
+    default: continue;
+    }
+  }
 #undef DO_ONE
 
-return cnt;
+  return cnt;
 }
 
 static int conf_file_fixup1(char * target, char *part, int len)
 {
-if (strncmp(target, part, len)) return 1; /* fail */
+  if (strncmp(target, part, len)) return 1; /* fail */
 
-while (target[0] = target[len]) target++;
-return 0;
+  while (target[0] = target[len]) target++;
+  return 0;
 
 }
 
 
 static int conf_set_pair(const char *name, const char *value)
 {
-struct confmatch *mp;
+  struct confmatch *mp;
 
-mp = conf_find(name);
-if (!mp) { /* nametag Not found */
-	return -1;
-	}
-switch (mp->type) {
-case 'p':
-case 'P':
-	if (*(char**)(mp->ptr)) free (*(char**)(mp->ptr));
-	*(char**)(mp->ptr) = (value) ? mystrdup(value): NULL;
-	break;
-case 'o':
-	if (!value || !*value) value = "0";
-	sscanf(value, "%o", (int*)(mp->ptr) );
-	break;
-case 'i':
-	if (!value || !*value) value = "0";
-	sscanf(value, "%d", (int*)(mp->ptr) );
-	break;
-case 'b':
-	if (!value || !*value) value = "F";
-	switch (*value) {
-		case 't': case 'T':
-		case 'y': case 'Y':
-		case '+': case '1':
-	 	*((char*)(mp->ptr)) = 1; break;
-		case 'f': case 'F':
-		case 'n': case 'N':
-		case '-':
-		case '0':
-	 	*((char*)(mp->ptr)) = -1; break;
-		}
-	break;
-case 'Z':
-case 'm':
-default: return -1;
-	}
+  mp = conf_find(name);
+  if (!mp) return -1; /* nametag Not found */
 
-return 0;
+  switch (mp->type) {
+  case 'p':
+  case 'P':
+    if (*(char**)(mp->ptr)) free (*(char**)(mp->ptr));
+    *(char**)(mp->ptr) = (value) ? mystrdup(value): NULL;
+    break;
+  case 'o':
+    if (!value || !*value) value = "0";
+    sscanf(value, "%o", (int*)(mp->ptr) );
+    break;
+  case 'i':
+    if (!value || !*value) value = "0";
+    sscanf(value, "%d", (int*)(mp->ptr) );
+    break;
+  case 'b':
+    if (!value || !*value) value = "F";
+    switch (*value) {
+      case 't': case 'T':
+      case 'y': case 'Y':
+      case '+': case '1':
+       *((char*)(mp->ptr)) = 1; break;
+      case 'f': case 'F':
+      case 'n': case 'N':
+      case '-':
+      case '0':
+       *((char*)(mp->ptr)) = 0; break;
+    }
+    break;
+  case 'Z':
+  case 'm':
+  default: return -1;
+  }
+
+  return 0;
 }
+
 
 static struct confmatch *conf_find(const char *name)
 {
-struct confmatch *mp;
+  struct confmatch *mp;
 
-for (mp = confmatchs; mp->type; mp++) {
-	if (mp->type== 'm') continue;
-	if (!strcmp(mp->name, name) ) return mp;
-	}
-return NULL;
+  for (mp = confmatchs; mp->type; mp++) {
+    if (mp->type== 'm') continue;
+    if (!strcmp(mp->name, name) ) return mp;
+  }
+  return NULL;
 }
+

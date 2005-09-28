@@ -857,7 +857,6 @@ Optional Features:
 			  (and sometimes confusing) to the casual installer
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-udp-socket     Use UDP-socket default=no
   --enable-dmalloc         Enable dmalloc debugging default=no
 
 Some influential environment variables:
@@ -6001,32 +6000,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-
-cat >>confdefs.h <<_ACEOF
-#define WANT_UDP 1
-_ACEOF
-
-echo "$as_me:$LINENO: checking whether UDP-socket is requested" >&5
-echo $ECHO_N "checking whether UDP-socket is requested... $ECHO_C" >&6
-# Check whether --enable-udp-socket or --disable-udp-socket was given.
-if test "${enable_udp_socket+set}" = set; then
-  enableval="$enable_udp_socket"
-  if test x$enableval = "xyes"; then
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-	cat >>confdefs.h <<\_ACEOF
-#define WANT_UDP 1
-_ACEOF
-
-	else
-	echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	fi
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi;
 
 
 

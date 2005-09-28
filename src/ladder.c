@@ -44,7 +44,7 @@ struct ladder {
   int fNameSorted;
   struct player **byPosn;
   struct player **byName;
-} ;
+  };
 
 int dbmax;
 static struct ladder *db;
@@ -88,14 +88,10 @@ int LadderNew(int n)
   int idx;
 
   for (idx = 0; idx < dbmax; idx++) {
-    if (db[idx].max == 0) {
-      break;
-    }
+    if (db[idx].max == 0) break;
   }
 
-  if (idx == dbmax) {
-    return 0;
-  }
+  if (idx == dbmax) return 0;
 
   return _LadderNew(idx, n);
 }
@@ -103,33 +99,25 @@ int LadderNew(int n)
 
 const struct player *PlayerAt(int idx, int i)
 {
-  if (i >= 0 && i < db[idx].n) {
-    return db[idx].byPosn[ i ];
-  }
+  if (i >= 0 && i < db[idx].n) return db[idx].byPosn[ i ];
   return 0;
 }
 
 
 void PlayerUpdTime(int idx, int i, time_t t)
 {
-  if (i >= 0 && i < db[idx].n) {
-    db[idx].byPosn[i]->tLast = t;
-  }
+  if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->tLast = t;
 }
 
 
 void PlayerAddWin(int idx, int i)
 {
-  if (i >= 0 && i < db[idx].n) {
-    db[idx].byPosn[i]->nWins++;
-  }
+  if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->nWins++;
 }
 
 void PlayerAddLoss(int idx, int i)
 {
-  if (i >= 0 && i < db[idx].n) {
-    db[idx].byPosn[i]->nLosses++;
-  }
+  if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->nLosses++;
 }
 
 static void copy(int idx, int dst, int src)
@@ -173,9 +161,8 @@ const struct player *PlayerNamed(int idx, const char *psz)
   int i;
 
   for (i = 0; i < db[idx].n; i++) {
-    if (!strcmp(db[idx].byPosn[ i ]->szName, psz)) {
-      return db[idx].byPosn[ i ];
-    }
+    if (strcmp(db[idx].byPosn[ i ]->szName, psz)) continue;
+    return db[idx].byPosn[ i ];
   }
 
   return 0;
@@ -216,9 +203,7 @@ int PlayerNew(int idx, const char *psz)
 {
   struct player *p;
 
-  if (db[idx].n >= db[idx].max) {
-    return 0;
-  }
+  if (db[idx].n >= db[idx].max) return 0;
 
   assert(p = malloc(sizeof *p));
 

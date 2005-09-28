@@ -96,10 +96,6 @@
 /*#define  buglog(x)  Logit x */
 #define  buglog(x) 
 
-#ifndef WANT_UDP
-#define WANT_UDP 1
-#endif
-
 /* [PEM]: Debugging. An attempt to find where things hangs sometimes. */
 #if 0
 #define TIMED  struct timeval t0, t1
@@ -194,11 +190,9 @@ static void  fd_cleanup(int fd);
 static void  flushWrites(void);
 
 
-#if WANT_UDP
 #include "udp_commands.h"
 static int  do_read_udp(int fd);
 static char udpbuff[2*4096];
-#endif
 /**********************************************************************
  * Public data
  **********************************************************************/
@@ -221,7 +215,7 @@ static void set_nonblocking(int fd)
 /*
  * Every time you call this, another fd is added to the listen list.
  */
-int net_init(int portnum)
+int net_init(int portnum, int want_udp)
 {
   static int doneinit = 0;
   int  fd,i;
@@ -293,22 +287,22 @@ int net_init(int portnum)
   if (fd > net_fd_top) net_fd_top = fd;
   FD_SET(fd , &readSet);
   listen_count++;
-#if WANT_UDP
-  {
-  int val,rc;
 
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-  fprintf(stderr, "NNGS: can't create UDP socket.  errno=%d\n", errno);
+  if (want_udp>0) {
+    int val,rc;
+
+    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    fprintf(stderr, "NNGS: can't create UDP socket.  errno=%d\n", errno);
         return 0; /* we want to ignore this error */
         }
-                                                                                             
-  val = 1;
-  rc = setsockopt(fd, IPPROTO_IP , IP_RECVOPTS , &val, sizeof val);
-  if (rc < 0) { rc = errno;
-    fprintf(stderr, "Tinker := %d(%s)\n" , rc, strerror(rc) );
-    close (fd);
-    return -1;
-  }
+
+    val = 1;
+    rc = setsockopt(fd, IPPROTO_IP , IP_RECVOPTS , &val, sizeof val);
+    if (rc < 0) { rc = errno;
+      fprintf(stderr, "Tinker := %d(%s)\n" , rc, strerror(rc) );
+      close (fd);
+      return -1;
+    }
 
 	/* Sorry, this is to minimize distribution errors.
 	** I test on an old alpha, and want to listen on 0.0.0.0
@@ -318,26 +312,26 @@ int net_init(int portnum)
 	** what they are doing, off course ...
 	*/
 #ifndef __alpha
-  addr.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
+    addr.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
 #endif
-  if (bind(fd, (struct sockaddr *) &addr, sizeof addr) == -1) {
-    fprintf(stderr
-    , "bind() Fd %d, Family %d, Port %d, Addr %x fails:%s\n"
-    , fd
-    , addr.sin_family
-    , (int) ntohs(addr.sin_port)
-    , (int) ntohl(addr.sin_addr.s_addr)
-    , strerror(errno)
-    );
-    close(fd);
-    return -1;
-    }
-  netarray[fd].netstate = NETSTATE_UDP;
-  if (fd > net_fd_top) net_fd_top = fd;
-  FD_SET(fd , &readSet);
-  listen_count++;
+    if (bind(fd, (struct sockaddr *) &addr, sizeof addr) == -1) {
+      fprintf(stderr
+      , "bind() Fd %d, Family %d, Port %d, Addr %x fails:%s\n"
+      , fd
+      , addr.sin_family
+      , (int) ntohs(addr.sin_port)
+      , (int) ntohl(addr.sin_addr.s_addr)
+      , strerror(errno)
+      );
+      close(fd);
+      return -1;
+      }
+    netarray[fd].netstate = NETSTATE_UDP;
+    if (fd > net_fd_top) net_fd_top = fd;
+    FD_SET(fd , &readSet);
+    listen_count++;
   }
-#endif /* WANT_UDP */
+
   return 0;
 }
 
@@ -485,12 +479,10 @@ void  net_select(int timeout)
             /* continue; */
           }
           break;
-#if WANT_UDP
         case NETSTATE_UDP: /* A datagram from a web-interface. */
           /* Logit("Got UDP Message on %d", fd); */
 	  /* rc = */ do_read_udp(fd);
 	  continue;
-#endif /* WANT_UDP */
 	default:	/* It is not connected. */
           assert(!FD_ISSET(fd, &readSet)); /* bogus */
 	  continue;
@@ -511,7 +503,6 @@ void  net_select(int timeout)
 }
 
 
-#if WANT_UDP
 static int  do_read_udp(int fd)
 {
   int rlen, wlen, alen;
@@ -547,9 +538,6 @@ static int  do_read_udp(int fd)
   /* Logit("Wrote UDP Message %d", wlen); */
   return wlen;
 }
-
-#endif /* WANT_UDP */
-
 
 static int  do_accept(int listenFd)
 {
@@ -651,6 +639,7 @@ static int  do_write(int fd)
     }
   }
  
+  bytes_sent += written;
   if (written == (int)conn->out_used)  {
     conn->out_used = 0;
     FD_CLR(fd, &writeSet);
@@ -828,6 +817,7 @@ static int  do_read(int fd)
       return -1;
     }
   }
+  bytes_received += readAmt;
   conn->in_used += readAmt;
   if (!conn->in_end) return checkForCmd(fd);
   return 0;
@@ -843,7 +833,6 @@ int  net_send(int fd, const char *src, int bufLen)
   assert((fd >= 0) && (fd < COUNTOF(netarray)));
   net = &netarray[fd];
   if (net->netstate != NETSTATE_CONNECTED) return 0;
-  byte_count += (long) bufLen;
 
   /* telnetify the output. */
   for (i = 0;  i < bufLen;  ++i)  {
@@ -935,9 +924,9 @@ struct stat statje;
   if (fd < 0 || fd > net_fd_top) return NULL;
 
   rc = fstat(fd, &statje);
-  if (!rc) rc =statje.st_mode;
+  if (!rc) rc = statje.st_mode;
 
-  pos = sprintf(buff, "%d:%d:%d:%x:%08x:%c:%c"
+  pos = sprintf(buff, "%d:%d:%x:%x:%08x:%c:%c"
     , fd, netarray[fd].netstate, rc, netarray[fd].telnetState
     , netarray[fd].fromHost
     , (netarray[fd].is_full) ? 'F' : '-'

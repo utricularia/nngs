@@ -27,6 +27,9 @@ char legalNotice[] = "\n\
     Copyright (C) 1995-1996 Erik Van Riper (geek@willent.com)\n\
     and John Tromp (tromp@daisy.uwaterloo.ca/tromp@cwi.nl)\n\
 \n\
+    Some maintenance and additions:\n\
+    Copyright (C) 2001-2005 Adriaan W.D. van Kessel\n\
+\n\
     Adapted from:\n\
     fics - An internet chess server.\n\
     Copyright (C) 1993  Richard V. Nash\n\

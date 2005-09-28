@@ -60,20 +60,18 @@ chkaddr(const char *s)
   dotcount = -1;
   do {
 
-    if (*p == '.' || *p == '\0')
-      return 0;		/* Dot in the wrong place (first, last or double) */
+		/* Dot in the wrong place (first, last or double) */
+    if (*p == '.' || *p == '\0') return 0;
     dotcount += 1;
     do {
       char c = *p++;
 
-      if (!NAME_CHAR_UNION(c))
-	return 0;
-    } while (*p != '.' && *p != '\0');
+      if (!NAME_CHAR_UNION(c)) return 0;
+    } while (*p && *p != '.');
 
   } while (*p++ == '.');
 
-  if (dotcount < 1)
-    return 0;			/* Too few dots */
+  if (dotcount < 1) return 0;			/* Too few dots */
   return 1;
 }
 
@@ -86,10 +84,8 @@ main(int argc, char **argv)
   while (fgets(buf, 1024, stdin))
   {
     buf[strlen(buf)-1] = '\0';
-    if (chkaddr(buf))
-      printf("+ %s\n", buf);
-    else
-      printf("- %s\n", buf);
+    if (chkaddr(buf)) printf("+ %s\n", buf);
+    else printf("- %s\n", buf);
   }
   exit(0);
 }

@@ -182,7 +182,6 @@ static void game_zero(struct game *gp, int size)
   gp->gevent = NULL;
   gp->minkg = NULL;
   gp->teach = 0;
-  /* gp->Teach2 = 0; */
   gp->ts.time_type = TIMETYPE_UNTIMED;
   gp->ts.totalticks = SECS2TICS(300);
   gp->ts.byoticks = SECS2TICS(300);
@@ -775,7 +774,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   else sprintf(resu, "%.1f", garray[g0].gresult);
   fprintf(fp, "\n(;\n");
   fprintf(fp, "GM[1]FF[4]AP[NNGS:%s]\n", conffile.version_string);
-  fprintf(fp, "US[Brought to you by No Name Go Server]\n");
+  fprintf(fp, "US[Brought to you by %s]\n", conffile.server_name);
   fprintf(fp, "CP[\n\
   Copyright This game was played on %s\n\
   Permission to reproduce this game is given,\n\
@@ -815,10 +814,10 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   if (Debug) Logit("garray[g0].nmvinfos = %d", garray[g0].nmvinfos);
   mink_savegame(fp, garray[g0].minkg, garray[g0].mvinfos, garray[g0].nmvinfos);
 
-  fprintf(fp, ";");
   if (statstring) {   /* record territory in SGF file */
     int x, y, n;      /*  - added on 11/19/98 by nic */
 
+    fprintf(fp, ";");
     n = 0;
     for (x = 0; x < garray[g0].minkg->height; x++)
       for (y = 0; y < garray[g0].minkg->width; y++)
@@ -1045,19 +1044,15 @@ void game_write_complete(int g0, twodstring statstring)
     }
     else
     {
-      if (rdbm_fetch(rdb, parray[wp].pname, &rp))
-	strcpy(wrank, rp.rank);
-      else
-	strcpy(wrank, "-");
-      if (rdbm_fetch(rdb, parray[bp].pname, &rp))
-	strcpy(brank, rp.rank);
-      else
-	strcpy(brank, "-");
+      if (rdbm_fetch(rdb, parray[wp].pname, &rp)) strcpy(wrank, rp.rank);
+      else strcpy(wrank, "-");
+      if (rdbm_fetch(rdb, parray[bp].pname, &rp)) strcpy(brank, rp.rank);
+      else strcpy(brank, "-");
       rdbm_close(rdb);
     }
 
     fp = xyfopen(FILENAME_NRESULTS, "a");
-    if (!fp) { return; }
+    if (!fp) return;
     fprintf(fp, "\"%s\" %s \"%s\" %s %u %.1f %c %02u-%02u-%02u\n",
 	    parray[wp].pname,
 	    wrank,

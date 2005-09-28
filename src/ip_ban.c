@@ -27,16 +27,17 @@
 #ifdef WANT_MAIN
 #define WANT_DUMP_RANGETREE 1
 #endif
-  /*
-   * rangetree-structure for exclusion of ip-adresses
-   * basic operations are add-range, remove-range
-   * check-if-XX-is-in-range. Ranges are split/merged when needed, eg
-   * [1-9][11-19] + [10] <<-->> [1-19]
-   * There is an attempt to keep the binary tree balanced
-   * by applying obvious and cheap rotations on-the-fly.
-   */
+/*
+ * Rangetree-structure for exclusion of ip-adresses.
+ * Basic operations are add-range, remove-range
+ * check-if-XX-is-in-range.
+ * Ranges are split/merged when needed, eg
+ * [1-9][11-19] + [10] <<-->> [1-19]
+ * There is an attempt to keep the binary tree balanced
+ * by applying obvious and cheap rotations on-the-fly.
+ */
 struct range {
-  struct range **hnd;
+  struct range **hnd; /* pointer to parent's pointer to this */
   struct range *nxt;
   struct range *prv;
   unsigned bot; /* lower bound of this range, inclusive */
@@ -85,7 +86,7 @@ int range_check(unsigned bot, unsigned top)
 
 	/* Iterate through the tree. (rather clumsily ...)
 	** on entry, pb and pt point to the values found on the previous call
-	** , on return thay point to the new range
+	** , on return they point to the new range
 	** ranges are returned in increasing order.
 	** on the first call, set (*pb > *pt) to start things up.
 	*/
@@ -221,6 +222,7 @@ static void range_dump0(FILE *fp, struct range *np)
 	** If 'val' currently exists, the return (*hnd) points to it,
 	** if not found, (*hnd) points to the place where it should be.
 	** While walking the tree, we attempt to do some trivial rotations.
+	** ("vine-compacting")
 	*/
 static struct range **range_hnd(struct range **hnd, unsigned val)
 {
@@ -233,26 +235,26 @@ static struct range **range_hnd(struct range **hnd, unsigned val)
       node_rotate(pp,pr);
       continue;
     }
-    else if (!pr && pl && !pl->nxt && pl->prv) { /* idem; pl new root */
+    /*else*/ if (!pr && pl && !pl->nxt && pl->prv) { /* idem; pl new root */
       node_rotate(pp,pl);
       continue;
     }
 	/* Grandmother's rotation ... */
-    else if (pl && !pl->prv && !pl->nxt && pr && pr->prv && pr->nxt) {
+    /*else*/ if (pl && !pl->prv && !pl->nxt && pr && pr->prv && pr->nxt) {
       node_rotate(pp,pr);
       continue;
     }
-    else if (pr && !pr->prv && !pr->nxt && pl && pl->prv && pl->nxt) {
+    /*else*/ if (pr && !pr->prv && !pr->nxt && pl && pl->prv && pl->nxt) {
       node_rotate(pp,pl);
       continue;
     }
     if (val < pp->bot) {
            hnd = &pp->prv;
            continue;  }
-    else if (val > pp->top) {
+    /*else*/ if (val > pp->top) {
            hnd = &pp->nxt;
            continue;  }
-    else break; /* found match */
+    /*else*/ break; /* found match */
     }
 
   return hnd;
@@ -469,7 +471,7 @@ int main()
           if (u1 + u2 < u1) break;
           u0 += u2; u1 += u2;
         }
-      continue;
+        continue;
       }
       if (narg< 2) u1=u0 ;
       range_remove(u0, u1);

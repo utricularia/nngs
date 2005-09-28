@@ -167,8 +167,7 @@ int channel_remove(int ch, int p)
 
   found = -1;
   for (i = 0; i < carray[ch].count && found < 0; i++)
-    if (p == carray[ch].members[i])
-      found = i;
+    if (p == carray[ch].members[i]) found = i;
   if (found < 0) return 1;
   for (i = found; i < carray[ch].count - 1; i++)
     carray[ch].members[i] = carray[ch].members[i + 1];
@@ -184,11 +183,12 @@ int channel_remove(int ch, int p)
 
 int channel_add(int ch, int p)
 {
-  if (ch == 0 && parray[p].adminLevel < ADMIN_MASTER) {
-    return 3;
-  }
+  if (ch == 0 && parray[p].adminLevel < ADMIN_MASTER) return 3;
+
   if (carray[ch].count >= MAX_CHANNEL_MEMBERS) return 1;
+
   if (on_channel(ch, p)) return 1;
+
   if (carray[ch].is_locked && parray[p].adminLevel < ADMIN_MASTER) return 4;
   if (carray[ch].is_hidden && parray[p].adminLevel < ADMIN_MASTER) return 5;
   if (parray[p].nochannels == MAX_INCHANNELS 

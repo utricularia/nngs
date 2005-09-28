@@ -50,9 +50,9 @@
 #endif
 */
 
-extern unsigned long byte_count;
+extern unsigned long bytes_received;
+extern unsigned long bytes_sent;
 extern int Debug;
-/* extern int globClock; */
 
 
 #endif /* COMMON_H */

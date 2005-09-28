@@ -10,7 +10,8 @@ Sets the admin level of the player with the following restrictions.
 
 Levels
 ------
-  0   - Normal user. Almost everyone is admin level 0.
+  0   - Unregistered user.
+  1   - Registered user.
  10   - Administrator. This level allows you to execute non-destructive
         administrator commands.
  20   - Master Administrator. Allows you to break normal users and lower

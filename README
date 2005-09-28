@@ -99,7 +99,7 @@ have to do some manual tuning.
 4) Maybe (?depending on platform?) other files (/dev/zero) are needed.
 5) As an aid in debugging, a file "written.cnf" is written in the
    chroot() -jail. The pathnames in this file will be relative to the
-   chroot() directory. (so: just a bit snipped at the front)
+   chroot() directory. (prefix is snipped)
 5) YMMV
 
 

@@ -56,18 +56,20 @@ int com_adrop(int p, struct parameter* param)
   }
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
   PlayerKillAt(lnum, LadderPlayer->idx);
-  if (lnum == 9)
-    fp = xyfopen(FILENAME_LADDER9, "w");
-  else
-    fp = xyfopen(FILENAME_LADDER19, "w");
+  switch (lnum) {
+  case 9: fp = xyfopen(FILENAME_LADDER9, "w"); break;
+  default:
+  case 19: fp = xyfopen(FILENAME_LADDER19, "w"); break;
+  }
   if (!fp) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_);
     return COM_OK;
   }
-  if (lnum == 9)
-    num_9 = PlayerSave(fp, lnum);
-  else
-    num_19 = PlayerSave(fp, lnum);
+  switch (lnum) {
+  case 9: num_9 = PlayerSave(fp, lnum); break;
+  default:
+  case 19: num_19 = PlayerSave(fp, lnum); break;
+  }
   fclose(fp);
   player_resort();
   return COM_OK;

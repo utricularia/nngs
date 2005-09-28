@@ -54,7 +54,7 @@ void language_init(void)
 #define GER(n,s) /*  ger [(n)] = (s) */
 #endif /* WANT_TO_DEFINE */
 
-#define FORMAT_COUNT (851+1)
+#define FORMAT_COUNT (852+1)
 #define FORMAT_empty 0
 ENG(FORMAT_empty,"")
 
@@ -1912,8 +1912,8 @@ ENG(FORMAT_BOTH_PLAYERS_HAVE_LESS_THAN_d_SECONDS_LEFT_n,"Both players have less 
 #define FORMAT_BYO_YOMI_TIME_MUST_BE_0n 501
 ENG(FORMAT_BYO_YOMI_TIME_MUST_BE_0n,"Byo-yomi time must be >= 0\n")
 
-#define FORMAT_BYTES_SENT_dn 502
-ENG(FORMAT_BYTES_SENT_dn,"Bytes sent: %ld\n")
+#define FORMAT_BYTES_SENT_un 502
+ENG(FORMAT_BYTES_SENT_un,"Bytes sent: %lu\n")
 
 #define FORMAT_CAN_T_RAISE_UNTIL_THEY_LEAVE_ 503
 ENG(FORMAT_CAN_T_RAISE_UNTIL_THEY_LEAVE_,"Can't raise until they leave.")
@@ -2962,7 +2962,10 @@ ENG(FORMAT_IP_BAN_CHANGED_dn,"IP-address-bans changed: %d\n")
 #define FORMAT_IP_RANGES_n 850
 ENG(FORMAT_IP_RANGES_n,"IP-address-ban ranges:\n")
 
-#define FORMAT__s 851
+#define FORMAT_BYTES_RECEIVED_un 851
+ENG(FORMAT_BYTES_RECEIVED_un,"Bytes received: %lu\n")
+
+#define FORMAT__s 852
 ENG(FORMAT__s," %s")
 
 /** end insert here */

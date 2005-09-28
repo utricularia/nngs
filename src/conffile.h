@@ -32,20 +32,21 @@ struct conffile {
   char *chroot_dir;
   char *chroot_user;
   char *chroot_group;
-
+	/* Identity */
   char *server_name;
   char *server_address;
   char *server_ports;
   char *server_http;
   char *server_email;
   char *geek_email;
+	/* mail/SMTP stuff */
   char *mail_program;
   char *smtp_from;
   char *smtp_reply_to;
   char *smtp_mta;
   int smtp_portnum;
   char *smtp_helo;
-
+	/* Directories for various stuff */
   char *mess_dir;
   char *help_dir;
   char *comhelp_dir;
@@ -62,7 +63,7 @@ struct conffile {
   char *lists_dir;
   char *news_dir;
   char *spool_dir;
-
+	/* Some filenames */
   char *intergo_file;
   char *ratings_file;
   char *nratings_file;
@@ -76,19 +77,21 @@ struct conffile {
   char *log_file;
   char *logons_file;
 
+	/* results-files to communicate with mlrate */
   char *stats_games;
   char *stats_rgames;
   char *stats_cgames;
-
+	/* Boolean flags */
   char allow_unregistered;
   char unregs_can_shout;
-
+  char want_udp_port;
+	/* Misc stuff */
   char *def_prompt;
   unsigned mode_for_dir;
   };
 
 #if CONFFILE_C
-struct conffile conffile;
+struct conffile conffile = {NULL, };
 #else
 extern struct conffile conffile;
 #endif

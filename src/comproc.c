@@ -638,12 +638,10 @@ int com_best(int p, struct parameter * param)
     if (i == 1) high = low;
     type = 19;
   }
-  else if (param[0].type == TYPE_INT)
-    type = param[0].val.integer;
+  else if (param[0].type == TYPE_INT) type = param[0].val.integer;
   else type = 0;
 
-  if (param[1].type == TYPE_INT)
-    low = high = param[1].val.integer;
+  if (param[1].type == TYPE_INT) low = high = param[1].val.integer;
   else if (param[1].type == TYPE_WORD) {
     i = sscanf(param[1].val.word, "%d-%d", &low, &high);
     if (i == 1) high = low;
@@ -2028,7 +2026,8 @@ int com_uptime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_THERE_ARE_CURRENTLY_d_GAMES_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n, count, game_high);
 
   pcn_out(p, CODE_INFO, FORMAT_CONNECTED_TO_sn, conffile.server_name);
-  pcn_out(p, CODE_INFO, FORMAT_BYTES_SENT_dn, byte_count);
+  pcn_out(p, CODE_INFO, FORMAT_BYTES_SENT_un, bytes_sent);
+  pcn_out(p, CODE_INFO, FORMAT_BYTES_RECEIVED_un, bytes_received);
 
   LPlayer = PlayerAt(Ladder9, 0);
   if (LPlayer)

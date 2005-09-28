@@ -219,7 +219,7 @@ char *nextword(char *str)
 int mail_ast(const char *addr, const char *subj, const char *text)
 {
   int ret;
-  char nbuf[1000];
+  char nbuf[MAX_FILENAME_SIZE];
 
   Logit("Mail_ast(%s,%s,%s)", addr, subj, text);
   if (!safestring(addr)) return -1;
@@ -248,7 +248,7 @@ int mail_psn(int p, const char *subj, const char *fname)
 
 int mail_asn(const char *addr, const char *subj, const char *fname)
 {
-  char nbuf[MAX_STRING_LENGTH];
+  char nbuf[MAX_FILENAME_SIZE];
   int ret;
 
   ret = 0;

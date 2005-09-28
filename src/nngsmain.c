@@ -76,12 +76,12 @@
 #include "mink.h"
 #include "ip_ban.h"
 
-/* Arguments */
-int /* port, */ Ladder9, Ladder19, num_19, num_9, completed_games,
+/* Scoreboard */
+int Ladder9, Ladder19, num_19, num_9, completed_games,
        num_logins, num_logouts, new_players, Debug;
-#if WANT_BYTE_COUNT
-unsigned long byte_count = 0L;
-#endif
+unsigned long bytes_sent = 0UL;
+unsigned long bytes_received = 0UL;
+
 static char confname[1024] = "nngs.cnf";
 
 void player_array_init(void);
@@ -214,9 +214,8 @@ int main(int argc, char *argv[])
   srand(startuptime);
   player_high = 0;
   game_high = 0;
-#if WANT_BYTE_COUNT
-  byte_count = 0;
-#endif
+  bytes_sent = 0;
+  bytes_received = 0;
 
 #ifdef SGI
   /*mallopt(100, 1);*/  /* Turn on malloc(3X) debugging (Irix only) */
@@ -273,7 +272,7 @@ int pos, len, rc, cnt;
     rc = sscanf(conffile.server_ports+pos, "%d%n", &port, &len );
     if (rc < 0) break;
     if (rc < 1) { len=1; continue; }
-    if (net_init(port)) {
+    if (net_init(port, conffile.want_udp_port)) {
       Logit("Init failed on port %d.", port);
       continue;
       }
