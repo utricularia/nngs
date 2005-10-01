@@ -66,7 +66,7 @@
 
 void game_ended(int g0, int winner, int why)
 {
-  const struct player *Ladder_B, *Ladder_W;
+  const struct ladderplayer *Ladder_B, *Ladder_W;
   char outstr[180];
   char tmp[50];
   char statZ1[200];
@@ -278,21 +278,21 @@ void game_ended(int g0, int winner, int why)
     player_resort();
     if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
       if (garray[g0].Ladder9 == 1) {
-        Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);
-        Ladder_B = PlayerNamed(Ladder9, parray[pb].pname);
-        PlayerRotate(Ladder9, Ladder_W->idx, Ladder_B->idx);
-        PlayerUpdTime(Ladder9, Ladder_W->idx, now);
-        PlayerUpdTime(Ladder9, Ladder_B->idx, now);
-        PlayerAddWin(Ladder9, Ladder_B->idx);
-        PlayerAddLoss(Ladder9, Ladder_W->idx);
+        Ladder_W = ladder_player_named(Ladder9, parray[pw].pname);
+        Ladder_B = ladder_player_named(Ladder9, parray[pb].pname);
+        ladder_rotate(Ladder9, Ladder_W->idx, Ladder_B->idx);
+        ladder_set_time(Ladder9, Ladder_W->idx, now);
+        ladder_set_time(Ladder9, Ladder_B->idx, now);
+        ladder_win(Ladder9, Ladder_B->idx);
+        ladder_lose(Ladder9, Ladder_W->idx);
         fp = xyfopen(FILENAME_LADDER9, "w");
         if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
-          num_9 = PlayerSave(fp, Ladder9);
+          num_9 = ladder_save(fp, Ladder9);
           fclose(fp);
-          Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);
-          Ladder_B = PlayerNamed(Ladder9, parray[pb].pname);
+          Ladder_W = ladder_player_named(Ladder9, parray[pw].pname);
+          Ladder_B = ladder_player_named(Ladder9, parray[pb].pname);
           pcn_out(pb, CODE_INFO, FORMAT_YOU_ARE_NOW_AT_POSITION_d_IN_THE_9X9_LADDER_CONGRATS_n, (Ladder_B->idx) + 1);
           pcn_out(pw, CODE_INFO, FORMAT_YOU_ARE_NOW_AT_POSITION_d_IN_THE_9X9_LADDER_n, (Ladder_W->idx) + 1);
           for (p2 = 0; p2 < parray_top; p2++) {
@@ -307,21 +307,21 @@ void game_ended(int g0, int winner, int why)
         }
       }
       if (garray[g0].Ladder19 == 1) {
-        Ladder_W = PlayerNamed(Ladder19, parray[pw].pname);
-        Ladder_B = PlayerNamed(Ladder19, parray[pb].pname);
-        PlayerRotate(Ladder19, Ladder_W->idx, Ladder_B->idx);
-        PlayerUpdTime(Ladder19, Ladder_W->idx, now);
-        PlayerUpdTime(Ladder19, Ladder_B->idx, now);
-        PlayerAddWin(Ladder19, Ladder_B->idx);
-        PlayerAddLoss(Ladder19, Ladder_W->idx);
+        Ladder_W = ladder_player_named(Ladder19, parray[pw].pname);
+        Ladder_B = ladder_player_named(Ladder19, parray[pb].pname);
+        ladder_rotate(Ladder19, Ladder_W->idx, Ladder_B->idx);
+        ladder_set_time(Ladder19, Ladder_W->idx, now);
+        ladder_set_time(Ladder19, Ladder_B->idx, now);
+        ladder_win(Ladder19, Ladder_B->idx);
+        ladder_lose(Ladder19, Ladder_W->idx);
         fp = xyfopen(FILENAME_LADDER19, "w");
         if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
-          num_19 = PlayerSave(fp, Ladder19);
+          num_19 = ladder_save(fp, Ladder19);
           fclose(fp);
-          Ladder_W = PlayerNamed(Ladder19, parray[pw].pname);
-          Ladder_B = PlayerNamed(Ladder19, parray[pb].pname);
+          Ladder_W = ladder_player_named(Ladder19, parray[pw].pname);
+          Ladder_B = ladder_player_named(Ladder19, parray[pb].pname);
           pcn_out(pb, CODE_INFO, FORMAT_YOU_ARE_NOW_AT_POSITION_d_IN_THE_19X19_LADDER_CONGRATS_n, (Ladder_B->idx) + 1);
           pcn_out(pw, CODE_INFO, FORMAT_YOU_ARE_NOW_AT_POSITION_d_IN_THE_19X19_LADDER_n, (Ladder_W->idx) + 1);
           for (p2 = 0; p2 < parray_top; p2++) {
@@ -340,32 +340,32 @@ void game_ended(int g0, int winner, int why)
   else if (winner == pw && rate_change) {
     if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
       if (garray[g0].Ladder9 == 1) {
-        Ladder_W = PlayerNamed(Ladder9, parray[pw].pname);
-        Ladder_B = PlayerNamed(Ladder9, parray[pb].pname);
-        PlayerUpdTime(Ladder9, Ladder_W->idx, now);
-        PlayerUpdTime(Ladder9, Ladder_B->idx, now);
-        PlayerAddWin(Ladder9, Ladder_W->idx);
-        PlayerAddLoss(Ladder9, Ladder_B->idx);
+        Ladder_W = ladder_player_named(Ladder9, parray[pw].pname);
+        Ladder_B = ladder_player_named(Ladder9, parray[pb].pname);
+        ladder_set_time(Ladder9, Ladder_W->idx, now);
+        ladder_set_time(Ladder9, Ladder_B->idx, now);
+        ladder_win(Ladder9, Ladder_W->idx);
+        ladder_lose(Ladder9, Ladder_B->idx);
         fp = xyfopen(FILENAME_LADDER9, "w");
         if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
-          num_9 = PlayerSave(fp, Ladder9);
+          num_9 = ladder_save(fp, Ladder9);
           fclose(fp);
         }
       }
       if (garray[g0].Ladder19 == 1) {
-        Ladder_W = PlayerNamed(Ladder19, parray[pw].pname);
-        Ladder_B = PlayerNamed(Ladder19, parray[pb].pname);
-        PlayerUpdTime(Ladder19, Ladder_W->idx, now);
-        PlayerUpdTime(Ladder19, Ladder_B->idx, now);
-        PlayerAddWin(Ladder19, Ladder_W->idx);
-        PlayerAddLoss(Ladder19, Ladder_B->idx);
+        Ladder_W = ladder_player_named(Ladder19, parray[pw].pname);
+        Ladder_B = ladder_player_named(Ladder19, parray[pb].pname);
+        ladder_set_time(Ladder19, Ladder_W->idx, now);
+        ladder_set_time(Ladder19, Ladder_B->idx, now);
+        ladder_win(Ladder19, Ladder_W->idx);
+        ladder_lose(Ladder19, Ladder_B->idx);
         fp = xyfopen(FILENAME_LADDER19, "w");
         if (!fp) {
           pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         } else {
-          num_19 = PlayerSave(fp, Ladder19);
+          num_19 = ladder_save(fp, Ladder19);
           fclose(fp);
         }
       }
@@ -758,7 +758,7 @@ int com_ladder(int p, struct parameter * param)
   int g1 = parray[p].session.gnum;
   int p2, pb, pw;
   int size;
-  const struct player *pl1, *pl2;
+  const struct ladderplayer *pl1, *pl2;
   UNUSED(param);
 
   pb = garray[g1].black.pnum;
@@ -781,11 +781,11 @@ int com_ladder(int p, struct parameter * param)
     size = garray[g1].minkg->width;
 
     if (size == 9) {
-      pl1 = PlayerNamed(Ladder9, parray[pw].pname);
-      pl2 = PlayerNamed(Ladder9, parray[pb].pname);
+      pl1 = ladder_player_named(Ladder9, parray[pw].pname);
+      pl2 = ladder_player_named(Ladder9, parray[pb].pname);
     } else {
-      pl1 = PlayerNamed(Ladder19, parray[pw].pname);
-      pl2 = PlayerNamed(Ladder19, parray[pb].pname);
+      pl1 = ladder_player_named(Ladder19, parray[pw].pname);
+      pl2 = ladder_player_named(Ladder19, parray[pb].pname);
     }
 
     if (!pl1 || !pl2) {
@@ -1536,7 +1536,7 @@ int com_load(int p, struct parameter * param)
   int pw, pb, p2, px;
   int g0;
   struct stat statbuf;
-  const struct player *LadderPlayer;
+  const struct ladderplayer *LadderPlayer;
   int bpos = -1, wpos = -1;
   struct pending *ptr;
   const char *bname, *wname;
@@ -1644,21 +1644,21 @@ int com_load(int p, struct parameter * param)
   parray[pw].session.protostate = STAT_PLAYING_GO;
   if (garray[g0].Ladder9 || garray[g0].Ladder19) {
     if (garray[g0].size == 19) {
-      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pb].pname)) ) {
+      if ((LadderPlayer=ladder_player_named(Ladder19,parray[pb].pname)) ) {
         bpos = LadderPlayer->idx;
       }
       else bpos = -1;
-      if ((LadderPlayer=PlayerNamed(Ladder19,parray[pw].pname)) ) {
+      if ((LadderPlayer=ladder_player_named(Ladder19,parray[pw].pname)) ) {
         wpos = LadderPlayer->idx;
       }
       else wpos = -1;
     }
     else if (garray[g0].size == 9) {
-      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pb].pname)) ) {
+      if ((LadderPlayer=ladder_player_named(Ladder9,parray[pb].pname)) ) {
         bpos = LadderPlayer->idx;
       }
       else bpos = -1;
-      if ((LadderPlayer=PlayerNamed(Ladder9,parray[pw].pname)) ) {
+      if ((LadderPlayer=ladder_player_named(Ladder9,parray[pw].pname)) ) {
         wpos = LadderPlayer->idx;
       }
       else wpos = -1;

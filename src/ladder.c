@@ -42,15 +42,21 @@ struct ladder {
   int n;
   int max;
   int fNameSorted;
-  struct player **byPosn;
-  struct player **byName;
+  struct ladderplayer **byPosn;
+  struct ladderplayer **byName;
   };
 
 int dbmax;
 static struct ladder *db;
 
+static int ladder_cmp_name(const void *p1, const void *p2);
+static void copy(int idx, int dst, int src);
+static void ladder_dump(FILE *pf, const struct ladderplayer *p);
+static int ladder_new_local(int idx, int n);
+static const struct ladderplayer * const *ladder_by_pos(int id);
+/* just the array, in order, with a lot of const shit so you can't f*** it up */
 
-void LadderDel(int idx)
+void ladder_delete(int idx)
 {
   if (db[idx].max) {
     int i;
@@ -66,13 +72,13 @@ void LadderDel(int idx)
   db[idx].byPosn = db[idx].byName = 0;
 }
 
-void LadderInit(int n)
+void ladder_init(int n)
 {
   assert((db = calloc(dbmax = n, sizeof *db)) != NULL);
 }
 
 
-static int _LadderNew(int idx, int n)
+static int ladder_new_local(int idx, int n)
 {
   db[idx].n = 0;
   db[idx].max = n;
@@ -83,7 +89,7 @@ static int _LadderNew(int idx, int n)
   return idx;
 }
 
-int LadderNew(int n)
+int ladder_new(int n)
 {
   int idx;
 
@@ -93,29 +99,29 @@ int LadderNew(int n)
 
   if (idx == dbmax) return 0;
 
-  return _LadderNew(idx, n);
+  return ladder_new_local(idx, n);
 }
 
 
-const struct player *PlayerAt(int idx, int i)
+const struct ladderplayer *ladder_player_at(int idx, int i)
 {
   if (i >= 0 && i < db[idx].n) return db[idx].byPosn[ i ];
   return 0;
 }
 
 
-void PlayerUpdTime(int idx, int i, time_t t)
+void ladder_set_time(int idx, int i, time_t t)
 {
-  if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->tLast = t;
+  if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->lasttime = t;
 }
 
 
-void PlayerAddWin(int idx, int i)
+void ladder_win(int idx, int i)
 {
   if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->nWins++;
 }
 
-void PlayerAddLoss(int idx, int i)
+void ladder_lose(int idx, int i)
 {
   if (i >= 0 && i < db[idx].n) db[idx].byPosn[i]->nLosses++;
 }
@@ -126,7 +132,7 @@ static void copy(int idx, int dst, int src)
   db[idx].byPosn[ dst ]->idx = dst;
 }
 
-void PlayerKillAt(int idx, int target)
+void ladder_remove_at(int idx, int target)
 {
   if (target >= 0 && target < db[idx].n) {
     int i;
@@ -140,13 +146,13 @@ void PlayerKillAt(int idx, int target)
   }
 }
 
-void PlayerRotate(int idx, int from, int to)
+void ladder_rotate(int idx, int from, int to)
 {
   if (from >= 0 && to >= 0 && from < db[idx].n && to < db[idx].n 
       && from < to) {
     int i;
     int lim = from + 1;
-    struct player *p = db[idx].byPosn[ to ];
+    struct ladderplayer *p = db[idx].byPosn[ to ];
 
     for (i = to; i >= lim; i--) {
       copy(idx, i, i - 1);
@@ -156,96 +162,96 @@ void PlayerRotate(int idx, int from, int to)
   }
 }
 
-const struct player *PlayerNamed(int idx, const char *psz)
+const struct ladderplayer *ladder_player_named(int idx, const char *psz)
 {
   int i;
 
   for (i = 0; i < db[idx].n; i++) {
-    if (strcmp(db[idx].byPosn[ i ]->szName, psz)) continue;
+    if (strcmp(db[idx].byPosn[ i ]->name, psz)) continue;
     return db[idx].byPosn[ i ];
   }
 
   return 0;
 }
 
-const struct player * const *PlayersSortedByPosn(int idx)
+const struct ladderplayer * const *ladder_by_pos(int idx)
 {
-  return db[idx].n ? (const struct player * const *)db[idx].byPosn : 0;
+  return db[idx].n ? (const struct ladderplayer * const *)db[idx].byPosn : NULL;
 }
 
-static int cmpByName(const void *p1, const void *p2)
+static int ladder_cmp_name(const void *p1, const void *p2)
 {
-#define P1 (*(const struct player * const *)p1)
-#define P2 (*(const struct player * const *)p2)
+#define P1 (*(const struct ladderplayer * const *)p1)
+#define P2 (*(const struct ladderplayer * const *)p2)
 
-  return strcmp(P1->szName, P2->szName);
+  return strcmp(P1->name, P2->name);
 
 #undef P1
 #undef P2  
 }
 
-const struct player * const *PlayersSortedByName(int idx)
+const struct ladderplayer * const *ladder_by_name(int idx)
 {
   if (db[idx].n) {
     if (!db[idx].fNameSorted) {
       db[idx].fNameSorted = 1;
       memset(db[idx].byName, 0, db[idx].max * sizeof *db[idx].byName);
       memcpy(db[idx].byName, db[idx].byPosn, db[idx].n * sizeof *db[idx].byName);
-      qsort(db[idx].byName, db[idx].n, sizeof *db[idx].byName, cmpByName);
+      qsort(db[idx].byName, db[idx].n, sizeof *db[idx].byName, ladder_cmp_name);
     }
-    return (const struct player * const *)db[idx].byName;
+    return (const struct ladderplayer * const *)db[idx].byName;
   }
 
   return 0;
 }
 
-int PlayerNew(int idx, const char *psz)
+int ladder_new_p(int idx, const char *psz)
 {
-  struct player *p;
+  struct ladderplayer *p;
 
   if (db[idx].n >= db[idx].max) return 0;
 
   assert(p = malloc(sizeof *p));
 
-  p->tLast = 0;
-  p->pvUser = 0;
-  p->szName = mystrdup(psz);
+  p->lasttime = 0;
+  p->payload = 0;
+  p->name = mystrdup(psz);
   p->nWins = p->nLosses = 0;
   db[idx].byPosn[ p->idx = db[idx].n++ ] = p;
   db[idx].fNameSorted = 0;
-  
+
   return 1;
 }
 
-void PlayerDump(FILE *pf, const struct player *pp)
+static void ladder_dump(FILE *pf, const struct ladderplayer *pp)
 {
-  fprintf(pf, "%03d \"%s\" %lu %d %d\n", pp->idx, pp->szName, pp->tLast,
+  fprintf(pf, "%03d \"%s\" %lu %d %d\n", pp->idx, pp->name, pp->lasttime,
 	  pp->nWins, pp->nLosses);
 }
 
-int PlayerSave(FILE *pf, int idx)
+int ladder_save(FILE *pf, int idx)
 {
   int i;
 
   fprintf(pf, "Max: %d\n", db[idx].max);
   for (i = 0; i < db[idx].n; i++) {
-    PlayerDump(pf, db[idx].byPosn[ i ]);
+    ladder_dump(pf, db[idx].byPosn[ i ]);
   }
   return db[idx].n;
 }
 
 static void setstats(int idx, int at, int wins, int losses)
 {
-  struct player *p = db[idx].byPosn[at];
+  struct ladderplayer *p = db[idx].byPosn[at];
 
   p->nWins = wins;
   p->nLosses = losses;
 }
 
-int PlayerLoad(FILE *pf, int idx)
+int ladder_load(FILE *pf, int idx)
 {
   int max;
-  time_t tLast;
+  time_t lasttime;
   char name[ 100 ];
 
   char linebuff[ 200 ];
@@ -254,13 +260,13 @@ int PlayerLoad(FILE *pf, int idx)
     int i = 0, dummy, nWins, nLosses;
     if (0>= sscanf(linebuff, "Max: %d", &max)) return -1;
 
-    LadderDel(idx);
-    _LadderNew(idx, max);
+    ladder_delete(idx);
+    ladder_new_local(idx, max);
     while (fgets(linebuff, sizeof linebuff, pf)) {
       if (0 >= sscanf(linebuff, "%d \"%[^\"]\" %lu %d %d", 
-		  &dummy, name, &tLast, &nWins, &nLosses) ) break;
-      PlayerNew(idx, name);
-      PlayerUpdTime(idx, i, tLast);
+		  &dummy, name, &lasttime, &nWins, &nLosses) ) break;
+      ladder_new_p(idx, name);
+      ladder_set_time(idx, i, lasttime);
       setstats(idx, i++, nWins, nLosses);
     }
 
@@ -277,7 +283,7 @@ static void renumber(int idx)
   }
 }
 
-void PlayerSift(int idx, int nDays)
+void ladder_sift(int idx, int nDays)
 {
   int n;
   int nCurr;
@@ -285,9 +291,9 @@ void PlayerSift(int idx, int nDays)
   int nLate;
   int *pLate;
   time_t tNow = globclock.time;
-  const time_t tDay = (time_t)(24 * 60 * 60);
-  const time_t tCut = tNow - (nDays * tDay);
-  struct player **pp;
+#define SECSPERDAY (24 * 60 * 60)
+  const time_t cuttime = tNow - (nDays * SECSPERDAY);
+  struct ladderplayer **pp;
 
   nCurr = nLate = 0;
   pCurr = calloc(db[idx].n, sizeof *pCurr);
@@ -295,7 +301,7 @@ void PlayerSift(int idx, int nDays)
   pp = calloc(db[idx].n, sizeof *pp);
 
   for (n = 0; n < db[idx].n ; n++) {
-    if ((db[idx].byPosn[n]->tLast < tCut) || 
+    if ((db[idx].byPosn[n]->lasttime < cuttime) || 
        ((db[idx].byPosn[n]->nWins == 0)   && 
         (db[idx].byPosn[n]->nLosses == 0))) {
       pLate[ nLate++ ] = n;
@@ -309,12 +315,13 @@ void PlayerSift(int idx, int nDays)
   }
   for (n = 0; n < nLate; n++) {
     pp[ n + nCurr ] = db[idx].byPosn[ pLate[n] ];
-    /*pp[ n + nCurr ]->tLast = tNow - tDay;*/
+    /*pp[ n + nCurr ]->lasttime = tNow - SECSPERDAY;*/
   }
   memcpy(db[idx].byPosn, pp, db[idx].n * sizeof *db[idx].byPosn );
   renumber(idx);
   free(pp);
   free(pCurr);
   free(pLate);
+#undef SECSPERDAY
 }
 

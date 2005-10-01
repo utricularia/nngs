@@ -84,7 +84,7 @@ struct confmatch {
 	** NUMBER is a decimal integer. Not altered by program.
 	** OCTAL is like number, but represented in octal.
 	** BOOL is a character used as a boolean value.
-	** 0 := False, > 0 := True; <0 := missing/NULL
+	** -1 := False, > 0 := True; 0 := missing/NULL
 	*/
 #define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
@@ -384,7 +384,7 @@ static int conf_set_pair(const char *name, const char *value)
       case 'n': case 'N':
       case '-':
       case '0':
-       *((char*)(mp->ptr)) = 0; break;
+       *((char*)(mp->ptr)) = -1; break;
     }
     break;
   case 'Z':

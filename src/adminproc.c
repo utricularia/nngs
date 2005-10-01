@@ -36,7 +36,7 @@
 int com_adrop(int p, struct parameter* param)
 {
   FILE *fp;
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
   char *name = param[0].val.string;
   int lnum = param[1].val.integer;
 
@@ -48,14 +48,14 @@ int com_adrop(int p, struct parameter* param)
     return COM_OK;
   }
 
-  LadderPlayer = PlayerNamed(lnum, name);
+  lp = ladder_player_named(lnum, name);
 
-  if (!LadderPlayer) {
+  if (!lp) {
     pcn_out(p, CODE_ERROR, FORMAT_NO_SUCH_LADDER_PLAYER);
     return COM_OK;
   }
   Show_Admin_Command(p, param[0].val.word, param[1].val.string);
-  PlayerKillAt(lnum, LadderPlayer->idx);
+  ladder_remove_at(lnum, lp->idx);
   switch (lnum) {
   case 9: fp = xyfopen(FILENAME_LADDER9, "w"); break;
   default:
@@ -66,9 +66,9 @@ int com_adrop(int p, struct parameter* param)
     return COM_OK;
   }
   switch (lnum) {
-  case 9: num_9 = PlayerSave(fp, lnum); break;
+  case 9: num_9 = ladder_save(fp, lnum); break;
   default:
-  case 19: num_19 = PlayerSave(fp, lnum); break;
+  case 19: num_19 = ladder_save(fp, lnum); break;
   }
   fclose(fp);
   player_resort();
@@ -1061,21 +1061,21 @@ int com_reload_ladders(int p, struct parameter* param)
   UNUSED(p);
   UNUSED(param);
   
-  LadderDel(Ladder9);
-  LadderDel(Ladder19);
-  Ladder9 = LadderNew(LADDERSIZE);
-  Ladder19 = LadderNew(LADDERSIZE);
+  ladder_delete(Ladder9);
+  ladder_delete(Ladder19);
+  Ladder9 = ladder_new(LADDERSIZE);
+  Ladder19 = ladder_new(LADDERSIZE);
   num_9 = 0;
   fp = xyfopen(FILENAME_LADDER9, "r");
   if (fp) {
-    num_9 = PlayerLoad(fp, Ladder9);
+    num_9 = ladder_load(fp, Ladder9);
     Logit("%d players loaded from file %s", num_9, filename());
     fclose(fp);
   }
   num_19 = 0;
   fp = xyfopen(FILENAME_LADDER19, "r");
   if (fp) {
-    num_19 = PlayerLoad(fp, Ladder19);
+    num_19 = ladder_load(fp, Ladder19);
     Logit("%d players loaded from file %s", num_19, filename());
     fclose(fp);
   }
@@ -1122,9 +1122,9 @@ int com_rating_recalc(int p, struct parameter* param)
   UNUSED(param);
 
   Logit("Sifting 19x19 ladder");
-  PlayerSift(Ladder19, 30);  /* Do the ladder stuff, 19x19 is 14 days */
+  ladder_sift(Ladder19, 30);  /* Do the ladder stuff, 19x19 is 14 days */
   Logit("Sifting 9x9 ladder");
-  PlayerSift(Ladder9, 30); /* Do the ladder stuff, 9x9 is 7 days */
+  ladder_sift(Ladder9, 30); /* Do the ladder stuff, 9x9 is 7 days */
   Logit("Done sifting");
   return COM_OK;
 }

@@ -38,7 +38,7 @@ Version 1.1.18 (2005 Jul 13)
 - cleanup
 - network fixes.
 
-Version 1.1.19 (2005 Sep xx)
+Version 1.1.19 (2005 Oct xx)
 - put configuration items into file, which is read at startup.
 - chroot() support
 - added smtp mailer, which is needed in a chrooted environment.

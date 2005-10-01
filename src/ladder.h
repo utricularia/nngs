@@ -31,46 +31,42 @@
 extern "C" {
 #endif /* C++ */
 
-struct player {
+struct ladderplayer {
   int idx;
-  char *szName;
-  time_t tLast;
-  void *pvUser;
+  char *name;
+  time_t lasttime;
+  void *payload; /* unused */
   int nWins, nLosses;
 } ;
 
-void LadderInit(int nLadders);
+void ladder_init(int nLadders);
 
-int LadderNew(int maxPlayers);
-void LadderDel(int id);
+int ladder_new(int maxPlayers);
+void ladder_delete(int id);
 
 int LadderCnt(int id);
 
-const struct player *PlayerAt(int id, int at);
+const struct ladderplayer *ladder_player_at(int id, int at);
 
-void PlayerSift(int idx, int nDays);
-void PlayerUpdTime(int id, int at, time_t t);
+void ladder_sift(int idx, int nDays);
+void ladder_set_time(int id, int at, time_t t);
 void PlayerSetData(int id, int at, void *pv);
-void PlayerAddWin(int id, int at);
-void PlayerAddLoss(int id, int at);
+void ladder_win(int id, int at);
+void ladder_lose(int id, int at);
 
-void PlayerKillAt(int id, int at);
-void PlayerRotate(int id, int from, int to);
+void ladder_remove_at(int id, int at);
+void ladder_rotate(int id, int from, int to);
 
-const struct player *PlayerNamed(int id, const char *psz);
+const struct ladderplayer *ladder_player_named(int id, const char *psz);
 
-const struct player * const *PlayersSortedByPosn(int id); /* just the array, in order,
-						 with a lot of const shit so
-						 you can't f*** it up */
 
-const struct player * const *PlayersSortedByName(int id);
+const struct ladderplayer * const *ladder_by_name(int id);
 
-int PlayerNew(int id, const char *szName); /* add at end - return 0 if full */
+int ladder_new_p(int id, const char *szName); /* add at end - return 0 if full */
 
-void PlayerDump(FILE *pf, const struct player *p);
 
-int PlayerSave(FILE *pf, int id);
-int PlayerLoad(FILE *pf, int id);
+int ladder_save(FILE *pf, int id);
+int ladder_load(FILE *pf, int id);
 
 #ifdef __cplusplus
 }

@@ -288,7 +288,7 @@ void player_init(void)
 
 int player_cmp(int p1, int p2, int sorttype)
 {
-  const struct player *LP1, *LP2;
+  const struct ladderplayer *lp1, *lp2;
   int a, b;
 
   if (!parray[p1].slotstat.is_online) {
@@ -299,18 +299,18 @@ int player_cmp(int p1, int p2, int sorttype)
 
   switch (sorttype) {
   case SORT_LADDER9:
-    LP1 = PlayerNamed(Ladder9, parray[p1].pname);
-    LP2 = PlayerNamed(Ladder9, parray[p2].pname);
-    if (!LP1) a = num_9 + 1; else a = LP1->idx;
-    if (!LP2) b = num_9 + 1; else b = LP2->idx;
+    lp1 = ladder_player_named(Ladder9, parray[p1].pname);
+    lp2 = ladder_player_named(Ladder9, parray[p2].pname);
+    if (!lp1) a = num_9 + 1; else a = lp1->idx;
+    if (!lp2) b = num_9 + 1; else b = lp2->idx;
     if (a > b) return 1;
     else return -1;
     break;
   case SORT_LADDER19:
-    LP1 = PlayerNamed(Ladder19, parray[p1].pname);
-    LP2 = PlayerNamed(Ladder19, parray[p2].pname);
-    if (!LP1) a = num_19 + 1; else a = LP1->idx;
-    if (!LP2) b = num_19 + 1; else b = LP2->idx;
+    lp1 = ladder_player_named(Ladder19, parray[p1].pname);
+    lp2 = ladder_player_named(Ladder19, parray[p2].pname);
+    if (!lp1) a = num_19 + 1; else a = lp1->idx;
+    if (!lp2) b = num_19 + 1; else b = lp2->idx;
     if (a > b) return 1;
     else return -1;
     break;

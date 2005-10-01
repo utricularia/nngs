@@ -230,9 +230,9 @@ int main(int argc, char *argv[])
   /*Logit("player_array_init()");*/
   player_array_init();
   player_init();
-  LadderInit(NUM_LADDERS);
-  Ladder9 = LadderNew(LADDERSIZE);
-  Ladder19 = LadderNew(LADDERSIZE);
+  ladder_init(NUM_LADDERS);
+  Ladder9 = ladder_new(LADDERSIZE);
+  Ladder19 = ladder_new(LADDERSIZE);
 
   Debug = 0;
   completed_games = 0;
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   num_9 = 0;
   fp = xyfopen(FILENAME_LADDER9, "r");
   if (fp) {
-    num_9 = PlayerLoad(fp, Ladder9);
+    num_9 = ladder_load(fp, Ladder9);
     Logit("%d players loaded from file %s", num_9, filename() );
     fclose(fp);
   }
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
   num_19 = 0;
   fp = xyfopen(FILENAME_LADDER19, "r");
   if (fp) {
-    num_19 = PlayerLoad(fp, Ladder19);
+    num_19 = ladder_load(fp, Ladder19);
     Logit("%d players loaded from file %s", num_19, filename() );
     fclose(fp);
   }

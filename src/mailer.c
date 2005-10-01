@@ -109,8 +109,9 @@ static void mail_tempnam(char *buff);
 static int mail_one(const char *spool);
 static int mail_child(const char *spool);
 static int smtp_err = 0;
-static int child_perror(char *msg);
+static int child_perror(const char *msg);
 static int smtp_mail(FILE *fp, char *to, char *subj);
+FILE * popen(const char *path, const char *mode);
 
 #ifndef WANT_MAIN
 int mail_spool(char *nbuff, const char *to, const char *subj, const char *text, const char *fname)
@@ -147,8 +148,9 @@ int mail_spool(char *nbuff, const char *to, const char *subj, const char *text, 
 
 static void mail_tempnam(char *buff)
 {
-  int now = globclock.time;
-  static int then = 0, seq=0;
+  time_t now = globclock.time;
+  static time_t then = 0;
+  static int seq=0;
   char deet[40];
   int siz;
 
@@ -255,10 +257,10 @@ body:
 #include <netdb.h>
 
 
-static int pars_addr(struct sockaddr_in *dst, char * name, int port);
-static int smtp_open(char *mtaname, int port, char *myname);
+static int pars_addr(struct sockaddr_in *dst, const char * name, int port);
+static int smtp_open(const char *mtaname, int port, const char *myname);
 static int set_envelope(int fd, char *from, char *rcpt);
-static int add_header(int fd, char *name, char *value);
+static int add_header(int fd, const char *name, const char *value);
 static int set_data(int fd);
 static int add_data(int fd, char *buff, int len);
 
@@ -267,7 +269,7 @@ static int wrap_read(int fd, char *buff, int len);
 static int wrap_write(int fd, char *buff, int len);
 static int wrap_line(int fd, char *buff, int len);
 /* ---------------------------------------------------- */
-static int smtp_open(char *mta, int port, char *myname)
+static int smtp_open(const char *mta, int port, const char *myname)
 {
 int fd = -1 , rc;
 struct sockaddr_in addr;
@@ -341,7 +343,7 @@ if (rc== -3) rc = 0;
 return rc;
 }
 /* -------------------------------------------------- */
-static int add_header(int fd, char *name, char *value)
+static int add_header(int fd, const char *name, const char *value)
 {
 int rc;
 char buff[1024];
@@ -407,7 +409,7 @@ else for (idx = 0; idx < len; idx++) {
 	dodo:
 		temp[done++] = buff[idx];
 		}
-	if (done+2 < sizeof temp) continue;
+	if (done+2 < (int) sizeof temp) continue;
 	rc = wrap_write(fd, temp, done);
 #if (WANT_DEBUG &2)
 	fprintf(stderr, " [Wrap_line(%d,%d) Loop :=%d,%d]\n", fd,len,done,rc);
@@ -529,19 +531,18 @@ fprintf(stderr, "  [Write(%d) := %d	\"%s\"]\n", fd, rc, buff);
 return rc;
 }
 /* -------------------------------------------------- */
-static int pars_addr(struct sockaddr_in *dst, char * name, int port)
+static int pars_addr(struct sockaddr_in *dst, const char * name, int port)
 {
 struct hostent *hp;
-unsigned char * cp;
 
 memset((char *)dst, 0, sizeof *dst);
 
 dst->sin_family = AF_INET;
 dst->sin_port = htons(port);
 
-if (!name) name = "localhost";
-if (!strcmp(name , "localhost")) { /* this is ugly ... */
-	/* uint32_t ul; ul = htonl(0x7f000001); */
+	/* this is ugly: avoid (DNS) hostnamelookup ... */
+if (!name || !strcmp(name , "localhost")) {
+	/* uint32_t ul; ul = htonl(0x7f000001);  Avoid c98 dependancy */
 	char ul[4] = {0x7f,0,0,1};
 	memcpy(&dst->sin_addr ,  &ul , sizeof ul);
 	return 0;
@@ -555,6 +556,7 @@ if (!hp || hp->h_addrtype != AF_INET) {
 #if 0
 	{
 	int ii,jj;
+	unsigned char * cp;
 	for(ii = 0;cp = hp->h_addr_list[ii] ; ii++)	{
 		fprintf(stdout,"\n[%d]  ", ii);
 		for(jj = 0;jj < hp->h_length ; jj++)	{
@@ -614,7 +616,7 @@ exit(0);
 
 #else
 
-static int child_perror(char *msg)
+static int child_perror(const char *msg)
 {
 int err;
 

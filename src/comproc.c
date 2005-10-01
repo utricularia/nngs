@@ -627,7 +627,7 @@ int com_quit(int p, struct parameter * param)
 
 int com_best(int p, struct parameter * param)
 {
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
   int i, type, low, high;
   const char *cp;
 
@@ -668,16 +668,16 @@ int com_best(int p, struct parameter * param)
   pcn_out(p,CODE_INFO, FORMAT_n);
   for(i = low; i < high; i++) {
     if (type == 9)
-      LadderPlayer = PlayerAt(Ladder9, i);
+      lp = ladder_player_at(Ladder9, i);
     else
-      LadderPlayer = PlayerAt(Ladder19, i);
-    cp = LadderPlayer->tLast 
-       ? time2str_utc((const time_t *) &LadderPlayer->tLast)
+      lp = ladder_player_at(Ladder19, i);
+    cp = lp->lasttime 
+       ? time2str_utc((const time_t *) &lp->lasttime)
        : "---" ;
     pcn_out(p, CODE_INFO, FORMAT_d_s_d_d_sn,
       i+1,
-      LadderPlayer->szName,
-      LadderPlayer->nWins, LadderPlayer->nLosses,
+      lp->name,
+      lp->nWins, lp->nLosses,
       cp);
   }
   return COM_OKN;
@@ -687,7 +687,7 @@ int com_best(int p, struct parameter * param)
 int com_join(int p, struct parameter * param)
 {
   FILE *fp;
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
   time_t now;
 
   now = globclock.time;
@@ -709,41 +709,41 @@ int com_join(int p, struct parameter * param)
   }
   if (param[0].val.string) {
     if (!strcmp(param[0].val.string, "ladder9")) {
-      if (PlayerNamed(Ladder9, parray[p].pname)) {
+      if (ladder_player_named(Ladder9, parray[p].pname)) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_9X9_LADDER_);
         return COM_OK;
       }
-      PlayerNew(Ladder9, parray[p].pname);
-      LadderPlayer = PlayerNamed(Ladder9, parray[p].pname);
-      PlayerUpdTime(Ladder9, LadderPlayer->idx, now);
+      ladder_new_p(Ladder9, parray[p].pname);
+      lp = ladder_player_named(Ladder9, parray[p].pname);
+      ladder_set_time(Ladder9, lp->idx, now);
       fp = xyfopen(FILENAME_LADDER9, "w");
       if (!fp) {
         pcn_out(p, CODE_ERROR,FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_);
         return COM_OK;
       }
-      num_9 = PlayerSave(fp, Ladder9);
+      num_9 = ladder_save(fp, Ladder9);
       fclose(fp);
       pcn_out(p, CODE_INFO, FORMAT_YOU_ARE_AT_POSITION_d_IN_THE_9X9_LADDER_GOOD_LUCK_,
-                  (LadderPlayer->idx) + 1);
+                  (lp->idx) + 1);
       player_resort();
       return COM_OK;
     }
     else if (!strcmp(param[0].val.string, "ladder19")) {
-      if (PlayerNamed(Ladder19, parray[p].pname) ) {
+      if (ladder_player_named(Ladder19, parray[p].pname) ) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_A_MEMBER_OF_THE_19X19_LADDER_);
         return COM_OK;
       }
-      PlayerNew(Ladder19, parray[p].pname);
-      LadderPlayer = PlayerNamed(Ladder19, parray[p].pname);
-      PlayerUpdTime(Ladder19, LadderPlayer->idx, now);
+      ladder_new_p(Ladder19, parray[p].pname);
+      lp = ladder_player_named(Ladder19, parray[p].pname);
+      ladder_set_time(Ladder19, lp->idx, now);
       fp = xyfopen(FILENAME_LADDER9, "w");
       if (!fp) {
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_);
         return COM_OK;
       }
-      num_19 = PlayerSave(fp, Ladder19);
+      num_19 = ladder_save(fp, Ladder19);
       fclose(fp);
-      pcn_out(p, CODE_INFO, FORMAT_YOU_ARE_AT_POSITION_d_IN_THE_19X19_LADDER_GOOD_LUCK_, (LadderPlayer->idx) + 1);
+      pcn_out(p, CODE_INFO, FORMAT_YOU_ARE_AT_POSITION_d_IN_THE_19X19_LADDER_GOOD_LUCK_, (lp->idx) + 1);
       player_resort();
       return COM_OK;
     }
@@ -755,7 +755,7 @@ int com_join(int p, struct parameter * param)
 int com_drop(int p, struct parameter * param)
 {
   FILE *fp;
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
 
   if (!parray[p].slotstat.is_registered) {
     pcn_out(p,CODE_ERROR,  FORMAT_SORRY_YOU_MUST_REGISTER_TO_PLAY_ON_THE_LADDER_);
@@ -770,45 +770,45 @@ int com_drop(int p, struct parameter * param)
   if (param[0].type == 0) {
   /* no args -> show all ladders */
     pcn_out(p,CODE_INFO, FORMAT_YOU_ARE_IN_LADDERS_n);
-    LadderPlayer = PlayerNamed(Ladder9, parray[p].pname);
-    if (LadderPlayer)
-      pcn_out(p, CODE_INFO, FORMAT_LADDER9_POSITION_dn, (LadderPlayer->idx) + 1);
-    LadderPlayer = PlayerNamed(Ladder19, parray[p].pname);
-    if (LadderPlayer)
-      pcn_out(p, CODE_INFO, FORMAT_LADDER19_POSITION_d, (LadderPlayer->idx) + 1);
+    lp = ladder_player_named(Ladder9, parray[p].pname);
+    if (lp)
+      pcn_out(p, CODE_INFO, FORMAT_LADDER9_POSITION_dn, (lp->idx) + 1);
+    lp = ladder_player_named(Ladder19, parray[p].pname);
+    if (lp)
+      pcn_out(p, CODE_INFO, FORMAT_LADDER19_POSITION_d, (lp->idx) + 1);
     return COM_OK;
   }
   if (param[0].val.string) {
     if (!strcmp(param[0].val.string, "ladder9")) {
-      if (!(LadderPlayer = PlayerNamed(Ladder9, parray[p].pname))) {
+      if (!(lp = ladder_player_named(Ladder9, parray[p].pname))) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_A_MEMBER_OF_THE_9X9_LADDER_);
         return COM_OK;
       }
-      PlayerKillAt(Ladder9, LadderPlayer->idx);
+      ladder_remove_at(Ladder9, lp->idx);
       fp = xyfopen(FILENAME_LADDER9, "w");
       if (!fp) {
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         return COM_OK;
       }
-      num_9 = PlayerSave(fp, Ladder9);
+      num_9 = ladder_save(fp, Ladder9);
       fclose(fp);
       pcn_out(p, CODE_INFO, FORMAT_YOU_HAVE_BEEN_REMOVED_FROM_THE_9X9_LADDER_);
       player_resort();
       return COM_OK;
     }
     if (!strcmp(param[0].val.string, "ladder19")) {
-      if (!(LadderPlayer = PlayerNamed(Ladder19, parray[p].pname))) {
+      if (!(lp = ladder_player_named(Ladder19, parray[p].pname))) {
         pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_NOT_A_MEMBER_OF_THE_19X19_LADDER_);
         return COM_OK;
       }
-      PlayerKillAt(Ladder19, LadderPlayer->idx);
+      ladder_remove_at(Ladder19, lp->idx);
       fp = xyfopen(FILENAME_LADDER19, "w");
       if (!fp) {
         Logit("Error opening \"%s\" for write!!!", filename() );
         pcn_out(p, CODE_ERROR, FORMAT_THERE_WAS_AN_INTERNAL_ERROR_PLEASE_NOTIFY_AN_ADMIN_n);
         return COM_OK;
       }
-      num_19 = PlayerSave(fp, Ladder19);
+      num_19 = ladder_save(fp, Ladder19);
       fclose(fp);
       pcn_out(p, CODE_INFO, FORMAT_YOU_HAVE_BEEN_REMOVED_FROM_THE_19X19_LADDER_);
       player_resort();
@@ -1685,7 +1685,7 @@ int com_stats(int p, struct parameter * param)
 {
   int p1;
   time_t tt;
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
 
   if (param[0].type == TYPE_WORD) {
     p1 = player_find_sloppy(param[0].val.word);
@@ -1739,20 +1739,20 @@ int com_stats(int p, struct parameter * param)
           (parray[p1].email[0] ? parray[p1].email : "UNREGISTERED"));
   if (parray[p1].slotstat.is_registered)
   pcn_out(p,CODE_INFO, FORMAT_REG_DATE_sn, parray[p1].RegDate);
-  if ((LadderPlayer = PlayerNamed(Ladder9, parray[p1].pname))) {
-    if (LadderPlayer->idx == 0) {
+  if ((lp = ladder_player_named(Ladder9, parray[p1].pname))) {
+    if (lp->idx == 0) {
       pcn_out(p,CODE_INFO, FORMAT_LADDER9_POSITION_NUMBER_ONEn);
     } else {
       pcn_out(p,CODE_INFO,  FORMAT_LADDER9_POSITION_dn,
-                  (LadderPlayer->idx) +1);
+                  (lp->idx) +1);
     }
   }
-  if ((LadderPlayer = PlayerNamed(Ladder19, parray[p1].pname)) ) {
-    if (LadderPlayer->idx == 0) {
+  if ((lp = ladder_player_named(Ladder19, parray[p1].pname)) ) {
+    if (lp->idx == 0) {
       pcn_out(p,CODE_INFO, FORMAT_LADDER19_POSITION_NUMBER_ONEn);
     } else {
       pcn_out(p,CODE_INFO,  FORMAT_LADDER19_POSITION_dn,
-                  (LadderPlayer->idx) +1);
+                  (lp->idx) +1);
     }
   }
   if (parray[p1].session.gnum >= 0) {
@@ -1992,7 +1992,7 @@ int com_password(int p, struct parameter * param)
 int com_uptime(int p, struct parameter * param)
 {
   time_t uptime, now;
-  const struct player *LPlayer;
+  const struct ladderplayer *lp;
   int count;
   UNUSED(param);
 
@@ -2029,19 +2029,16 @@ int com_uptime(int p, struct parameter * param)
   pcn_out(p, CODE_INFO, FORMAT_BYTES_SENT_un, bytes_sent);
   pcn_out(p, CODE_INFO, FORMAT_BYTES_RECEIVED_un, bytes_received);
 
-  LPlayer = PlayerAt(Ladder9, 0);
-  if (LPlayer)
-  pcn_out(p, CODE_INFO, FORMAT_d_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n, 
-              num_9, LPlayer->szName);
-  else
-  pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_9X9_LADDER_STRUCTURE_n);
+  lp = ladder_player_at(Ladder9, 0);
+  if (lp) pcn_out(p, CODE_INFO, FORMAT_d_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n, 
+              num_9, lp->name);
+  else pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_9X9_LADDER_STRUCTURE_n);
 
-  LPlayer = PlayerAt(Ladder19, 0);
-  if (LPlayer)
-  pcn_out(p, CODE_INFO, FORMAT_d_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n, 
-              num_19, LPlayer->szName);
-  else
-  pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_19X19_LADDER_STRUCTURE_n);
+  lp = ladder_player_at(Ladder19, 0);
+  if (lp) pcn_out(p
+                 , CODE_INFO, FORMAT_d_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n
+                 , num_19, lp->name);
+  else pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_19X19_LADDER_STRUCTURE_n);
 
   pcn_out(p, CODE_INFO, FORMAT_SEE_HTTP_NNGS_COSMIC_ORG_FOR_MORE_INFORMATION_n);
   return COM_OK;
@@ -2242,8 +2239,8 @@ int com_awho(int p, struct parameter * param)
 static void a_who(int p, int cnt, int *plist)
 {
   int idx, p1, pos9, pos19;
-  const struct player *LadderPlayer9;
-  const struct player *LadderPlayer19;
+  const struct ladderplayer *lp9;
+  const struct ladderplayer *lp19;
   char line[180];	
   char rtemp[8], otemp[4], gtemp[4], flags[4];
 
@@ -2253,10 +2250,10 @@ static void a_who(int p, int cnt, int *plist)
     p1 = plist[idx];
     if (!parray[p1].slotstat.is_inuse) continue;
     if (!parray[p1].slotstat.is_online) continue;
-    LadderPlayer19 = PlayerNamed(Ladder19, parray[p1].pname);
-    LadderPlayer9 = PlayerNamed(Ladder9, parray[p1].pname);
-    pos9 = (LadderPlayer9) ? LadderPlayer9->idx + 1 : 0;
-    pos19 = (LadderPlayer19) ? LadderPlayer19->idx + 1 : 0;
+    lp19 = ladder_player_named(Ladder19, parray[p1].pname);
+    lp9 = ladder_player_named(Ladder9, parray[p1].pname);
+    pos9 = (lp9) ? lp9->idx + 1 : 0;
+    pos19 = (lp19) ? lp19->idx + 1 : 0;
     flags[0] = parray[p1].i_shout ? ' ' : 'S';
     flags[1] = (parray[p1].flags.want_logins && parray[p1].flags.want_gshouts) ? ' ' : 'Q';
     if (parray[p1].session.gnum >= 0
@@ -3212,7 +3209,7 @@ int create_new_gomatch(int wp, int bp,
   int g0 = game_new(GAMETYPE_GO,size), p;
   char outStr[1024];
 
-  const struct player *LadderPlayer;
+  const struct ladderplayer *lp;
   int bpos, wpos;
 
   if (g0 < 0) return COM_FAILED;
@@ -3346,12 +3343,12 @@ int create_new_gomatch(int wp, int bp,
   send_go_boards(g0, 0);
   if (garray[g0].teach) return COM_OKN;
   if (size == 19) {
-    if ((LadderPlayer=PlayerNamed(Ladder19,parray[bp].pname))) {
-      bpos = LadderPlayer->idx;
+    if ((lp=ladder_player_named(Ladder19,parray[bp].pname))) {
+      bpos = lp->idx;
     }
     else return COM_OKN;
-    if ((LadderPlayer=PlayerNamed(Ladder19,parray[wp].pname))) {
-      wpos = LadderPlayer->idx;
+    if ((lp=ladder_player_named(Ladder19,parray[wp].pname))) {
+      wpos = lp->idx;
     }
     else return COM_OKN;
     if (wpos < bpos) {
@@ -3363,12 +3360,12 @@ int create_new_gomatch(int wp, int bp,
     }
   }
   else if (size == 9) {
-    if ((LadderPlayer=PlayerNamed(Ladder9,parray[bp].pname))) {
-      bpos = LadderPlayer->idx;
+    if ((lp=ladder_player_named(Ladder9,parray[bp].pname))) {
+      bpos = lp->idx;
     }
     else return COM_OKN;
-    if ((LadderPlayer=PlayerNamed(Ladder9,parray[wp].pname))) {
-      wpos = LadderPlayer->idx;
+    if ((lp=ladder_player_named(Ladder9,parray[wp].pname))) {
+      wpos = lp->idx;
     }
     else return COM_OKN;
     if (wpos < bpos) {

@@ -25,10 +25,11 @@
 #ifndef CONFFILE_H
 #define CONFFILE_H
 
-struct conffile {
+struct confstuff {
   char *version_string;
   char *compile_date;
   char *compile_time;
+	/* */
   char *chroot_dir;
   char *chroot_user;
   char *chroot_group;
@@ -91,9 +92,9 @@ struct conffile {
   };
 
 #if CONFFILE_C
-struct conffile conffile = {NULL, };
+struct confstuff conffile = {NULL};
 #else
-extern struct conffile conffile;
+extern struct confstuff conffile;
 #endif
 
 int conf_file_read(const char * fname);

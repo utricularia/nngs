@@ -165,7 +165,7 @@ Dec 97:	   New alternative rating system (by pem)
 
   Removed excessive debugging in the log file
 
-2005-09-xx nngs-1.1.19
+2005-10-xx nngs-1.1.19
 
   Added chroot() support, and some daemon-code.
 

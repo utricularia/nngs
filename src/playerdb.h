@@ -128,8 +128,8 @@ struct player_ {
     unsigned  is_valid:1;	/* data is valid (initialized or read) */
     unsigned  is_dirty:1;	/* Data has changed */
     unsigned  is_connected:1;	/* slot is connected to a socket */
-    unsigned  is_online:1;	/* Player is logged on and can receive */
-    unsigned  is_registered:1;	/* registered Player, data should be saved */
+    unsigned  is_online:1;	/* player is logged on and can receive */
+    unsigned  is_registered:1;	/* registered player, data should be saved */
     unsigned fixcount:2;	/* Reference count; for refleak testing */
     time_t timestamp;	/* For LRU allocation */
   } slotstat;

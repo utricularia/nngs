@@ -73,7 +73,7 @@ extern struct stat RatingsBuf1, RatingsBuf2;
 #define ADMIN_GUEST	1
 #define ADMIN_REGISTERED_USER	2
 #define ADMIN_ADMIN	20
-	/* ADMIS_MASTER is required to edit lists, muzzle players,
+	/* ADMIN_MASTER is required to edit lists, muzzle players,
 	** and sneak into private rooms
 	*/
 #define ADMIN_MASTER	50

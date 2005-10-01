@@ -1019,9 +1019,9 @@ int process_heartbeat(int *fdp)
       last_ratings = now;
 #ifdef WANT_LADDERSIFT
       Logit("Sifting 19x19 ladder");
-      PlayerSift(Ladder19, 14);  /* Do the ladder stuff, 19x19 is 14 days */
+      ladder_sift(Ladder19, 14);  /* Do the ladder stuff, 19x19 is 14 days */
       Logit("Sifting 9x9 ladder");
-      PlayerSift(Ladder9, 7); /* Do the ladder stuff, 9x9 is 7 days */
+      ladder_sift(Ladder9, 7); /* Do the ladder stuff, 9x9 is 7 days */
 #endif
     }
   }
