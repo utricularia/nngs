@@ -86,6 +86,7 @@
 
 #include "network.h"
 #include "common.h"
+#include "conffile.h"
 #include "command.h"
 #include "utils.h"
 
@@ -269,7 +270,7 @@ int net_init(int portnum, int want_udp)
   lingerOpt.l_linger = 0;
   setsockopt(fd, SOL_SOCKET, SO_LINGER, &lingerOpt, sizeof lingerOpt);
 
-  if (Debug > 99) {
+  if (conffile.debug_general > 99) {
     opt = 1;
     setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof opt);
   }
@@ -863,7 +864,7 @@ void  net_close(int fd)
   if (conn->netstate == NETSTATE_CONNECTED
     && conn->out_used > 0)
     write(fd, conn->out_buff, conn->out_used);
-  if (Debug) Logit("Disconnecting fd %d ---", fd);
+  if (conffile.debug_general) Logit("Disconnecting fd %d ---", fd);
   if (conn->out_buff) free(conn->out_buff);
   conn->out_buff = NULL;
   conn->out_used = 0;

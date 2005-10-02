@@ -89,6 +89,9 @@ struct confstuff {
 	/* Misc stuff */
   char *def_prompt;
   unsigned mode_for_dir;
+  int debug_general;
+  int debug_parray;
+  int debug_mailer;
   };
 
 #if CONFFILE_C

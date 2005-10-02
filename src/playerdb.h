@@ -40,7 +40,7 @@
 #define PENDING_SIZE (MAX_PENDING*PARRAY_SIZE)
 
 #define DEBUG_PLAYER_KICK 1
-#define DEBUG_PLAYER_SLOT 0
+#define DEBUG_PLAYER_SLOT 2
 #define DEBUG_GAME_SLOT 0
 
 	/* These are for parray.pstatus */

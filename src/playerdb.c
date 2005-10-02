@@ -135,11 +135,11 @@ void player_dirty(int p)
   parray[p].slotstat.timestamp = globclock.time;
   if (parray[p].slotstat.is_dirty) return;
   parray[p].slotstat.is_dirty = 1;
-#if DEBUG_PLAYER_SLOT
   if (!parray[p].slotstat.is_valid) {
-    Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s: Dirty=Invalid", player_dumpslot(p));
+    }
   }
-#endif
 }
 
 static int player_get_empty_slot(void)
@@ -173,22 +173,22 @@ static int player_get_empty_slot(void)
   if (idx < 0) idx = best_v;	/* this one is valid */
   if (idx < 0) idx = best_d;	/* this one is dirty */
   if (idx < 0) idx = parray_top;	/* allocate from top */
-#if DEBUG_PLAYER_SLOT
-  Logit("Empty_slot: {u=%d i=%d v=%d d=%d t=%d} -->> %d"
-  , best_u,best_i,best_v,best_d,parray_top,idx);
-#endif
+  if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+    Logit("Empty_slot: {u=%d i=%d v=%d d=%d t=%d} -->> %d"
+    , best_u,best_i,best_v,best_d,parray_top,idx);
+  }
 
   if (idx == best_d) {
-#if DEBUG_PLAYER_SLOT
-    Logit("Slot %s: Flushed", player_dumpslot(idx));
-#endif
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s: Flushed", player_dumpslot(idx));
+    }
     player_save(best_d);
   }
 
   if (idx < parray_top && parray[idx].slotstat.is_valid && parray_top < COUNTOF(parray)) {
-#if DEBUG_PLAYER_SLOT
-    Logit("Slot %s: moved to %d", player_dumpslot(idx), parray_top);
-#endif
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s: moved to %d", player_dumpslot(idx), parray_top);
+    }
     player_swapslots(idx, parray_top,0);
     parray_top++;
     if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globclock.time;
@@ -196,9 +196,9 @@ static int player_get_empty_slot(void)
   if (idx == parray_top && parray_top < COUNTOF(parray)) {
     parray_top++;
     if (parray_top<COUNTOF(parray)) parray[idx].slotstat.timestamp = globclock.time;
-#if DEBUG_PLAYER_SLOT
-    Logit("Slot %s: top <- %d", player_dumpslot(idx), parray_top);
-#endif
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s: top <- %d", player_dumpslot(idx), parray_top);
+    }
   }
   player_clear(idx);
   parray[idx].slotstat.is_inuse = 1;
@@ -285,6 +285,7 @@ void player_init(void)
     sort_alpha[i] = sort_ladder9[i] = sort_ladder19[i] = i;
   }
 }
+
 
 int player_cmp(int p1, int p2, int sorttype)
 {
@@ -510,9 +511,9 @@ void player_disconnect(int p)
 
   if (p < 0) return ;
 
-#if DEBUG_PLAYER_SLOT
-  Logit( "Disconnect %s: top=%d", player_dumpslot(p), parray_top);
-#endif
+  if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+    Logit( "Disconnect %s: top=%d", player_dumpslot(p), parray_top);
+  }
 
   player_decline_offers(p, -1, -1);
   player_withdraw_offers(p, -1, -1);
@@ -786,9 +787,9 @@ int player_read(int p)
     if (slot == p) continue;
     if (parray[slot].slotstat.is_dirty) player_save(slot);
     if (strcmp(parray[slot].login, parray[p].login)) continue;
-#if DEBUG_PLAYER_SLOT
-    Logit("Slot %s shadowed by %d", player_dumpslot(slot), p);
-#endif
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s shadowed by %d", player_dumpslot(slot), p);
+    }
     /* we don't want player_clear(slot); for valid slots.
     ** if the player is online, he will be kicked out later */
     if (parray[slot].slotstat.is_valid 
@@ -798,13 +799,16 @@ int player_read(int p)
     */
     if (parray[slot].slotstat.is_valid && slot > p) {
       player_swapslots(slot, p, 1);
-      Logit("Slot %d copied down from %s", p, player_dumpslot(slot));
+      if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+        Logit("Slot %d copied down from %s", p, player_dumpslot(slot));
       }
+    }
 #if PLAYER_SWAPSLOTS_WOULD_BE_CORRECT
     if (parray[slot].slotstat.is_valid && slot < p) {
       player_swapslots(slot, p, -1);
-      Logit("Slot %d copied up from %s", p, player_dumpslot(slot));
-      
+      if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+        Logit("Slot %d copied up from %s", p, player_dumpslot(slot));
+      }
       player_clear(p);
       p = slot; continue;
       }
@@ -1270,9 +1274,9 @@ static void write_p_inout(int inout, int p, FILE *fp, int maxlines)
                   dotQuad(parray[p].thisHost));
   fclose(fp);
   if (parray[p].num_logons % 100 == 0) {
-    if (Debug) Logit("About to truncate");
+    if (conffile.debug_general) Logit("About to truncate");
     if (maxlines >= 1) truncate_file(filename(), maxlines);
-    if (Debug) Logit("done with  truncate");
+    if (conffile.debug_general) Logit("done with  truncate");
   }
 }
 

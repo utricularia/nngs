@@ -415,14 +415,14 @@ int process_command(int p, char *com_string)
     return COM_BADCOMMAND;
   }
 
-  if (Debug > 8) {
+  if (conffile.debug_general > 8) {
     Logit("DEBUG: %s > %s <", player_dumpslot(p), com_string);
   }
 
   KillTrailWhiteSpace(com_string);
   alias_substitute(p, com_string, &alias_string);
 
-  if (Debug > 9) {
+  if (conffile.debug_general > 9) {
     if (com_string != alias_string)
       Logit("DEBUG: %s -alias-: > %s <", parray[p].pname, alias_string);
   }
@@ -581,10 +581,10 @@ static int process_password(int p, char *password)
     if (p == p1) continue;
     if (!parray[p1].slotstat.is_inuse) continue;
     if (strcmp (parray[p].login, parray[p1].login)) continue;
-#if DEBUG_PLAYER_SLOT
-    Logit("Slot %s NEW ", player_dumpslot(p));
-    Logit("Slot %s OLD ", player_dumpslot(p1));
-#endif
+    if (conffile.debug_parray & DEBUG_PLAYER_SLOT) {
+      Logit("Slot %s NEW ", player_dumpslot(p));
+      Logit("Slot %s OLD ", player_dumpslot(p1));
+    }
     if (!parray[p1].slotstat.is_connected) {
       player_clear(p1); /* this may lose dirty data(can it be dirty?) */
       continue;
@@ -593,10 +593,10 @@ static int process_password(int p, char *password)
       pprintf (p, "\n*** Sorry %s is already logged in ***\n", parray[p1].pname);
       return COM_LOGOUT;
     }
-#if DEBUG_PLAYER_KICK
-    Logit("Slot %s Kicking ", player_dumpslot(p));
-    Logit("Slot %s Kicked ", player_dumpslot(p1));
-#endif  
+    if (conffile.debug_parray & (DEBUG_PLAYER_SLOT|DEBUG_PLAYER_KICK)) {
+      Logit("Slot %s Kicking ", player_dumpslot(p));
+      Logit("Slot %s Kicked ", player_dumpslot(p1));
+    }
     boot_out(p,p1);
   }
 
@@ -625,12 +625,12 @@ static int process_password(int p, char *password)
 
   if (!parray[p].slotstat.is_registered)
     pxysend_raw_file(p, FILENAME_MESS_UNREGISTERED);
-  if (Debug) Logit("About to resort");
+  if (conffile.debug_general) Logit("About to resort");
   player_resort();
-  if (Debug) Logit("About to write login");
+  if (conffile.debug_general) Logit("About to write login");
   player_write_loginout(p, P_LOGIN);
   parray[p].slotstat.is_online = 1;
-  if (Debug) Logit("Made it to announce");
+  if (conffile.debug_general) Logit("Made it to announce");
   sprintf(tmptext, "{%s [%3.3s%s] has connected.}\n",
       parray[p].pname,
       parray[p].srank,
@@ -694,9 +694,9 @@ static int process_password(int p, char *password)
   }
 
   num_logins++;
-  if (Debug) Logit("Doing messages...");
+  if (conffile.debug_general) Logit("Doing messages...");
   messnum = player_num_messages(p);
-  if (Debug) Logit("Done with messages...");
+  if (conffile.debug_general) Logit("Done with messages...");
   if (messnum) {
     pcn_out(p, CODE_INFO, FORMAT_YOU_HAVE_d_MESSAGES_TYPE_qMESSAGESq_TO_DISPLAY_THEMn, 
 	messnum);

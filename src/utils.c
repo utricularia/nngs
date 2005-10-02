@@ -581,7 +581,7 @@ int psend_file(int p, const char *dir, const char *file)
     return -1;
   }
 
-  if (Debug) Logit("Opened \"%s\"", fname);
+  if (conffile.debug_general) Logit("Opened \"%s\"", fname);
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
   while ((cp = fgets( tmp, sizeof tmp, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
@@ -1045,7 +1045,7 @@ int truncate_file(char *file, int lines)
     fprintf(stderr,"truncate_file: File '%s' not found!\n",file);
     return 1;
   }
-  if (Debug) Logit("Opened %s", file);
+  if (conffile.debug_general) Logit("Opened %s", file);
   while ((cp = fgets(tBuf[bptr], MAX_LINE_SIZE, fp))) {
     len = strlen(cp); if (len < 1) continue;
     if (tBuf[bptr][len-1] != '\n') {	/* Line too long */
@@ -1089,7 +1089,7 @@ int truncate_file(char *file, int lines)
     fprintf(stderr,"truncate_file: File '%s' not found!\n",file);
     return 1;
   }
-  if (Debug) Logit("Opened %s", file);
+  if (conffile.debug_general) Logit("Opened %s", file);
   while (fgets(tBuf[bptr], MAX_LINE_SIZE, fp)) {
     if (tBuf[bptr][strlen(tBuf[bptr]) - 1] != '\n') {
       fclose(fp);

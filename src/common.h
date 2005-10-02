@@ -52,7 +52,5 @@
 
 extern unsigned long bytes_received;
 extern unsigned long bytes_sent;
-extern int Debug;
-
 
 #endif /* COMMON_H */

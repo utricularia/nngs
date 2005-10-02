@@ -146,7 +146,7 @@ static int get_empty_game_slot(void)
   } else {
     garray = realloc(garray, garray_top * sizeof *garray );
   }
-  if (Debug)
+  if (conffile.debug_general)
     Logit("get_empty_game_slot, garray_top = %d, i = %d (Had to alloc)", garray_top,i);
   return garray_top - 1;
 }
@@ -156,7 +156,7 @@ int game_new(int type, int size)
   int i; 
   
   i = get_empty_game_slot();
-  if (Debug) Logit("In game_new, i = %d", i);
+  if (conffile.debug_general) Logit("In game_new, i = %d", i);
   game_zero(&garray[i], size);
   garray[i].slotstat.in_use = 1;
   garray[i].gotype = type;
@@ -555,7 +555,7 @@ static void loadkib(FILE *fp, struct game *gp)
     if (len >= sizeof buf) len = sizeof buf ;
     buf[len-1] = '\0';	/* strip '\n' */
     if (is_totally_blank(buf)) {
-      /* if (Debug) */ Logit("Got my blank line in loadkib");
+      /* if (conffile.debug_general) */ Logit("Got my blank line in loadkib");
       continue;
     }
     sscanf(buf, "%d %n", &i,&k);
@@ -811,7 +811,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   fprintf(fp, "DT[%s]\n", time2str_sgf(&now));
   fprintf(fp, "SZ[%d]TM[%d]KM[%.1f]\n\n", garray[g0].minkg->width,
      TICS2SECS(garray[g0].ts.totalticks), garray[g0].komi);
-  if (Debug) Logit("garray[g0].nmvinfos = %d", garray[g0].nmvinfos);
+  if (conffile.debug_general) Logit("garray[g0].nmvinfos = %d", garray[g0].nmvinfos);
   mink_savegame(fp, garray[g0].minkg, garray[g0].mvinfos, garray[g0].nmvinfos);
 
   if (statstring) {   /* record territory in SGF file */

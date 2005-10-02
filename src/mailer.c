@@ -51,49 +51,11 @@
 #include <errno.h>
 #endif
 
-#if 0
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-
-#ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#endif
-
-#ifdef HAVE_UTIME_H
-#include <utime.h>
-#endif
-
-#ifdef HAVE_CRYPT_H
-#include <crypt.h>
-#endif
-
-#ifdef SGI
-#include <sex.h>
-#endif
-
-#ifdef USING_DMALLOC
-#include <dmalloc.h>
-#define DMALLOC_FUNC_CHECK 1
-#endif
-#endif
-
-#define WANT_MAIL_CHILD 1
-#if WANT_MAIN
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include "mailer.h"
-#define MAX_LINE_SIZE 1024
-#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #include "missing.h"
 #include "nngsconfig.h"
@@ -103,17 +65,36 @@
 #include "common.h"
 #include "command.h"
 #include "mailer.h"
+
+#define WANT_DEBUG 0
+#define WANTED_SMTP_PORT 25
+#define WANT_MAIL_CHILD 1
+
+#if WANT_MAIN
+#define MAX_LINE_SIZE 1024
 #endif
 
+static int smtp_err = 0;
 static void mail_tempnam(char *buff);
 static int mail_one(const char *spool);
 static int mail_child(const char *spool);
-static int smtp_err = 0;
 static int child_perror(const char *msg);
 static int smtp_mail(FILE *fp, char *to, char *subj);
+static int pars_addr(struct sockaddr_in *dst, const char * name, int port);
+static int smtp_open(const char *mtaname, int port, const char *myname);
+static int set_envelope(int fd, char *from, char *rcpt);
+static int add_header(int fd, const char *name, const char *value);
+static int set_data(int fd);
+static int add_data(int fd, char *buff, int len);
+static int do_ping_pong(int fd, char *buff, int len);
+static int wrap_read(int fd, char *buff, int len);
+static int wrap_write(int fd, char *buff, int len);
+static int wrap_line(int fd, char *buff, int len);
+
 FILE * popen(const char *path, const char *mode);
 
-#ifndef WANT_MAIN
+/* ---------------------------------------------------- */
+
 int mail_spool(char *nbuff, const char *to, const char *subj, const char *text, const char *fname)
 {
   char buff[MAX_LINE_SIZE];
@@ -157,7 +138,7 @@ static void mail_tempnam(char *buff)
   if (now != then) seq = 0;
   sprintf(deet, time2str_file((time_t *) &now));
   siz = xyfilename(buff, FILENAME_SPOOL_sd, deet, seq);
-  Logit("Mail_tempnam() := [%d]%s", siz, buff);
+  if (conffile.debug_mailer) Logit("Mail_tempnam() := [%d]%s", siz, buff);
   then = now; seq++;
   return;
 }
@@ -166,19 +147,21 @@ static void mail_tempnam(char *buff)
 static int mail_child(const char *spool)
 {
 #if WANT_MAIL_CHILD
-int pid;
+  int rc, pid;
 
-pid = fork();
-if (pid) {
-  Logit("Mail_child() =: %d", pid);
-  return pid;
+  pid = fork();
+  if (pid) {
+    if (conffile.debug_mailer) Logit("Mail_child() =: %d", pid);
+    return pid;
   }
-pid = mail_one(spool);
-Logit("Mail_one() =: %d", pid);
-exit(0);
-return -1;
+  rc = mail_one(spool);
+  if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
+  exit(0);
+  return -1;
 #else
-return mail_one(spool);
+  rc = mail_one(spool);
+  if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
+  return rc;
 #endif
 }
 
@@ -209,6 +192,7 @@ body:
   if (!to) {
     Logit("Mail_one(%s) : no \"to:\"", spool);
     fclose(fp);
+    if (subj) free(subj);
     return -2;}
 
   to[strlen(to)-1] = 0;
@@ -217,7 +201,8 @@ body:
   if (memcmp(conffile.mail_program, "SMTP", 4)) {
     if (subj) sprintf(buff, "%s -s \"%s\" %s", conffile.mail_program, subj, to);
     else sprintf(buff, "%s %s", conffile.mail_program, to);
-    Logit("Mail_one(%s) : opening pipe: \"%s\"", spool, buff);
+    if (conffile.debug_mailer) Logit("Mail_one(%s) : opening pipe: \"%s\""
+       , spool, buff);
     pipo = popen(buff, "w");
     fprintf(pipo, "From: %s\n", conffile.server_email);
     if (conffile.smtp_reply_to) fprintf(pipo, "Reply-To: %s\n", conffile.smtp_reply_to);
@@ -227,48 +212,17 @@ body:
     rc = 0;
   } else {
     rc =  smtp_mail(fp, to, subj);
-    Logit("Smtp_mail(to=%s,Subj=%s) returned %d", to, subj, rc);
+    if (conffile.debug_mailer) Logit("Smtp_mail(to=%s,Subj=%s) returned %d"
+       , to, subj, rc);
   }
+
   if (rc >= 0) unlink(spool);
   fclose(fp);
-
   if (to) free(to);
   if (subj) free(subj);
   return (rc>=0) ? 0: -1;
 }
-#endif
 
-/* smtp.c simple smtp client for use in a program
-*/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-
-#include <errno.h>
-
-#define WANT_DEBUG 0
-#define WANTED_SMTP_PORT 25
-/* ---------------------------------------------------- */
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
-
-static int pars_addr(struct sockaddr_in *dst, const char * name, int port);
-static int smtp_open(const char *mtaname, int port, const char *myname);
-static int set_envelope(int fd, char *from, char *rcpt);
-static int add_header(int fd, const char *name, const char *value);
-static int set_data(int fd);
-static int add_data(int fd, char *buff, int len);
-
-static int do_ping_pong(int fd, char *buff, int len);
-static int wrap_read(int fd, char *buff, int len);
-static int wrap_write(int fd, char *buff, int len);
-static int wrap_line(int fd, char *buff, int len);
-/* ---------------------------------------------------- */
 static int smtp_open(const char *mta, int port, const char *myname)
 {
 int fd = -1 , rc;

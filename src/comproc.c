@@ -860,9 +860,7 @@ int com_shout(int p, struct parameter * param)
 {
   int p1, i;
 
-#ifdef UNREGS_CANNOT_SHOUT
-#endif /* UNREGS_CANNOT_SHOUT */
-  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_SHOUT_COMMAND_);
     return COM_OK;
   }
@@ -977,9 +975,7 @@ int com_gshout(int p, struct parameter * param)
 {
   int p1;
 
-#ifdef UNREGS_CANNOT_SHOUT
-#endif /* UNREGS_CANNOT_SHOUT */
-  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_GSHOUT_COMMAND_);
     return COM_OK;
   }
@@ -1008,9 +1004,7 @@ int com_it(int p, struct parameter * param)
   int p1;
   int why;
 
-#ifdef UNREGS_CANNOT_SHOUT
-#endif /* UNREGS_CANNOT_SHOUT */
-  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
     return COM_OK;
   }
@@ -1042,9 +1036,7 @@ int com_git(int p, struct parameter * param)
 {
   int p1;
 
-#ifdef UNREGS_CANNOT_SHOUT
-#endif /* UNREGS_CANNOT_SHOUT */
-  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 0) {
+  if (!parray[p].slotstat.is_registered && conffile.unregs_can_shout < 1) {
     pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_IT_COMMAND_);
     return COM_OK;
   }

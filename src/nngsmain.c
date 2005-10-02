@@ -78,7 +78,7 @@
 
 /* Scoreboard */
 int Ladder9, Ladder19, num_19, num_9, completed_games,
-       num_logins, num_logouts, new_players, Debug;
+       num_logins, num_logouts, new_players;
 unsigned long bytes_sent = 0UL;
 unsigned long bytes_received = 0UL;
 
@@ -234,7 +234,6 @@ int main(int argc, char *argv[])
   Ladder9 = ladder_new(LADDERSIZE);
   Ladder19 = ladder_new(LADDERSIZE);
 
-  Debug = 0;
   completed_games = 0;
   num_logins = num_logouts = new_players = 0;
 
@@ -314,70 +313,74 @@ static void read_ban_ip_list(void)
 
 static int daemonise(void)
 {
-int rc;
+  int rc;
 
-struct passwd *pp = NULL;
-struct group *gp = NULL;
-uid_t uid = -1, euid =0;
-gid_t gid = -1;
+  struct passwd *pp = NULL;
+  struct group *gp = NULL;
+  uid_t uid = 0, euid =0;
+  gid_t gid = 0;
 
 	/* we do this before chroot()ing, because they need
 	** the /etc/directory
 	*/
-if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
-if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
+  if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
+  if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
 
-if (conffile.chroot_user && !pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
-else { uid = pp->pw_uid; gid = pp->pw_gid; }
-if (conffile.chroot_group && !gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
-else gid = gp->gr_gid;
+  if (conffile.chroot_user) {
+    if (!pp) fprintf(stderr, "Could not find user %s\n", conffile.chroot_user );
+    else { uid = pp->pw_uid; gid = pp->pw_gid; }
+  }
+  if (conffile.chroot_group) {
+    if(!gp) fprintf(stderr, "Could not find group %s\n", conffile.chroot_group);
+    else gid = gp->gr_gid;
+  }
 
-if (conffile.chroot_dir) {
-	(void) gethostbyname("localhost") ;
-	rc = chdir(conffile.chroot_dir);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
-		, conffile.chroot_dir, rc, strerror(rc) );
-		}
-	rc = chroot(conffile.chroot_dir);
-	if (rc==-1) { rc=errno;
-		fprintf(stderr, "Failed chroot(%s): %d (%s)\n"
-		, conffile.chroot_dir, rc, strerror(rc) );
-		}
-	if (rc) return rc;
-	}
+  if (conffile.chroot_dir) {
+    (void) gethostbyname("localhost") ;
+    rc = chdir(conffile.chroot_dir);
+    if (rc==-1) { rc=errno;
+      fprintf(stderr, "Failed chdir(%s): %d (%s)\n"
+      , conffile.chroot_dir, rc, strerror(rc) );
+    }
+    rc = chroot(conffile.chroot_dir);
+    if (rc==-1) { rc=errno;
+      fprintf(stderr, "Failed chroot(%s): %d (%s)\n"
+      , conffile.chroot_dir, rc, strerror(rc) );
+    }
+    if (rc) return rc;
+  }
 
-if (gid) rc = setgid(gid);
-if (rc==-1) { rc=errno;
-	fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
-	, gid, conffile.chroot_group, rc, strerror(rc) );
-	return rc;
-	}
-if (uid) rc = setuid(uid);
-if (rc==-1) { rc=errno;
-	fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
-	, uid, conffile.chroot_user, rc, strerror(rc) );
-	return rc;
-	}
+  if (gid) rc = setgid(gid);
+  if (rc==-1) { rc=errno;
+    fprintf(stderr, "Failed setgid(%d:%s): %d (%s)\n"
+    , gid, conffile.chroot_group, rc, strerror(rc) );
+    return rc;
+  }
+  if (uid) rc = setuid(uid);
+  if (rc==-1) { rc=errno;
+    fprintf(stderr, "Failed setuid(%d:%s): %d (%s)\n"
+    , uid, conffile.chroot_user, rc, strerror(rc) );
+    return rc;
+  }
 #if 1
-if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
-if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+  if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+  if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
 #endif
 
-if (uid && (euid = geteuid()) != uid) {
-	fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
-	, uid, conffile.chroot_user, euid );
-	return rc;
-	}
+  if (uid && (euid = geteuid()) != uid) {
+    fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
+    , uid, conffile.chroot_user, euid );
+    return rc;
+  }
 
-if (conffile.chroot_dir) {
-	if (!uid || !(euid = geteuid()) ) {
-		fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n" );
-		conf_file_write("refused.cnf");
-		return rc;
-		}
-	conf_file_fixup();
-	}
-return 0;
+  if (conffile.chroot_dir) {
+    if (!uid || !(euid = geteuid()) ) {
+      fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n" );
+      conf_file_write("refused.cnf");
+      return rc;
+    }
+    conf_file_fixup();
+  }
+  return 0;
 }
 

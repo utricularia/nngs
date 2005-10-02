@@ -283,13 +283,13 @@ int com_asetdebug(int p, struct parameter* param)
 {
   
   if (param[0].type == TYPE_NULL) {
-    pcn_out(p, CODE_INFO, FORMAT_DEBUG_LEVEL_SET_TO_d, Debug);
+    pcn_out(p, CODE_INFO, FORMAT_DEBUG_LEVEL_SET_TO_d, conffile.debug_general);
     return COM_OK;
   }
   
   else {
-    Debug = param[0].val.integer;
-    if (Debug < 0) Debug = 0;
+    conffile.debug_general = param[0].val.integer;
+    if (conffile.debug_general < 0) conffile.debug_general = 0;
   }
   return COM_OK;
 }

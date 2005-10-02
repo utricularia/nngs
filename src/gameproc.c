@@ -55,6 +55,7 @@
 #include "nngsconfig.h"
 #include "gameproc.h"
 #include "common.h"
+#include "conffile.h"
 #include "servercodes.h"
 #include "playerdb.h"
 #include "gamedb.h"
@@ -103,7 +104,7 @@ void game_ended(int g0, int winner, int why)
     completed_games++;
     mink_getcaps(garray[g0].minkg, &wcaps, &bcaps);
     mink_countscore(garray[g0].minkg, statstring, &wterr, &bterr, &wocc, &bocc);
-    if (Debug)
+    if (conffile.debug_general)
       Logit("k=%.1f wtr=%d, btr=%d, wocc=%d, bocc=%d, wcaps=%d, bcaps=%d",
                  garray[g0].komi, wterr, bterr,  wocc, bocc, wcaps, bcaps);
 #ifdef WANT_CHINESESCORE
@@ -2294,7 +2295,7 @@ void game_update_time(int g0)
       garray[g0].black.byoperiods = 1;
       garray[g0].black.byostones = garray[g0].ts.byostones;
       garray[g0].black.ticksleft = garray[g0].ts.byoticks;
-	/* AvK split */
+
       pcn_out(garray[g0].white.pnum, CODE_INFO,
               FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
               parray[garray[g0].black.pnum].pname);
