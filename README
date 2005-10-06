@@ -112,6 +112,7 @@ Once there is an admin-account, it can be used to grant admin-rights
 to other users.
 NOTE: the admin-status is stored in TWO places: the userfile proper,
 and a lists/admin - file. You'l need both.
+
 There already is a user 'admin' in the lists/admins.default -file
 , you'll need to
 1) create a user named 'admin' by logging in and using

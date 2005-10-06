@@ -1,7 +1,7 @@
 helpdatadir=${prefix}/share/${PACKAGE}/help
 helpdata_DATA=
 
-LANGUAGES=en ch fr pl
+LANGUAGES=en ch fr pl de
 
 
 ## This is from autobook 14.3 install-data-local:
