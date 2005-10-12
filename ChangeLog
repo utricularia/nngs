@@ -3,13 +3,13 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.18avk2 2005-07-31 -2005-08-24  2005-09-28 AvK
+1.1.19 AvK 2005-10-11
 - removed unnecessary extern from function declarations in headers.
 - renamed the ladder functions. They all start with ladder_ now.
 - renamed globals in mink.c to mink_*
 - Added support for chroot(). Set CHROOT_DIR to empty if you don't want it.
   - chroot/fork will probably only work on unix/linux platforms.
-    windows people don't need security, anyway.
+    windows people don't seem to need security, anyway.
   chroot() involves a lot of changes.
   - the tempfile-mechanism needs a /tmp/ subdirectory in jail.
   for safety: if chroot is wanted but impossible: nngssrv should fail.

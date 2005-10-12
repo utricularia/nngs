@@ -95,7 +95,7 @@ struct confstuff {
   };
 
 #if CONFFILE_C
-struct confstuff conffile = {NULL};
+struct confstuff conffile = {NULL,};
 #else
 extern struct confstuff conffile;
 #endif
