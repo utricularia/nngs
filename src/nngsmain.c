@@ -362,7 +362,7 @@ static int daemonise(void)
     , uid, conffile.chroot_user, rc, strerror(rc) );
     return rc;
   }
-  if (conffile.want_fork) {
+  if (conffile.want_fork > 0) {
     if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
     if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
   }

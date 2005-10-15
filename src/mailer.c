@@ -148,7 +148,7 @@ static int mail_child(const char *spool)
 {
   int rc, pid;
 
-  if (conffile.want_mail_child) {
+  if (conffile.want_mail_child > 0) {
     pid = fork();
     if (pid) {
       if (conffile.debug_mailer) Logit("Mail_child() =: %d", pid);

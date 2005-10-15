@@ -41,6 +41,7 @@
 
 - change ALL date/time (in filenames ...) to UTC: avoid foldover at DST-changes.
   <<-- 1.1.1x done!
+
 >>FUNCTIONALITY
 - change mail queue: don't invoke sendmail, run a cron job?
 - for debug, don't use mailprog but give passwds out online?

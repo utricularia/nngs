@@ -267,15 +267,16 @@ size_t pos=0;
   len = snprintf(dst+pos, dstlen-pos, "Version: %s\n", conffile.version_string);
   if (len < 0) return pos; pos += len;
 
-  if (len < 0) return pos; pos += len;
   len = snprintf(dst+pos, dstlen-pos, "Compile_date(local): %s %s\n"
                 , __DATE__, __TIME__);
   if (len < 0) return pos; pos += len;
 
   len = snprintf(dst+pos, dstlen-pos, "Date(UTC): %s\n", time2str_utc(&now));
   if (len < 0) return pos; pos += len;
+
   len = snprintf(dst+pos, dstlen-pos, "Date(local): %s\n", time2str_local(&now));
   if (len < 0) return pos; pos += len;
+
   len = snprintf(dst+pos, dstlen-pos, "Startuptime(local): %s\n", time2str_local(&startuptime));
   if (len < 0) return pos; pos += len;
 
