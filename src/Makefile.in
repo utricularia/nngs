@@ -15,8 +15,7 @@
 @SET_MAKE@
 
 
-
-SOURCES = $(libladder_a_SOURCES) $(nngssrv_SOURCES)
+SOURCES = $(nngssrv_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -49,13 +48,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-AR = ar
-ARFLAGS = cru
-LIBRARIES = $(noinst_LIBRARIES)
-libladder_a_AR = $(AR) $(ARFLAGS)
-libladder_a_LIBADD =
-am_libladder_a_OBJECTS = ladder.$(OBJEXT)
-libladder_a_OBJECTS = $(am_libladder_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
@@ -67,12 +59,10 @@ am_nngssrv_OBJECTS = network.$(OBJEXT) bm.$(OBJEXT) channel.$(OBJEXT) \
 	ip_ban.$(OBJEXT) chkaddr.$(OBJEXT) command.$(OBJEXT) \
 	comproc.$(OBJEXT) gamedb.$(OBJEXT) playerdb.$(OBJEXT) \
 	emote2.$(OBJEXT) pending.$(OBJEXT) udp_commands.$(OBJEXT) \
-	conffile.$(OBJEXT) mailer.$(OBJEXT)
+	conffile.$(OBJEXT) mailer.$(OBJEXT) ladder.$(OBJEXT)
 nngssrv_OBJECTS = $(am_nngssrv_OBJECTS)
 nngssrv_LDADD = $(LDADD)
-nngssrv_DEPENDENCIES = $(top_srcdir)/memory/libmemory.a \
-	$(top_srcdir)/src/libladder.a \
-	$(top_srcdir)/mlrate/src/libmlr.a
+nngssrv_DEPENDENCIES = $(top_srcdir)/mlrate/src/libmlr.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -94,8 +84,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libladder_a_SOURCES) $(nngssrv_SOURCES)
-DIST_SOURCES = $(libladder_a_SOURCES) $(nngssrv_SOURCES)
+SOURCES = $(nngssrv_SOURCES)
+DIST_SOURCES = $(nngssrv_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -186,16 +176,11 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-noinst_LIBRARIES = libladder.a
-libladder_a_SOURCES = ladder.c #avk emote2.c
 EXTRA_DIST = 
 INCLUDES = \
-        -I$(top_srcdir)/memory \
         -I$(top_srcdir)/mlrate/src
 
 LDADD = \
-        $(top_srcdir)/memory/libmemory.a \
-        $(top_srcdir)/src/libladder.a \
         $(top_srcdir)/mlrate/src/libmlr.a
 
 nngssrv_SOURCES = \
@@ -224,8 +209,10 @@ nngssrv_SOURCES = \
 	pending.c \
 	udp_commands.c \
 	conffile.c \
-	mailer.c
+	mailer.c \
+	ladder.c
 
+#avk emote2.c
 noinst_HEADERS = 
 
 # Remove these files here... they are created locally
@@ -263,13 +250,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libladder.a: $(libladder_a_OBJECTS) $(libladder_a_DEPENDENCIES) 
-	-rm -f libladder.a
-	$(libladder_a_AR) libladder.a $(libladder_a_OBJECTS) $(libladder_a_LIBADD)
-	$(RANLIB) libladder.a
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
@@ -423,7 +403,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
+all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
@@ -455,8 +435,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
-	mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -504,16 +483,15 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-noinstLIBRARIES ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-info-am
+	clean-generic ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-info-am
 
 
 @NNGS_ALL_WARNINGS@

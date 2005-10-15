@@ -72,7 +72,7 @@
 #include "alias.h"
 #include "ip_ban.h"
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 #include "rdbm.h"
 #endif /* WANT_NNGSRATED */
 
@@ -973,14 +973,14 @@ int process_heartbeat(int *fdp)
 {
   static int last_ratings = 0;
   static int lastcalled = 0;
-  static int last_results = 0;
   int time_since_last;
   int p;
   static int last_idle_check;
-  static int resu = 0;
   time_t now = globclock.time;
+#if WANT_NNGSRATED
+  static int resu = 0;
+  static int last_results = 0;
   static struct stat ratingsbuf1, ratingsbuf2;
-#ifdef WANT_NNGSRATED
   rdbm_t rdb;
 #endif /* WANT_NNGSRATED */
 
@@ -1025,7 +1025,7 @@ int process_heartbeat(int *fdp)
 #endif
     }
   }
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   if (!last_results) {
     last_results = now;
     stat(NRATINGS_FILE, &ratingsbuf1);  /* init the stat buf */

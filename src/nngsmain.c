@@ -320,8 +320,8 @@ static int daemonise(void)
   uid_t uid = 0, euid =0;
   gid_t gid = 0;
 
-	/* we do this before chroot()ing, because they need
-	** the /etc/directory
+	/* we need to do these before chroot()ing, because they need
+	** the /etc/ directory.
 	*/
   if (conffile.chroot_user) pp = getpwnam(conffile.chroot_user);
   if (conffile.chroot_group) gp = getgrnam(conffile.chroot_group);
@@ -362,15 +362,15 @@ static int daemonise(void)
     , uid, conffile.chroot_user, rc, strerror(rc) );
     return rc;
   }
-#if 1
-  if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
-  if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
-#endif
+  if (conffile.want_fork) {
+    if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+    if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+  }
 
   if (uid && (euid = geteuid()) != uid) {
     fprintf(stderr, "Failed setuid(%d:%s): euid=%d\n"
     , uid, conffile.chroot_user, euid );
-    return rc;
+    return -1;
   }
 
   if (conffile.chroot_dir) {

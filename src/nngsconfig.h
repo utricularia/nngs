@@ -60,7 +60,7 @@
 #define WANT_PAIR 1
 
 /* define this if you have a ratings file somewhere.  See playerdb.c */
-#define WANT_NNGSRATED
+#define WANT_NNGSRATED 0
 /*#undef WANT_NNGSRATED*/
 
 

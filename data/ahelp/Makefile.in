@@ -137,7 +137,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 ahelpdatadir = ${prefix}/share/${PACKAGE}/ahelp
 ahelpdata_DATA = 
-LANGUAGES = en ch de pl
+LANGUAGES = en ch fr pl de
 
 # Remove these files here... they are created locally
 DISTCLEANFILES = *~

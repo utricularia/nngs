@@ -58,7 +58,7 @@
 #include "plan.h"
 #include "alias.h"
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 #include "rdbm.h"
 #endif
 
@@ -870,7 +870,7 @@ skip_fysical_read:
     player_dirty(p);
     do_copy(parray[p].RegDate, time2str_utc(&tt), sizeof parray[p].RegDate);
   }
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   if (!strcasecmp(parray[p].ranked, "NR") ) {
     parray[p].rating = 0;
     parray[p].orating = 0;

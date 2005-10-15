@@ -86,6 +86,8 @@ struct confstuff {
   char allow_unregistered;
   char unregs_can_shout;
   char want_udp_port;
+  char want_fork;
+  char want_mail_child;
 	/* Misc stuff */
   char *def_prompt;
   unsigned mode_for_dir;

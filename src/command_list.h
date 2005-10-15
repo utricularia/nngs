@@ -212,7 +212,7 @@ struct command_type command_list[] = {
   {"orating",           "o",    com_orating,     ADMIN_USER },
   {"osuggest",		"wo",	com_osuggest,	ADMIN_USER },
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   {"rating",		"o",	com_nrating,	ADMIN_USER },
   {"suggest",		"wo",	com_nsuggest,	ADMIN_USER },
 #endif

@@ -146,23 +146,23 @@ static void mail_tempnam(char *buff)
 
 static int mail_child(const char *spool)
 {
-#if WANT_MAIL_CHILD
   int rc, pid;
 
-  pid = fork();
-  if (pid) {
-    if (conffile.debug_mailer) Logit("Mail_child() =: %d", pid);
-    return pid;
+  if (conffile.want_mail_child) {
+    pid = fork();
+    if (pid) {
+      if (conffile.debug_mailer) Logit("Mail_child() =: %d", pid);
+      return pid;
+    }
+    rc = mail_one(spool);
+    if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
+    exit(0);
+    return -1;
+  } else {
+    rc = mail_one(spool);
+    if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
+    return rc;
   }
-  rc = mail_one(spool);
-  if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
-  exit(0);
-  return -1;
-#else
-  rc = mail_one(spool);
-  if (conffile.debug_mailer) Logit("Mail_one() =: %d", rc);
-  return rc;
-#endif
 }
 
 static int mail_one(const char *spool)

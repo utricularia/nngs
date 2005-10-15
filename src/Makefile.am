@@ -1,17 +1,11 @@
 bin_PROGRAMS = nngssrv
 
-noinst_LIBRARIES = libladder.a
-libladder_a_SOURCES = ladder.c #avk emote2.c
-
 EXTRA_DIST =
 
 INCLUDES = \
-        -I$(top_srcdir)/memory \
         -I$(top_srcdir)/mlrate/src
 
 LDADD = \
-        $(top_srcdir)/memory/libmemory.a \
-        $(top_srcdir)/src/libladder.a \
         $(top_srcdir)/mlrate/src/libmlr.a
 
 nngssrv_SOURCES = \
@@ -40,7 +34,9 @@ nngssrv_SOURCES = \
 	pending.c \
 	udp_commands.c \
 	conffile.c \
-	mailer.c
+	mailer.c \
+	ladder.c
+#avk emote2.c
 
 noinst_HEADERS =
 

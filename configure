@@ -6188,7 +6188,7 @@ LIBS="$LIBS $DMALLOCLIB"
 
 
 
-                                                            ac_config_files="$ac_config_files Makefile src/Makefile memory/Makefile data/Makefile data/help/Makefile data/ahelp/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/Makefile data/Makefile data/help/Makefile data/ahelp/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -6754,7 +6754,6 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-  "memory/Makefile" ) CONFIG_FILES="$CONFIG_FILES memory/Makefile" ;;
   "data/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/Makefile" ;;
   "data/help/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/help/Makefile" ;;
   "data/ahelp/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/ahelp/Makefile" ;;

@@ -131,7 +131,7 @@ int com_note(int, struct parameter *);
 int com_shownote(int, struct parameter *);
 int com_ping(int, struct parameter *);
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 int com_nsuggest(int, struct parameter *);
 int com_nrating(int, struct parameter *);
 #endif

@@ -3,6 +3,12 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.19_1 AvK 2005-10-15
+- fixed missing language-subdirs for help and ahelp
+- fixed handling of empty chroot_xxx variables
+- removed reference to memory - subdir (now considered obsolete)
+- removed libladder. It's functions now live in ordinary objects
+- changed NNGSRATED #define to 0 (zero) -->> Default: no need for mlrate
 1.1.19 AvK 2005-10-11
 - removed unnecessary extern from function declarations in headers.
 - renamed the ladder functions. They all start with ladder_ now.

@@ -69,7 +69,7 @@
 #include "alias.h"
 #include "pending.h"
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 #include "rdbm.h"
 #endif
 
@@ -2949,7 +2949,7 @@ static int com_xmatch(int p, struct parameter * param, int gametype)
 static int
 get_nrating(int p, double *ratp)
 {
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   rdbm_t db;
   rdbm_player_t rp;
 
@@ -3029,7 +3029,7 @@ aux_suggest(int p, int ratdiff, int stronger)
   }
 }
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 int com_nsuggest(int p, struct parameter * param)
 {
   int p1, p2;
@@ -4382,7 +4382,7 @@ int com_spair(int p, struct parameter * param)
 
 int com_nrating(int p, struct parameter * param)
 {
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   char name[sizeof parray[0].pname];
   rdbm_t db;
   rdbm_player_t rp;

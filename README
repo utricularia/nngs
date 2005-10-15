@@ -95,7 +95,7 @@ have to do some manual tuning.
    this will only need gethostbyname(), which relies on /etc/hosts and/or
    /etc/resolv.conf. *these need to be present in jail, or mail won't work*
 3) For safety: if anything fails (chroot, setuid, ...) the program will
-   refuse to work and exits.
+   refuse to work and will exit() before doing anything useful.
 4) Maybe (?depending on platform?) other files (/dev/zero) are needed.
 5) As an aid in debugging, a file "written.cnf" is written in the
    chroot() -jail. The pathnames in this file will be relative to the

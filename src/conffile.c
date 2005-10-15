@@ -104,13 +104,14 @@ MESSAGE("and the end-of-line is read into the variable.")
 MESSAGE("")
 MESSAGE("Leave chroot_dir empty if chroot() is not wanted.")
 MESSAGE("Note: chroot() itself needs root permissions.")
-MESSAGE("Note: chroot will cause the pathnames below to be")
-MESSAGE("changed automatically (prefix is stripped)")
+MESSAGE("Note: chroot will cause all pathnames to be")
+MESSAGE("changed automatically (the prefix is stripped)")
 MESSAGE("Stripped filenames will appear in written.cnf for verification." )
 MESSAGE("Note: chroot also :")
 MESSAGE(" * needs chroot_user && chroot_group to be set.")
 MESSAGE(" * needs mail to be sent by SMTP.")
-MESSAGE(" * causes tempnam() to fail, even if /tmp/ directory is present in jail.")
+MESSAGE(" * will cause tempnam() to fail, even if a /tmp/ subdirectory")
+MESSAGE("   is present in the chroot() -jail.")
 MESSAGE("")
 NAME("chroot_dir", &conffile.chroot_dir, NULL)
 NAME("chroot_user", &conffile.chroot_user, NULL)
@@ -161,7 +162,8 @@ MESSAGE("This is needed in chroot() installations, because /usr/bin/mail et.al."
 MESSAGE("are unavailabls in a chroot() jail.")
 MESSAGE("The smtp_xxx - fields are used to fill the SMTP-request:")
 MESSAGE("")
-MESSAGE(" smtp_mta := mailer we want to use.")
+MESSAGE(" smtp_mta := hostname where the MTA lives.")
+MESSAGE(" smtp_portnum := portnumber that the MTA uses.")
 MESSAGE(" smtp_helo := what we put in the HELO line (this host).")
 MESSAGE(" smtp_from := what we put in the MAIL FROM: line (our address).")
 MESSAGE(" smtp_reply_to := what we put in the Reply-to: header (reply address).")
@@ -182,7 +184,7 @@ MESSAGE("")
 NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
 MESSAGE("")
 MESSAGE("Debugging flags. Can cause a lot of output to the logfile.")
-MESSAGE("Higher levels will cause more output. Set to zero to disable.")
+MESSAGE("Higher levels will cause more output. Set them to zero to disable.")
 MESSAGE("")
 NUMBER("debug_general", &conffile.debug_general, "0")
 NUMBER("debug_parray", &conffile.debug_parray, "0")
@@ -193,6 +195,8 @@ MESSAGE("")
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
 BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
 BOOL("want_udp_port", &conffile.want_udp_port, "No" )
+BOOL("want_fork", &conffile.want_fork, "Yes" )
+BOOL("want_mail_child", &conffile.want_mail_child, "Yes" )
 
 MESSAGE("")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
@@ -232,9 +236,9 @@ int conf_file_read(const char * fname)
     len = strcspn(name, "=");
     if (name[len] != '=') continue;
     name[len] = 0; value = name + len + 1;
-    if (!*value) continue;
     trimtrail(name);
     trimtrail(value);
+    if (!*value) continue;
     conf_set_pair(name, value);
   }
   fclose (fp);

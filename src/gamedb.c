@@ -60,7 +60,7 @@
 #include "playerdb.h"
 #include "utils.h"
 
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
 #include "rdbm.h"		/* PEM */
 #endif
 
@@ -1029,7 +1029,7 @@ void game_write_complete(int g0, twodstring statstring)
                (garray[g0].winner == wp ? "W" : "B"),
                ResultsDate(fdate));
   fclose(fp);
-#ifdef WANT_NNGSRATED
+#if WANT_NNGSRATED
   /* [PEM]: New results file for nrating. */
   {
     rdbm_t rdb;
