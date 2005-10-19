@@ -769,7 +769,7 @@ static int process_prompt(int p, char *command)
 	int len = strlen(command);
 	int i ;
 	pcn_out( p, CODE_ERROR, FORMAT_AMBIGUOUS_COMMAND_MATCHES_);
-	for (i=0;command_list[i].comm_name; i++) {
+	for (i=0;i < command_count; i++) {
 	  if (strncmp(command_list[i].comm_name, command, len)) continue;
 	  pprintf( p, " %s", command_list[i].comm_name );
 	}
@@ -1102,7 +1102,7 @@ void commands_init()
     fclose(fp);
     return;
   }
-  for(i=0; command_list[i].comm_name; i++) {
+  for(i=0; i < command_count; i++) {
     if (command_list[i].adminLevel >= ADMIN_ADMIN) {
       fprintf(afp, "%s\n", command_list[i].comm_name);
     } else {

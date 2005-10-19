@@ -3,6 +3,15 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.20 AvK 2005-10-19
+- removed a silly bug (looking for a sentinel in command_list, while there was
+no sentinel. Problem was that it compiled fine on my home machines (probably
+cause of padding/packing/alingment of global variables)
+(thanks to  Guoliang Cao for reporting it, and insisting on it beeing fixed!)
+- removed vsnprintf() <--> Logit() mutual recursion. Sigh.
+- added some language subdirs to the CVS
+- added want_fork and want_mail_child - booleans, for ease of running under a debugger.
+- fixed incorrect incorrect handling of NULL-configurationstrings.
 1.1.19_1 AvK 2005-10-15
 - fixed missing language-subdirs for help and ahelp. Don't mention the war!
 - fixed handling of empty chroot_xxx variables
