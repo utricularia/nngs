@@ -421,8 +421,8 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
     name = tempnam(NULL, NULL);
     if (!name) name = "vsnprintf.tmp" ;
     dummy = fopen(name, "w+");
-    if (!dummy) Logit("Could not open tempfile '%s'", name);
-    else Logit("Opened tempfile(%d) '%s'", fileno(dummy), name);
+    if (!dummy) fprintf(stderr, "Could not open tempfile '%s'", name);
+    else fprintf(stderr, "Opened tempfile(%d) '%s'", fileno(dummy), name);
     unlink(name);
   }
   rewind(dummy);
