@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 {
   FILE *fp;
 
-#ifdef USING_DMALLOC
+#if USING_DMALLOC
   dmalloc_debug(1);
 #endif
 
@@ -284,7 +284,7 @@ return cnt;
 void main_exit(int code)
 {
 
-#ifdef USING_DMALLOC
+#if USING_DMALLOC
   dmalloc_log_unfreed();
   dmalloc_shutdown();
 #endif
@@ -375,7 +375,7 @@ static int daemonise(void)
 
   if (conffile.chroot_dir) {
     if (!uid || !(euid = geteuid()) ) {
-      fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n" );
+      fprintf(stderr, "Refuse to run as root, uid=%d, euid=%d\n", uid, euid );
       conf_file_write("refused.cnf");
       return rc;
     }

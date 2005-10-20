@@ -33,7 +33,7 @@
 
 void game_ended(int, int, int);
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
 void process_move(int, char *, int);
 int paired(int);
 #else

@@ -151,10 +151,10 @@ struct command_type command_list[] = {
   {"quit",		"",	com_quit,	ADMIN_USER },
   {"rank",		"S",	com_ranked,	ADMIN_USER },
   {"refresh",		"p",	com_refresh,	ADMIN_USER },
-#ifndef RESTRICT_REGISTRATION
-  {"register",         "WWT",  com_register,   ADMIN_USER },
-#else
+#if RESTRICT_REGISTRATION
   {"register",         "WWT",  com_register,   ADMIN_ADMIN },
+#else
+  {"register",         "WWT",  com_register,   ADMIN_USER },
 #endif
   {"reload_ladders",    "",     com_reload_ladders,  ADMIN_DEMIGOD  },
   {"remplayer",         "w",    com_remplayer,  ADMIN_DEMIGOD  },
@@ -199,13 +199,13 @@ struct command_type command_list[] = {
   {"who",		"T",	com_who,	ADMIN_USER },
   {"withdraw",		"n",	com_withdraw,	ADMIN_USER },
 
-#ifdef WANT_UNWANTED
+#if WANT_UNWANTED
   {"nocaps",		"",	com_nocaps,	ADMIN_USER },
   {"raisedead",         "w",    com_raisedead,  ADMIN_DEMIGOD  },
   {"review",		"T",	com_review,	ADMIN_USER },
 #endif
 
-#ifdef WANT_LADDER_SIFT
+#if WANT_LADDER_SIFT
   {"forcerecalc",        "",    com_rating_recalc, ADMIN_DEMIGOD },
 #endif /* WANT_LADDER_SIFT */
 
@@ -217,18 +217,18 @@ struct command_type command_list[] = {
   {"suggest",		"wo",	com_nsuggest,	ADMIN_USER },
 #endif
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
   {"teamgo",		"d",	com_pair,	ADMIN_USER }, 
   {"pair",		"d",	com_pair,	ADMIN_USER }, 
 #endif
 
-#ifdef WANT_NOTIFY
+#if WANT_NOTIFY
   {"znotify",		"",	com_znotify,	ADMIN_USER },  
   {"notify",		"o",	com_notify,	ADMIN_USER }, 
   {"unnotify",		"o",	com_unnotify,	ADMIN_USER }, 
 #endif
 
-#ifdef NEWS_BB
+#if NEWS_BB
   {"createadmnews",     "S",    com_createadmnews, ADMIN_MASTER },
   {"createnews",        "S",    com_createnews,  ADMIN_USER },
   {"news",	        "o",    com_news,       ADMIN_USER },

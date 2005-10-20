@@ -57,7 +57,7 @@ struct minkgame {
   int *uf;		/* union-find structure */
   struct uf_log_ *uflog;	/* log of changes to uf */
   int logsize,logid;	/* size of uflog & number of changes to uf */
-#ifdef WANT_MINKKOMI
+#if WANT_MINKKOMI
   float komi;
 #endif
   /*int nocaps; */		/* don't make captures, e.g. to play other games */
@@ -76,7 +76,7 @@ void freeminkgame(struct minkgame *g);	/* frees up game record */
 int mink_sethcap(struct minkgame *g, int n);     /* returns 1 if succesful */
 void mink_setnocaps(struct minkgame *g, int val);     /* returns 1 if succesful */
 xulong mink_gethash(struct minkgame *g); /* get a hashcode for current board */
-#ifdef WANT_MINKKOMI
+#if WANT_MINKKOMI
 void mink_setkomi(struct minkgame *g, float k);      /* set the komi */
 float mink_getkomi(struct minkgame *g);              /* get the komi */
 #endif

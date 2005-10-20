@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef WANT_MAIN
+#if WANT_MAIN
 #define WANT_DUMP_RANGETREE 1
 #endif
 /*

@@ -196,7 +196,7 @@ static void game_zero(struct game *gp, int size)
   gp->Ladder19 = 0;
   gp->Tourn = 0;
   gp->Ladder_Possible = 0;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   gp->pairwith = 0;;
   gp->pairstate = NOTPAIRED;
 #endif
@@ -521,7 +521,7 @@ int NewOldGame(int g0)
 
 void game_disconnect(int g0, int p)
 {
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(parray[p].session.gnum)) {
     game_ended(garray[g0].pairwith, PLAYER_NEITHER, END_LOSTCONNECTION);
   }
@@ -757,7 +757,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   if (!fp) return -1;
   wp = garray[g0].white.pnum;
   bp = garray[g0].black.pnum;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0)) {
     int g2 = garray[g0].pairwith;
     obp = garray[g2].black.pnum;
@@ -782,7 +782,7 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
   if (garray[g0].Ladder9 == 1 || garray[g0].Ladder19 == 1) {
     fprintf(fp, "GN[%s-%s(B) NNGS (LADDER RATED)]\n",
      parray[wp].pname, parray[bp].pname);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   } else if (paired(g0)) {
     fprintf(fp, "GN[%s-%s vs %s-%s(B) NNGS (RENGO)]\n",
      parray[wp].pname, parray[owp].pname,
@@ -990,7 +990,7 @@ void game_write_complete(int g0, twodstring statstring)
      && parray[wp].slotstat.is_registered
      && parray[bp].slotstat.is_registered
      && garray[g0].teach != 1
-#ifdef WANT_PAIR
+#if WANT_PAIR
      && !paired(g0)
 #endif
      && mink_movenum(garray[g0].minkg) >= 20
@@ -1011,7 +1011,7 @@ void game_write_complete(int g0, twodstring statstring)
      || !parray[bp].slotstat.is_registered
      || !garray[g0].rated
      || garray[g0].teach
-#ifdef WANT_PAIR
+#if WANT_PAIR
      || paired(g0)
 #endif
      || mink_movenum(garray[g0].minkg) <= 20

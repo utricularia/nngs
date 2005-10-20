@@ -131,7 +131,7 @@ struct minkgame *mink_initgame(int width, int height, int rules)
   gp->height = height;
   gp->rules = rules;
   gp->handicap = 0;
-#ifdef WANT_MINKKOMI
+#if WANT_MINKKOMI
   gp->komi = MINK_KOMI;
 #endif
   gp->board = malloc(ESIZE(gp) * sizeof *gp->board);
@@ -247,7 +247,7 @@ xulong mink_gethash(struct minkgame *gp)
   return gp->hash;
 }
 
-#ifdef WANT_MINKKOMI
+#if WANT_MINKKOMI
 void mink_setkomi(struct minkgame *gp, float k)	/* set the komi */
 {
   gp->komi = k;

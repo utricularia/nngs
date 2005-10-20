@@ -78,7 +78,7 @@ struct game {
   struct {
     unsigned in_use: 1;
   } slotstat;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   int pairwith;
   int pairstate;
 #endif

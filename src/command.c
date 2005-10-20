@@ -701,11 +701,11 @@ static int process_password(int p, char *password)
     pcn_out(p, CODE_INFO, FORMAT_YOU_HAVE_d_MESSAGES_TYPE_qMESSAGESq_TO_DISPLAY_THEMn, 
 	messnum);
   }
-#ifdef WANT_NOTIFY
+#if WANT_NOTIFY
   player_notify_present(p);
   player_notify(p, "arrived", "arrival"); 
 #endif /* WANT_NOTIFY */
-#ifdef CHECK_LAST_HOST /*  No real need to check this anymore */
+#if CHECK_LAST_HOST /*  No real need to check this anymore */
   if (parray[p].slotstat.is_registered && (parray[p].lastHost != 0) &&
       (parray[p].lastHost != parray[p].thisHost)) {
     Logit("Player %s: Last login: %s ", parray[p].pname,
@@ -752,7 +752,7 @@ static int process_prompt(int p, char *command)
       break;
     case COM_ISMOVE:
       retval = COM_OK;
-#ifdef WANT_PAIR
+#if WANT_PAIR
       process_move(p, command, 1);
 #else
       process_move(p, command);
@@ -906,7 +906,7 @@ void process_disconnection(int fd)
       pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_HAS_DISCONNECTED_n, 
 	  parray[p].pname);
     }
-#ifdef WANT_NOTIFY
+#if WANT_NOTIFY
     player_notify(p, "departed", "departure");
     player_notify_departure(p); 
 #endif /* WANT_NOTIFY */
@@ -1017,7 +1017,7 @@ int process_heartbeat(int *fdp)
   else {
     if (last_ratings + 6 * 60 * 60 < now) { /* Every 6 hours */
       last_ratings = now;
-#ifdef WANT_LADDERSIFT
+#if WANT_LADDERSIFT
       Logit("Sifting 19x19 ladder");
       ladder_sift(Ladder19, 14);  /* Do the ladder stuff, 19x19 is 14 days */
       Logit("Sifting 9x9 ladder");
@@ -1102,7 +1102,7 @@ void commands_init()
     fclose(fp);
     return;
   }
-  for(i=0; i < command_count; i++) {
+  for(i=0; i < COUNTOF(command_list); i++) {
     if (command_list[i].adminLevel >= ADMIN_ADMIN) {
       fprintf(afp, "%s\n", command_list[i].comm_name);
     } else {

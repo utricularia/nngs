@@ -27,10 +27,6 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* C++ */
-
 struct ladderplayer {
   int idx;
   char *name;
@@ -67,9 +63,5 @@ int ladder_new_p(int id, const char *szName); /* add at end - return 0 if full *
 
 int ladder_save(FILE *pf, int id);
 int ladder_load(FILE *pf, int id);
-
-#ifdef __cplusplus
-}
-#endif /* C++ */
 
 #endif /* LADDER_H */

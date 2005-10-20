@@ -107,7 +107,7 @@ void game_ended(int g0, int winner, int why)
     if (conffile.debug_general)
       Logit("k=%.1f wtr=%d, btr=%d, wocc=%d, bocc=%d, wcaps=%d, bcaps=%d",
                  garray[g0].komi, wterr, bterr,  wocc, bocc, wcaps, bcaps);
-#ifdef WANT_CHINESESCORE
+#if WANT_CHINESESCORE
     if (garray[g0].komi > 0) wscore = wterr + wocc + garray[g0].komi;
     else wscore = wterr + wocc;
     if (garray[g0].komi < 0) bscore = bterr + bocc + fabs(garray[g0].komi);
@@ -407,7 +407,7 @@ void game_ended(int g0, int winner, int why)
   game_finish(g0);
 }
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
 int paired(int g0)
 {
   int g2;
@@ -421,7 +421,7 @@ int paired(int g0)
 }
 #endif
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
 void process_move(int p, char *command, int original)
 #else
 void process_move(int p, char *command)
@@ -456,7 +456,7 @@ void process_move(int p, char *command)
     return;
   }
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
 /* pair1 = (W1,B1), pair2 = (W2,B2)
    movenum % 4      0   1   2   3   ( == movenum & 3)
    player to move   B1  W1  B2  W2
@@ -546,7 +546,7 @@ void process_move(int p, char *command)
   /* send out the boards to everyone.... */
   send_go_boards(g1, players_only);
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g1) && original) {
     int g2;
     g2 = garray[g1].pairwith ;
@@ -703,7 +703,7 @@ int com_adjourn(int p, struct parameter * param)
   if (pending_find(parray[p].session.opponent, p, PEND_ADJOURN)) {
     player_remove_requests(parray[p].session.opponent, p, PEND_ADJOURN);
     player_decline_offers(p, -1, -1);
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g1)) {
       game_ended(garray[g1].pairwith, PLAYER_NEITHER, END_ADJOURN);
     }
@@ -868,7 +868,7 @@ int com_komi(int p, struct parameter * param)
         pcn_out(p2, CODE_INFO, FORMAT_KOMI_SET_TO_f_IN_MATCH_dn, newkomi, g1+1);
       }
     }
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g1)) {
       garray[garray[g1].pairwith].komi = newkomi;
     }
@@ -1002,7 +1002,7 @@ int com_undo(int p, struct parameter * param)
   pb = garray[g1].black.pnum;
   pw = garray[g1].white.pnum;
   gmove = mink_movenum(garray[g1].minkg);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   g2 = garray[g1].pairwith;
 
 /* pair1 = (W1,B1), pair2 = (W2,B2)
@@ -1058,7 +1058,7 @@ int com_undo(int p, struct parameter * param)
       garray[g1].minkg->handicap = 0;
     }
   }
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g1) && gmove == mink_movenum(garray[g2].minkg)) {
     com_undo(garray[g1].onMove == PLAYER_WHITE
        ? garray[g2].black.pnum : garray[g2].white.pnum,
@@ -1272,7 +1272,7 @@ int com_observe(int p, struct parameter * param)
   return COM_OK;
 }
 
-#ifdef WANT_PAIR 
+#if WANT_PAIR 
 int com_pair(int p, struct parameter * param)
 {
   int gmove, p2;
@@ -1956,7 +1956,7 @@ int com_unfree(int p, struct parameter * param)
   return COM_OK;
 }
 
-#ifdef NOUSED
+#if NOUSED
 int com_nocaps(int p, struct parameter * param)
 {
   int gmove, nc, nocap;
@@ -1985,7 +1985,7 @@ int com_nocaps(int p, struct parameter * param)
 
   garray[g1].onMove = PLAYER_WHITE;
   send_go_boards(g1, 0);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g1) && !mink_movenum(garray[garray[g1].pairwith].minkg)) {
     com_handicap(garray[garray[g1].pairwith].black.pnum, param);
     Logit("DUPLICATING handicap");
@@ -2040,7 +2040,7 @@ int com_handicap(int p, struct parameter * param)
 
   garray[g0].onMove = PLAYER_WHITE;
   send_go_boards(g0, 0);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0) && !mink_movenum(garray[garray[g0].pairwith].minkg)) {
     com_handicap(garray[garray[g0].pairwith].black.pnum, param);
     Logit("DUPLICATING handicap");
@@ -2083,7 +2083,7 @@ int com_save(int p, struct parameter * param)
 int com_moretime(int p, struct parameter * param)
 {
   int g0, increment;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   int g2;
 #endif
 
@@ -2097,7 +2097,7 @@ int com_moretime(int p, struct parameter * param)
     return COM_OK;
   }
   g0 = parray[p].session.gnum;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   g2 = garray[g0].pairwith;
 #endif
   if (increment > 60000) {
@@ -2106,7 +2106,7 @@ int com_moretime(int p, struct parameter * param)
   }
   if (garray[g0].white.pnum == p) {
     garray[g0].black.ticksleft += SECS2TICS(increment * 60);
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       garray[g2].black.ticksleft += SECS2TICS(increment * 60);
     }
@@ -2114,7 +2114,7 @@ int com_moretime(int p, struct parameter * param)
   }
   if (garray[g0].black.pnum == p) {
     garray[g0].white.ticksleft += SECS2TICS(increment * 60);
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       garray[g2].white.ticksleft += SECS2TICS(increment * 60);
     }
@@ -2122,7 +2122,7 @@ int com_moretime(int p, struct parameter * param)
   }
   pcn_out(p, CODE_INFO, FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCK,
 	    increment);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0)) {
     if (p == garray[g0].black.pnum) {
       pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
@@ -2140,7 +2140,7 @@ int com_moretime(int p, struct parameter * param)
 	   FORMAT_YOUR_OPPONENT_HAS_ADDED_d_MINUTES_TO_YOUR_CLOCK_n,
 	   increment);
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0)) {
     if (p == garray[g0].black.pnum) {
       pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
@@ -2161,7 +2161,7 @@ void game_update_time(int g0)
 {
   unsigned now, jiffies;
   int pw, pb;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   int g2;
 #endif
 
@@ -2200,7 +2200,7 @@ void game_update_time(int g0)
 
   pb = garray[g0].black.pnum;
   pw = garray[g0].white.pnum;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   g2 = garray[g0].pairwith;
 #endif
 
@@ -2213,7 +2213,7 @@ void game_update_time(int g0)
   /* Game over, ran out of time! */
   if (garray[g0].white.ticksleft < SECS2TICS(1)
       && garray[g0].white.byostones > 1) {
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       game_ended(g2, garray[g2].black.pnum, END_FLAG);
     }
@@ -2222,7 +2222,7 @@ void game_update_time(int g0)
   }
   else if (garray[g0].black.ticksleft < SECS2TICS(1)
           && garray[g0].black.byostones > 1) {
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       game_ended(g2, garray[g2].white.pnum, END_FLAG);
     }
@@ -2231,7 +2231,7 @@ void game_update_time(int g0)
   }
   if (garray[g0].onMove == PLAYER_WHITE) {
     garray[g0].white.ticksleft -= jiffies;
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       garray[g2].white.ticksleft = garray[g0].white.ticksleft;
     }
@@ -2259,7 +2259,7 @@ void game_update_time(int g0)
                 garray[g0].white.byostones,
                 TICS2SECS(garray[g0].white.ticksleft)/60);
     }
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       if (garray[g2].white.ticksleft <= 0 && garray[g2].white.byoperiods == 0) {
         garray[g2].white.byoperiods = 1;
@@ -2286,7 +2286,7 @@ void game_update_time(int g0)
 
   } else {  /* onMove == PLAYER_BLACK */
     garray[g0].black.ticksleft -= jiffies ;
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       garray[g2].black.ticksleft = garray[g0].black.ticksleft;
     }
@@ -2312,7 +2312,7 @@ void game_update_time(int g0)
               TICS2SECS(garray[g0].black.ticksleft)/60);
     }
 
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       if (garray[g2].black.ticksleft <= 0 && garray[g2].black.byoperiods == 0) {
         garray[g2].black.byoperiods = 1;
@@ -2338,7 +2338,7 @@ void game_update_time(int g0)
 #endif /* WANT_PAIR */
   }
   garray[g0].lastDectick = now;
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0)) 
     garray[g2].lastDectick = now;
 #endif /* WANT_PAIR */    

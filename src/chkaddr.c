@@ -75,7 +75,7 @@ chkaddr(const char *s)
   return 1;
 }
 
-#ifdef WANT_MAIN
+#if WANT_MAIN
 int
 main(int argc, char **argv)
 {

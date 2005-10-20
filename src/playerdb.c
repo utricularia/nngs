@@ -908,7 +908,7 @@ skip_fysical_read:
       parray[p].orating = 0;
   }
 #else
-  parray[p].rating == 0;
+  parray[p].rating = 0;
   strcpy(parray[p].srank,parray[p].ranked);
   if (strcmp(parray[p].srank, "NR")) {
     sscanf(parray[p].srank, "%u%c", &rat, &trnk);

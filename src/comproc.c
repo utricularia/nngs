@@ -1481,7 +1481,7 @@ int com_kibitz(int p, struct parameter * param)
 		   g0 + 1);
       do_tell(p, p1, tmp2, TELL_KIBITZ, 0);
     }
-#ifdef WANT_PAIR
+#if WANT_PAIR
     if (paired(g0)) {
       otherg = garray[g0].pairwith;
       if (player_is_observe(p1, otherg)) {
@@ -1528,7 +1528,7 @@ int com_kibitz(int p, struct parameter * param)
                 parray[p].flags.is_rated ? "*" : " ",
                 tmp2);
   add_kib(&garray[g0], mink_movenum(garray[g0].minkg), tmp3);
-#ifdef WANT_PAIR
+#if WANT_PAIR
   if (paired(g0)) {
     otherg = garray[g0].pairwith;
     add_kib(&garray[otherg], mink_movenum(garray[otherg].minkg), tmp3);
@@ -2251,7 +2251,7 @@ static void a_who(int p, int cnt, int *plist)
     if (parray[p1].session.gnum >= 0
       && (garray[parray[p1].session.gnum].Ladder19 || garray[parray[p1].session.gnum].Ladder9)) {
       flags[2] = '*';
-#ifdef WANT_PAIR
+#if WANT_PAIR
     } else if (parray[p1].session.gnum >= 0 && paired(parray[p1].session.gnum)) {
       flags[2] = '@';
 #endif
@@ -3260,7 +3260,7 @@ int create_new_gomatch(int wp, int bp,
   garray[g0].teach = teaching?1:0;
   if (rules == RULES_NET || type == GAMETYPE_TNETGO) garray[g0].type = GAMETYPE_GO;
   else garray[g0].type = GAMETYPE_GOEGO;
-#ifdef USING_PRIVATE_GAMES
+#if USING_PRIVATE_GAMES
   garray[g0].Private = parray[wp].Private || parray[bp].Private;
 #endif
   garray[g0].ts.totalticks = SECS2TICS(start_time);
@@ -4572,7 +4572,7 @@ int com_find(int p, struct parameter * param)
   return COM_OKN;
 }
 
-#ifdef WANT_NOTIFY
+#if WANT_NOTIFY
 int com_notify(int p, struct parameter * param)
 {
   int i, p1;

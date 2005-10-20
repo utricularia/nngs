@@ -253,7 +253,7 @@ static char * emote_next_arg(void)
 }
 
 /*#define WANT_MAIN*/
-#ifdef WANT_MAIN
+#if WANT_MAIN
 
 int main(int, const char **)
 {

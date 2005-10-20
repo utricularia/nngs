@@ -387,7 +387,7 @@ extern "C" const char *EmoteMkStr(const char *pszKey, const char *pszUsr,
 }
 
 /*#define TESTMAIN*/
-#ifdef TESTMAIN
+#if TESTMAIN
 
 int main(int, const char **)
 {

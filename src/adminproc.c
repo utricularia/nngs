@@ -1115,7 +1115,7 @@ int com_unhide(int p, struct parameter* param)
 }
 
 
-#ifdef WANT_LADDER_SIFT
+#if WANT_LADDER_SIFT
 int com_rating_recalc(int p, struct parameter* param)
 {
   UNUSED(p);
