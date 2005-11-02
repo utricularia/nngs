@@ -83,6 +83,7 @@ struct confstuff {
   char *stats_rgames;
   char *stats_cgames;
 	/* Boolean flags */
+  char allow_registration;
   char allow_unregistered;
   char unregs_can_shout;
   char want_udp_port;
@@ -91,6 +92,9 @@ struct confstuff {
 	/* Misc stuff */
   char *def_prompt;
   unsigned mode_for_dir;
+  int game_save_frequency;
+  int game_save_treshold;
+	/* Debugging stuff */
   int debug_general;
   int debug_parray;
   int debug_mailer;

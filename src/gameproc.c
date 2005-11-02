@@ -541,7 +541,8 @@ void process_move(int p, char *command)
 
   /* Check to see if we should be saving the game */
   gmove = mink_movenum(garray[g1].minkg);
-  if (gmove) if ((gmove % SAVEFREQ) == 0) game_save(g1);
+  if (gmove && conffile.game_save_frequency 
+	&& (gmove % conffile.game_save_frequency) == 0) game_save(g1);
 
   /* send out the boards to everyone.... */
   send_go_boards(g1, players_only);

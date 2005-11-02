@@ -859,7 +859,7 @@ int game_save(int g0)
   wp = garray[g0].white.pnum;
   bp = garray[g0].black.pnum;
   
-  if (mink_movenum(garray[g0].minkg) < 3) return 1;
+  if (mink_movenum(garray[g0].minkg) < conffile.game_save_treshold) return 1;
   fp = xyfopen(FILENAME_GAMES_ws_s, "w",parray[wp].login,parray[bp].login);
   if (!fp) return -1;
 

@@ -27,10 +27,6 @@
 
 #include "command.h"
 
-#ifndef SAVEFREQ
-#define SAVEFREQ	5
-#endif
-
 void game_ended(int, int, int);
 
 #if WANT_PAIR

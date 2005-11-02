@@ -85,6 +85,8 @@ struct confmatch {
 	** OCTAL is like number, but represented in octal.
 	** BOOL is a character used as a boolean value.
 	** -1 := False, > 0 := True; 0 := missing/NULL
+	** NB: The last argument is always a string, because it is processed
+	** bij the same logic as the textfile.
 	*/
 #define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
@@ -179,9 +181,15 @@ MESSAGE("")
 MESSAGE("Set mode_for_dir to nonzero to create non-existant directories silently.")
 MESSAGE("Use with care...")
 MESSAGE("")
-OCTAL("mode_for_dir", &conffile.mode_for_dir, 0)
+OCTAL("mode_for_dir", &conffile.mode_for_dir, "0")
 MESSAGE("")
 NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
+MESSAGE("")
+MESSAGE("Games are saved at every /frequency/ move.")
+MESSAGE("No games are written before /treshold/ moves have been played.")
+MESSAGE("")
+NUMBER("game_save_frequency", &conffile.game_save_frequency, "5")
+NUMBER("game_save_treshold", &conffile.game_save_treshold, "3")
 MESSAGE("")
 MESSAGE("Debugging flags. Can cause a lot of output to the logfile.")
 MESSAGE("Higher levels will cause more output. Set them to zero to disable.")
@@ -192,6 +200,7 @@ NUMBER("debug_mailer", &conffile.debug_mailer, "0")
 MESSAGE("")
 MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
 MESSAGE("")
+BOOL("allow_registration", &conffile.allow_registration, "Yes" )
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
 BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
 BOOL("want_udp_port", &conffile.want_udp_port, "No" )

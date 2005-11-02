@@ -141,6 +141,9 @@ struct player_ {
     int gametype; /* Never used ... */
   /* int teach;    unused:: A teaching account */
     }cruft;
+	/* These members are initialized and used when online,
+	** buth forgotten on logout
+	*/
   struct forget_ {
     int pass_tries;
     int notifiedby;

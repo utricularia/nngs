@@ -403,7 +403,7 @@ static void printusage(int p, const char *command_str)
 
 int process_command(int p, char *com_string)
 {
-  int which_command, retval;
+  int which_command, retval, g0;
   struct parameter params[MAXNUMPARAMS];
   char *alias_string;
   char *comm, *rest;
@@ -432,8 +432,8 @@ int process_command(int p, char *com_string)
 
   stolower(comm);               /* All commands are case-insensitive */
 
-  if (parray[p].session.gnum >= 0) {
-    if (mink_is_valid_move(garray[parray[p].session.gnum].minkg, comm)) {
+  if ((g0=parray[p].session.gnum) >= 0) {
+    if (mink_is_valid_move(garray[g0].minkg, comm)) {
       return COM_ISMOVE;
     }
   }

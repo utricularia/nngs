@@ -111,6 +111,10 @@ int com_register(int p, struct parameter * param)
   int idx, len;
   time_t shuttime = globclock.time;
 
+  if (conffile.allow_registration < 1 && parray[p].adminLevel < ADMIN_ADMIN) {
+    pcn_out(p, CODE_ERROR, FORMAT_THAT_NAME_IS_NOT_PERMITTED);
+    return COM_OK;
+  }
   len=strlen(pname);
   if (len > MAX_NAME) {
     pcn_out(p, CODE_ERROR, FORMAT_PLAYER_NAME_IS_TOO_LONG);
@@ -3177,7 +3181,7 @@ int com_osuggest(int p, struct parameter * param)
 
 int com_teach(int p, struct parameter * param)
 {
-  int t;
+  int t, g0;
 
   if (parray[p].session.gnum >= 0) {
     pcn_out(p, CODE_ERROR, FORMAT_YOU_ARE_ALREADY_PLAYING_A_GAME_);
@@ -3187,8 +3191,9 @@ int com_teach(int p, struct parameter * param)
   if (param[0].val.integer <= 0) t = COM_FAILED;
   else t = create_new_gomatch(p, p, param[0].val.integer, 1, 1, 1, RULES_NET, GAMETYPE_GO);
   if (t == COM_FAILED) return COM_FAILED;
-  garray[parray[p].session.gnum].teach = 1;
-  garray[parray[p].session.gnum].rated = 0;
+  g0 = parray[p].session.gnum;
+  garray[g0].teach = 1;
+  garray[g0].rated = 0;
   return COM_OK;
 }
 

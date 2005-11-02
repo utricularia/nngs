@@ -151,11 +151,7 @@ struct command_type command_list[] = {
   {"quit",		"",	com_quit,	ADMIN_USER },
   {"rank",		"S",	com_ranked,	ADMIN_USER },
   {"refresh",		"p",	com_refresh,	ADMIN_USER },
-#if RESTRICT_REGISTRATION
-  {"register",         "WWT",  com_register,   ADMIN_ADMIN },
-#else
   {"register",         "WWT",  com_register,   ADMIN_USER },
-#endif
   {"reload_ladders",    "",     com_reload_ladders,  ADMIN_DEMIGOD  },
   {"remplayer",         "w",    com_remplayer,  ADMIN_DEMIGOD  },
   {"reset",		"",  	com_reset,   	ADMIN_USER },	
