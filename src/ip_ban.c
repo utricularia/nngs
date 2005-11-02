@@ -148,7 +148,7 @@ int range_add(unsigned bot, unsigned top)
   yield = range_harvest(bot-1, top+1);
   if (yield) yield->hnd = &yield;
 
-  for(cnt=0;(np = node_harvest(yield)); cnt++) {
+  for(cnt=0;(np = node_harvest(yield)); cnt--) {
     if (np->bot < bot) bot = np->bot;
     if (np->top > top) top = np->top;
 #if WANT_DUMP_RANGETREE
@@ -161,7 +161,7 @@ int range_add(unsigned bot, unsigned top)
   np = node_new(bot, top);
   node_app(&rangeroot, np);
 
-  return (cnt) ? -cnt :1;
+  return cnt+1;
 }
 
 	/* Remove range [bot,top] ,inclusive from the tree.

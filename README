@@ -15,7 +15,9 @@ Things like mail program locations are specified therein.
 You may also want to check config.h after running ./configure
 
 Configuration-method has changed!
-Most of the configuration items are kept in a single nngs.cnf -file.
+Most of the configuration items are now kept in a single nngs.cnf -file.
+The ./configure just establishes the defaults, basically.
+This will allow you to reconfigure things without recompiling.
 If not found, nngs *creates* this file, whith the current default-
 values in it (which have been established by the ./configure ).
 Edit and enjoy...
@@ -48,7 +50,9 @@ The 'make install' command installs the server and all basic
 help files necessary for its functionality.
 All files needed by the server are installed under the --prefix.
 Once running, the server will put all of it's data (players,games,logfile)
-under this prefix, too. This may grow ...
+under this prefix, too.
+Some of these files may grow over time, as the server runs. You might need to
+periodically check and prune these directories.
 
 To run and test it:
 $prefix/bin/nngssrv
@@ -70,8 +74,10 @@ part to activate them.
 
 >> SETTING UP ALTERNATE LOCATIONS.
 
-The config file mechanism enables you to change file locations
-without recompiling. You can also use separate locations for data
+On startup, nngssrv will try to read it's config from nngs.cnf in
+the current directory (or specfied with -c pathname)
+The config file mechanism enables you to change file locations and
+other things without recompiling. You can also use separate locations for data
 and the nngssrv binary. (but I would advise you *not* to make too
 wild choices ;-)
 
@@ -80,9 +86,13 @@ The easiest way to set things up is:
 2) start the binary, and kill it.
 3) edit the nngs.cnf, which will have been written in the current directory.
    The config file contains enough comment to be self-explanatory.
+4) Future versions will probably add more items to the conffile.
+   Please inspect the nngs.cnf (or written.cnf) for possible additions.
 
 If you want nngs to run in a chroot()ed environment ('jail'), you'll
 have to do some manual tuning.
+NOTE: if you don't know what chroot() is, you will probably *not* want it!
+
 1) the chroot() systemcall itself requires root privileges.
    the program starts as root, then chdir()s, chroot()s, fork()s twice
    , and changes gid and uid.
@@ -101,7 +111,6 @@ have to do some manual tuning.
    chroot() -jail. The pathnames in this file will be relative to the
    chroot() directory. (prefix is snipped)
 6) YMMV
-
 
 
 >> USERS AND ADMINS
@@ -168,4 +177,5 @@ Major changes since the beginning of this project:
 The server now works on windows as well!  Here's how:
 - Get and install cygwin (>=1.1.8) from http://www.cygwin.com
 - follow the instructions above to compile and install as on unix
+- Note: windows-build not tried since 2002. YMMV.
 

@@ -3,6 +3,10 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.21 AvK 2005-11-2
+- added handling of dotted quad in lists/ban file
+- network.c : in_full is never set to anything != zero. plan to reuse it.
+- moved some more tunable constants to the conffile.
 1.1.20 AvK 2005-10-19
 - removed a silly bug (looking for a sentinel in command_list, while there was
 no sentinel. Problem was that it compiled fine on my home machines (probably

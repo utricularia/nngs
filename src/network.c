@@ -130,8 +130,8 @@ struct netstruct {
   int netstate;
   int telnetState;
   unsigned int fromHost; /* IP-adress in host byte order */
-  unsigned is_full :1;
-  unsigned is_throttled :1;
+  unsigned is_full :1;	/* read() queue; this seems to never be set! (since 1.1.12) */
+  unsigned is_throttled :1;	/* set when partial write()s start to occur */
   
   	/* Output buffering reallocates its buffer when needed */
   unsigned  out_size;  /* allocated size */

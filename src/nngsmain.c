@@ -296,18 +296,37 @@ static void read_ban_ip_list(void)
 {
   FILE *fp;
   int rc,cnt=0;
-  char buff[100];
+  char buff[100], bots[40], tops[40];
   unsigned bot, top;
 
   fp = xyfopen(FILENAME_LIST_BAN, "r");
   if (!fp) return;
   while(fgets(buff, sizeof buff, fp)) {
     rc = sscanf(buff, "%x %x", &bot, &top);
-    if (rc < 2) continue;
+    if (rc < 2) {
+      rc = sscanf(buff, "%s %s", bots, tops);
+      if (rc < 2) continue;
+#if 0
+#include <netinet/in.h>
+#include <arpa/inet.h>
+      bot = inet_addr(bots);
+      if ((int)bot == -1) continue;
+      top = inet_addr(tops);
+      if ((int)top == -1) continue;
+      bot = ntohl(bot); /* could use asc2ipaddr(bots, &bot); */
+      top = ntohl(top);
+#else
+      if (asc2ipaddr(bots, &bot)) continue;
+      if (asc2ipaddr(tops, &top)) continue;
+#endif
+      }
     cnt += range_add(bot,top);
   }
   fclose(fp);
   Logit("Ipban: Read %d ranges from %s", cnt, filename() );
+  bot = top = 0xf7000001;
+  cnt = range_remove(bot,top);
+  Logit("Ipban: Avoided %d ranges %x-%x", cnt, bot, top );
 }
 
 
