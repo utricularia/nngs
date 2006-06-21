@@ -2011,6 +2011,7 @@ int xystat(struct stat * sp, int num, ...)
   rc = stat(filename1, sp);
 
   va_end(ap);
+  if (!rc) rc = sp->st_size;
   return rc;
 }
 

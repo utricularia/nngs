@@ -1076,8 +1076,8 @@ static void player_write(int p)
 {
   FILE *fp;
   int i;
-
-  parray[p].slotstat.is_dirty=0;
+  int old_size, new_size;
+  old_size = xystat(NULL, FILENAME_PLAYER_cs, "w",parray[p].login);
 
   fp = xyfopen(FILENAME_PLAYER_cs, "w",parray[p].login);
   if (!fp) {
@@ -1163,6 +1163,9 @@ static void player_write(int p)
       fprintf(fp, "%s %s\n", c, a);
   }
   fclose(fp);
+
+  new_size = xystat(NULL, FILENAME_PLAYER_cs, "w",parray[p].login);
+  if (new_size >= old_size/2) parray[p].slotstat.is_dirty=0;
   return ;
 }
 
@@ -1659,8 +1662,8 @@ int player_clear_messages(int p)
 
 /* 
  * look for EXACT match in parray.
- * if not found: check in registered user's files and maybe read in.
  * If found: fix slot and return slotnumber
+ * If not found: check registered user's files and maybe read in.
  */
 int player_fetch(const char *name)
 {
@@ -1673,7 +1676,7 @@ int player_fetch(const char *name)
   }
   /* exact match with registered player? */
   rc = xystat(NULL, FILENAME_PLAYER_cs, name);
-  if (rc) return -1;
+  if (rc<0) return -1;
 
   slot = player_new();
   if (slot < 0) return slot;

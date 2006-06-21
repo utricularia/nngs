@@ -1564,8 +1564,8 @@ ENG(FORMAT_LADDER19_RESULT_s_TAKES_POSITION_d_FROM_s_n,"!! Ladder19 Result: %s t
 #define FORMAT_LADDER9_RESULT_s_TAKES_POSITION_d_FROM_s_n 385
 ENG(FORMAT_LADDER9_RESULT_s_TAKES_POSITION_d_FROM_s_n,"!! Ladder9 Result: %s takes position %d from %s !!\n")
 
-#define FORMAT_s_sn 386
-ENG(FORMAT_s_sn,"%s --> %s\n")
+#define FORMAT__s__sn 386
+ENG(FORMAT__s__sn,"*%s* : %s\n")
 
 #define FORMAT_s_HAS_JOINED_THE_ADMIN_CHANNEL_n 387
 ENG(FORMAT_s_HAS_JOINED_THE_ADMIN_CHANNEL_n,"## --- ##: %s has joined the ADMIN channel.\n")
@@ -2967,6 +2967,12 @@ ENG(FORMAT_BYTES_RECEIVED_un,"Bytes received: %lu\n")
 
 #define FORMAT__s 852
 ENG(FORMAT__s," %s")
+
+#define FORMAT_s_arrow_sn 853
+ENG(FORMAT_s_arrow_sn,"%s -->> %s\n")
+
+#define FORMAT_s_sn 854
+ENG(FORMAT_s_sn,"%s %s\n")
 
 /** end insert here */
 #if WANT_TO_DEFINE

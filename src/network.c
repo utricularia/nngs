@@ -130,6 +130,7 @@ struct netstruct {
   int netstate;
   int telnetState;
   unsigned int fromHost; /* IP-adress in host byte order */
+  unsigned int fromport; /* UDP-port in host byte order */
   unsigned is_full :1;	/* read() queue; this seems to never be set! (since 1.1.12) */
   unsigned is_throttled :1;	/* set when partial write()s start to occur */
   
@@ -517,6 +518,8 @@ static int  do_read_udp(int fd)
 	/* We could check the ip address here ... */
   if (rlen >= sizeof netarray[fd].in_buff) rlen = sizeof netarray[fd].in_buff;
   if (rlen <= 0) return 0;
+  netarray[fd].fromHost = ntohl(addr.sin_addr.s_addr);
+  netarray[fd].fromport = ntohs(addr.sin_port);
   while( rlen-- > 0) {
     switch(netarray[fd].in_buff[rlen]) {
     case ' ': case '\t':
@@ -558,6 +561,7 @@ static int  do_accept(int listenFd)
 
   fd_init(newFd);
   netarray[newFd].fromHost = ntohl(addr.sin_addr.s_addr);
+  netarray[newFd].fromport = ntohs(addr.sin_port);
 
   /* Logit("New connection on fd %d ---", newFd); */
   return newFd;
@@ -571,6 +575,8 @@ static void  fd_init(int fd)
   netarray[fd].telnetState = 0;
   netarray[fd].is_full = 0;
   netarray[fd].is_throttled = 0;
+  netarray[fd].fromHost = 0;
+  netarray[fd].fromport = 0;
 
   netarray[fd].in_used = 0;
   netarray[fd].in_end = 0;
@@ -927,9 +933,9 @@ struct stat statje;
   rc = fstat(fd, &statje);
   if (!rc) rc = statje.st_mode;
 
-  pos = sprintf(buff, "%d:%d:%x:%x:%08x:%c:%c"
+  pos = sprintf(buff, "%d:%d:%x.%x:%x:%08x:%c:%c"
     , fd, netarray[fd].netstate, rc, netarray[fd].telnetState
-    , netarray[fd].fromHost
+    , netarray[fd].fromHost, netarray[fd].fromport
     , (netarray[fd].is_full) ? 'F' : '-'
     , (netarray[fd].is_throttled) ? 'T' : '-'
     );

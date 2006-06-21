@@ -1537,7 +1537,7 @@ int com_load(int p, struct parameter * param)
 {
   int pw, pb, p2, px;
   int g0;
-  struct stat statbuf;
+  int filesize;
   const struct ladderplayer *LadderPlayer;
   int bpos = -1, wpos = -1;
   struct pending *ptr;
@@ -1582,13 +1582,14 @@ int com_load(int p, struct parameter * param)
       pcn_out(p, CODE_ERROR, FORMAT_GAME_FAILED_TO_LOAD_);
       return COM_OK;
   }
-  if (xystat(&statbuf, FILENAME_GAMES_ws_s,parray[pw].login,parray[pb].login)) {
+  filesize= xystat(NULL, FILENAME_GAMES_ws_s,parray[pw].login,parray[pb].login);
+  if (filesize < 0) {
     Logit("Failed stat %s", filename() );
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn, parray[pw].pname,parray[pb].pname);
     return COM_OK;
   }
-  Logit("Successfull stat %s", filename() );
-  if (statbuf.st_size == 0) {
+  Logit("Successfull stat %s, size=%d", filename(), filesize );
+  if (filesize == 0) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_A_SERIOUS_PROBLEM_WITH_YOUR_GAME_RECORD_THIS_IS_SOMETIMESn);
     pcn_out(p, CODE_ERROR, FORMAT_CAUSED_BY_AN_NNGS_CRASH_DURING_YOUR_GAME_);
     pcn_out(p, CODE_ERROR, FORMAT_WE_APOLOGIZE_BUT_THE_GAME_IS_LOST_);
@@ -2360,7 +2361,6 @@ int com_sresign(int p, struct parameter * param)
 {
   int pw, pb, g0, oldwstate, oldbstate;
   int old_w_game, old_b_game;
-  struct stat statbuf;
   const char *wname, *bname;
 
   bname = file_bplayer(param[0].val.string);
@@ -2388,7 +2388,7 @@ int com_sresign(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (xystat(&statbuf,FILENAME_GAMES_ws_s,wname, bname) ) {
+  if (xystat(NULL,FILENAME_GAMES_ws_s,wname, bname) < 0 ) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn, 
                parray[pw].pname,parray[pb].pname);
     player_unfix(pw);
@@ -2425,7 +2425,6 @@ int com_sresign(int p, struct parameter * param)
 int com_look(int p, struct parameter * param)
 {
   int pw, pb, g0, x, until, wc, bc, oldwstate, oldbstate;
-  struct stat statbuf;
   twodstring statstring;
   const char *wname, *bname;
 
@@ -2449,7 +2448,7 @@ int com_look(int p, struct parameter * param)
     return COM_OK;
   }
 
-  if (xystat(&statbuf,FILENAME_GAMES_ws_s, wname, bname) ) {
+  if (xystat(NULL,FILENAME_GAMES_ws_s, wname, bname) < 0 ) {
     pcn_out(p, CODE_ERROR, FORMAT_THERE_IS_NO_STORED_GAME_s_VS_sn, 
                parray[pw].pname,parray[pb].pname);
     player_unfix(pw);

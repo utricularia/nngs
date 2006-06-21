@@ -50,6 +50,7 @@
 #define PSTATUS_LOGIN    3 /* connection is logging in, parray[] almost valid */
 #define PSTATUS_PASSWORD 4 /* idem */
 #define PSTATUS_PROMPT   5 /* Normal mode, connected player */
+#define PSTATUS_INTERNAL 6 /* Used when slot is needed, but no connected player */
 
 	/* These are the two "opcodes" for write_loginout() */
 #define P_LOGIN 0
@@ -60,7 +61,7 @@
 #define SORT_LADDER19 2
 
 /*************************************************************************
-                   The are the player record item sizes
+                   These are the player record field sizes
 *************************************************************************/
 #define MAX_NAME 10
 #define MIN_NAME 2

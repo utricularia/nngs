@@ -882,7 +882,7 @@ int com_shout(int p, struct parameter * param)
     if (p1 == p) continue;
     if (!parray[p1].slotstat.is_online) continue;
     if (player_censored(p1, p)) continue;
-    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
+    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_arrow_sn,
                    parray[p].pname, param[0].val.string);
   }
   return COM_OK;
@@ -964,7 +964,7 @@ int com_ashout(int p, struct parameter * param)
     if (p1 == p) continue;
     if (player_censored(p1, p)) continue;
     if (!parray[p1].slotstat.is_online) continue;
-    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
+    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_arrow_sn,
                    parray[p].pname,
 		   param[0].val.string);
   }
@@ -997,7 +997,7 @@ int com_gshout(int p, struct parameter * param)
     if (!parray[p1].slotstat.is_online) continue;
     if (!parray[p1].i_gshout) continue;
     if (player_censored(p1, p)) continue;
-    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
+    pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_arrow_sn,
                    parray[p].pname, param[0].val.string);
   }
   return COM_OK;
@@ -1028,7 +1028,7 @@ int com_it(int p, struct parameter * param)
                    parray[p].pname, param[0].val.string);
       break;
     default:
-      pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
+      pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_arrow_sn,
                    parray[p].pname, param[0].val.string);
       break;
     }
@@ -1058,7 +1058,7 @@ int com_git(int p, struct parameter * param)
                    parray[p].pname, param[0].val.string);
       break;
     default:
-       pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_sn,
+       pcn_out_prompt(p1, CODE_SHOUT, FORMAT_s_arrow_sn,
                    parray[p].pname, param[0].val.string);
        break;
     }
@@ -1292,7 +1292,7 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
   case TELL_TELL:
   default:
     if (parray[p1].flags.want_bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
-    pcn_out_prompt(p1, CODE_CR1|CODE_TELL, FORMAT_s_sn, parray[p].pname, msg);
+    pcn_out_prompt(p1, CODE_CR1|CODE_TELL, FORMAT__s__sn, parray[p].pname, msg);
     if (parray[p1].forget.last_tell != p) parray[p1].forget.last_tell_from = p;
     break;
   case TELL_SAY:
@@ -3913,7 +3913,7 @@ int com_alias(int p, struct parameter * param)
     pcn_out(p, CODE_INFO, FORMAT_n );
     alias_start(parray[p].alias_list);
     while (alias_next(&c, &a, parray[p].alias_list)) {
-      pcn_out(p,CODE_INFO, FORMAT_s_sn, c, a);
+      pcn_out(p,CODE_INFO, FORMAT_s_arrow_sn, c, a);
     }
     return COM_OKN;
   }

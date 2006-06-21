@@ -689,7 +689,7 @@ int com_announce(int p, struct parameter* param)
 
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_online) continue;
-    pcn_out_prompt(p1, CODE_INFO, FORMAT_s_sn, 
+    pcn_out_prompt(p1, CODE_INFO, FORMAT_s_arrow_sn, 
                 parray[p].pname, param[0].val.string);
   }
   return COM_OK;

@@ -819,6 +819,7 @@ int process_input(int fd, char *com_string)
   parray[p].forget.last_command_time = globclock.time;
   switch (parray[p].session.pstatus) {
     default:
+    case PSTATUS_INQUEUE: /* Obsolete; should not occur */
       sprintf(statstr,".status=%d", parray[p].session.pstatus);
       msg=statstr;
       break;
@@ -828,10 +829,6 @@ int process_input(int fd, char *com_string)
     case PSTATUS_NEW:
       msg= "new";
       break;
-    case PSTATUS_INQUEUE:
-      /* Ignore input from player in queue */
-      msg= "inqueue";
-      break;
     case PSTATUS_LOGIN:
       process_login(p, com_string);
       break;
@@ -839,6 +836,7 @@ int process_input(int fd, char *com_string)
       retval = process_password(p, com_string);
       break;
     case PSTATUS_PROMPT:
+    case PSTATUS_INTERNAL:
       retval = process_prompt(p, com_string);
       break;
   }
@@ -855,8 +853,8 @@ void process_new_connection(int fd, unsigned int fromHost)
 
   p = range_check(fromHost,fromHost);
   if (p) {
-    Logit("Revoked connection from %s :%d.", 
-      dotQuad(parray[p].thisHost), p);
+    Logit("Revoked connection from %s :%d."
+      , dotQuad(fromHost), p);
     net_close(fd);
     return;
   }
@@ -936,7 +934,7 @@ int process_incomplete(int fd, char *com_string)
   int p;
   char last_char;
   int len;
-  char *quit = "quit";
+  char quit[] = "quit";
 
   p = player_find_fd(fd);
   if (p < 0) {
