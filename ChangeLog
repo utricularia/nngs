@@ -4,16 +4,18 @@
 
 
 1.1.21 AvK 2005-11-2
+- use server_http (instead of hardcoded nngs.cosmic.org) in last line
+of usage-command.
 - added handling of dotted quad in lists/ban file
 - network.c : in_full is never set to anything != zero. plan to reuse it.
 - moved some more tunable constants to the conffile.
 - added fromport (portnumber) into netstruct.
 - changed return form xystat() to be st_size iff stat() returns >=0
 - changed player_write() to only clear is_dirty if file was written
-succesfully. (defined by newsize > oldsize/2, which seems fair enough.
+succesfully. (defined by newsize > oldsize/2, which seems fair enough).
 This will result in NNGS to retry writing if previous writes were
 unsuccessful (caused by disk-full conditions).
-Otherwise playerfiles would be truncated.
+Previously, playerfiles would be truncated on disk-full conditions.
 1.1.20 AvK 2005-10-19
 - removed a silly bug (looking for a sentinel in command_list, while there was
 no sentinel. Problem was that it compiled fine on my home machines (probably

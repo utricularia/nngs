@@ -19,8 +19,8 @@ You may also want to check config.h after running ./configure
 Most of the configuration items are now kept in a single nngs.cnf -file.
 The ./configure just establishes the defaults, basically.
 This will allow you to reconfigure things without recompiling.
-If not found, nngs *creates* this file, whith the current default-
-values in it (which have been established by the ./configure ).
+On startup, if not found, nngs will *create* this file, whith the current
+default-values in it (which have been established by the ./configure ).
 Edit and enjoy...
 
 NNGS needs mlrate. Unfortunately, the original (pem's) mlrate
@@ -79,8 +79,8 @@ On startup, nngssrv will try to read it's config from nngs.cnf in
 the current directory (or specfied with -c pathname)
 The config file mechanism enables you to change file locations and
 other things without recompiling. You can also use separate locations for data
-and the nngssrv binary. (but I would advise you *not* to make too
-wild choices ;-)
+and the nngssrv binary. Or put the logfile in /var/.
+(but I would advise you *not* to make too wild choices ;-)
 
 The easiest way to set things up is:
 1) do a configure&compile&and install of nngs
@@ -99,23 +99,25 @@ NOTE: if you don't know what chroot() is, you will probably *not* want it!
 1) the chroot() systemcall itself requires root privileges.
    the program starts as root, then chdir()s, chroot()s, fork()s twice
    , and changes gid and uid.
-   Currently, 
-   - it does not close filedescriptors,
+   Currently, it does *not* 
+   - close filedescriptors,
    - change process group,
    - detach from its CTTY.
    Just the two forks should do.
-2) Mail cannot be sent by /usr/bin/mail et.al. (unless a copy exists in the
-   jail, which will also need the loader, and part of the /lib/*so, and maybe
-   more)
-   if you configure the mailer to SMTP, a built-in mailer is used.
-   this will only need gethostbyname(), which relies on /etc/hosts and/or
-   /etc/resolv.conf. *these need to be present in jail, or mail won't work*
+2) Mail cannot be sent fom a chroot()ed program using /usr/bin/mail et.al.
+   (unless a copy exists in the jail, which will also need the loader, and
+   part of the /lib/*so, and maybe more)
+   If you configure the mailer to be SMTP (by setting mail_program=SMTP),
+   a built-in mailer is used. This will only need gethostbyname(), which
+   relies on /etc/hosts and/or /etc/resolv.conf. These need to be present
+   in the jail, or mail won't work.
 3) For safety: if anything fails (chroot, setuid, ...) the program will
    refuse to work and will exit() before doing anything useful.
-4) Maybe (?depending on platform?) other files (/dev/zero) are needed.
-5) As an aid in debugging, a file "written.cnf" is written in the
+4) Maybe (?depending on platform?) other files (/dev/zero?) are needed.
+5) As an aid in debugging, a file "written.cnf" is written inside the
    chroot() -jail. The pathnames in this file will be relative to the
-   chroot() directory. (prefix is snipped)
+   chroot() directory. (the prefix is snipped) You can use this to check
+   NNGS's assumptions about where things should be located.
 6) YMMV
 
 
