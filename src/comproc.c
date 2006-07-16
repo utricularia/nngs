@@ -2036,7 +2036,9 @@ int com_uptime(int p, struct parameter * param)
                  , num_19, lp->name);
   else pcn_out(p, CODE_INFO, FORMAT_PROBLEM_WITH_19X19_LADDER_STRUCTURE_n);
 
-  pcn_out(p, CODE_INFO, FORMAT_SEE_HTTP_NNGS_COSMIC_ORG_FOR_MORE_INFORMATION_n);
+  if (conffile.server_http && *conffile.server_http)
+    pcn_out(p, CODE_INFO, FORMAT_SEE_s_FOR_MORE_INFORMATION_n
+           , conffile.server_http);
   return COM_OK;
 }
 
