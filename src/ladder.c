@@ -212,6 +212,7 @@ int ladder_new_p(int idx, const char *psz)
   if (db[idx].n >= db[idx].max) return 0;
 
   assert(p = malloc(sizeof *p));
+  memset(p, 0, sizeof *p);
 
   p->lasttime = 0;
   p->payload = 0;

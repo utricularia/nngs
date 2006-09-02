@@ -124,9 +124,12 @@ void mink_init(void)
 struct minkgame *mink_initgame(int width, int height, int rules)
 {
   struct minkgame *gp;
+  unsigned cnt;
 
   gp = malloc(sizeof *gp);
   assert(gp != NULL);
+  memset (gp , 0, sizeof *gp);
+
   gp->width = width;
   gp->height = height;
   gp->rules = rules;
@@ -134,17 +137,28 @@ struct minkgame *mink_initgame(int width, int height, int rules)
 #if WANT_MINKKOMI
   gp->komi = MINK_KOMI;
 #endif
-  gp->board = malloc(ESIZE(gp) * sizeof *gp->board);
+
+  cnt = ESIZE(gp) ;
+  gp->board = malloc(cnt * sizeof *gp->board);
   assert(gp->board != NULL);
-  gp->mvsize = ESIZE(gp)/2;		/* need at least 1 for 0x0 board:) */
+  memset (gp->board , 0, cnt* sizeof *gp->board);
+  gp->mvsize = cnt/2;		/* need at least 1 for 0x0 board:) */
+
   gp->moves = malloc(gp->mvsize * sizeof *gp->moves);
   assert(gp->moves != NULL);
+  memset (gp->moves , 0, gp->mvsize * sizeof *gp->moves);
+
   gp->moves[0].hash = 0L;
-  gp->uf = malloc(ESIZE(gp) * sizeof *gp->uf);
+
+  cnt = ESIZE(gp) ;
+  gp->uf = malloc(cnt * sizeof *gp->uf);
   assert(gp->uf != NULL);
+  memset (gp->uf , 0, cnt * sizeof *gp->uf);
+
   gp->logsize = ESIZE(gp);
   gp->uflog = malloc(gp->logsize * sizeof *gp->uflog);
   assert(gp->uflog != NULL);
+  memset (gp->uflog , 0, gp->logsize * sizeof *gp->uflog);
 /*  gp->nocaps = 0; */
   mink_startgame(gp);
   return gp;
@@ -510,14 +524,13 @@ static int mink_superko(struct minkgame *gp)
         curboard[j] = gp->board[j];
       n = gp->movenr;
       do mink_back(gp); while (gp->movenr > i);
-      for (j=0; j<ESIZE(gp); j++)
-        if ((diff = (curboard[j] != gp->board[j])))
-          break;
+      for (j=0; j<ESIZE(gp); j++) {
+        if ((diff = (curboard[j] != gp->board[j]))) break;
+      }
       do mink_forward(gp); while (gp->movenr < n);
 /* only works if forward doesn't check for superko:( */
       free(curboard);
-      if (!diff)
-        return 1;
+      if (!diff) return 1;
 #endif
     }
   }
