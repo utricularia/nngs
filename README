@@ -97,8 +97,11 @@ have to do some manual tuning.
 NOTE: if you don't know what chroot() is, you will probably *not* want it!
 
 1) the chroot() systemcall itself requires root privileges.
-   the program starts as root, then chdir()s, chroot()s, fork()s twice
-   , and changes gid and uid.
+   the program starts as root, then
+   - chdir()s
+   - chroot()s
+   fork()s twice
+   - , and changes gid and uid.
    Currently, it does *not* 
    - close filedescriptors,
    - change process group,

@@ -118,12 +118,13 @@ size_t pos=0;
     pb = garray[g0].black.pnum;
     pw = garray[g0].white.pnum;
     /* game# gstatus mink pb pw + bname brank wname wrank + movenum */
-    len = snprintf(dst+pos, dstlen-pos, "%d:%d:%p:%d:%d\n"
-      , g0, (int) garray[g0].gstatus, (void*) garray[g0].minkg, pb, pw);
+    len = snprintf(dst+pos, dstlen-pos, "%d:%d:%d:%d:%d\n"
+      , g0, (int)garray[g0].slotstat.in_use, (int)garray[g0].gstatus
+      , pb, pw);
     if (len < 0) break; else pos += len;
     if (pb < 0 || pw < 0) continue;
     if (pb >= parray_top || pw >= parray_top) continue;
-    pos--;
+    pos--; /* eat \n */
     len = snprintf(dst+pos, dstlen-pos, ":%s:%s:%s:%s\n"
       , parray[pb].pname, parray[pb].srank
       , parray[pw].pname, parray[pw].srank
@@ -134,8 +135,8 @@ size_t pos=0;
     mnum = mink_movenum(garray[g0].minkg);
     len = snprintf(dst+pos, dstlen-pos , ":%d\n" , (int) mnum);
     if (len < 0) return pos; else pos += len;
-#if 0
-    pos--;
+#if 1
+    pos--; /* eat \n */
     len = snprintf(dst+pos, dstlen-pos
     , ":%d:%d:%d:%f:%d:%c:%c\n"
     , (int) mnum

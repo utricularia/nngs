@@ -42,6 +42,13 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+int ftruncate(int fd, off_t size);
+int truncate(const char *path, off_t size);
+
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif

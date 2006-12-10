@@ -933,7 +933,7 @@ struct stat statje;
   rc = fstat(fd, &statje);
   if (!rc) rc = statje.st_mode;
 
-  pos = sprintf(buff, "%d:%d:%x.%x:%x:%08x:%c:%c"
+  pos = sprintf(buff, "%d:%d:%x:%x:%x:%08x:%c:%c"
     , fd, netarray[fd].netstate, rc, netarray[fd].telnetState
     , netarray[fd].fromHost, netarray[fd].fromport
     , (netarray[fd].is_full) ? 'F' : '-'

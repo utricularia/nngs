@@ -74,7 +74,10 @@ void ladder_delete(int idx)
 
 void ladder_init(int n)
 {
-  assert((db = calloc(dbmax = n, sizeof *db)) != NULL);
+  dbmax = n;
+  db = malloc(dbmax * sizeof *db);
+  memset(db ,0, dbmax * sizeof *db);
+  assert(db != NULL);
 }
 
 
@@ -83,8 +86,14 @@ static int ladder_new_local(int idx, int n)
   db[idx].n = 0;
   db[idx].max = n;
   db[idx].fNameSorted = 0;
-  assert(db[idx].byPosn = calloc(n, sizeof *db[idx].byPosn));
-  assert(db[idx].byName = calloc(n, sizeof *db[idx].byName));
+  db[idx].byPosn = malloc(n * sizeof *db[idx].byPosn);
+  db[idx].byName = malloc(n * sizeof *db[idx].byName);
+
+  assert(db[idx].byPosn != NULL);
+  assert(db[idx].byName != NULL);
+
+  memset(db[idx].byPosn ,0, n* sizeof *db[idx].byPosn);
+  memset(db[idx].byName ,0, n* sizeof *db[idx].byName);
 
   return idx;
 }
@@ -297,9 +306,12 @@ void ladder_sift(int idx, int nDays)
   struct ladderplayer **pp;
 
   nCurr = nLate = 0;
-  pCurr = calloc(db[idx].n, sizeof *pCurr);
-  pLate = calloc(db[idx].n, sizeof *pLate);
-  pp = calloc(db[idx].n, sizeof *pp);
+  pCurr = malloc(db[idx].n * sizeof *pCurr);
+  memset(pCurr ,0, db[idx].n * sizeof *pCurr);
+  pLate = malloc(db[idx].n * sizeof *pLate);
+  memset(pLate ,0, db[idx].n * sizeof *pLate);
+  pp = malloc(db[idx].n * sizeof *pp);
+  memset(pp ,0, db[idx].n * sizeof *pp);
 
   for (n = 0; n < db[idx].n ; n++) {
     if ((db[idx].byPosn[n]->lasttime < cuttime) || 

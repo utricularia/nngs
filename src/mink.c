@@ -703,7 +703,7 @@ int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
   if (len < 0) return pos;
   pos += len;
   if (!gp || !gp->board) return pos;
-  pos = 0;
+  /* pos = 0; */
   for (y=1; y <= gp->height; y++) {
     for (x=1; x <= gp->width ; x++) {
       if (pos+2 >= (int)buflen) break;

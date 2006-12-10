@@ -3,12 +3,16 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.21 AvK 2005-11-2
+1.1.21 AvK 2006-12-xx
+- Removed some more double-indexing of [pg]array.
+- (GIFU2006) fixed bugs that were introduced (in 1.1.15??) 
+by changing calloc() -->> malloc(); added some memset()...
 - use server_http (instead of hardcoded nngs.cosmic.org) in last line
 of usage-command.
 - added handling of dotted quad in lists/ban file
-- network.c : in_full is never set to anything != zero. plan to reuse it.
-- moved some more tunable constants to the conffile.
+- network.c : netstruct.in_full is never set to anything != zero.
+plan to reuse it.
+- moved more tunable constants to the conffile.
 - added fromport (portnumber) into netstruct.
 - changed return form xystat() to be st_size iff stat() returns >=0
 - changed player_write() to only clear is_dirty if file was written

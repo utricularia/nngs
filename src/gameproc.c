@@ -1033,11 +1033,11 @@ int com_undo(int p, struct parameter * param)
     }
     if (!garray[g1].teach && x == 0) x = num;
     mink_listmove(garray[g1].minkg, gmove, buf);
-    pcn_out(garray[g1].black.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
+    pcn_out(pb, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
     if (garray[g1].teach != 1) 
-      pcn_out(garray[g1].white.pnum, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
+      pcn_out(pw, CODE_UNDO, FORMAT_s_UNDID_THE_LAST_MOVE_s_n,
               parray[p].pname,
               buf + 1);
     for (p2 = 0; p2 < parray_top; p2++) {
@@ -1072,7 +1072,7 @@ int com_undo(int p, struct parameter * param)
 
 int com_games(int p, struct parameter * param)
 {
-  int i;
+  int g0;
   int pw, pb;
 
   int selected = 0;  int count = 0;  int totalcount = 0;
@@ -1086,20 +1086,20 @@ int com_games(int p, struct parameter * param)
     if (selected < 0) selected = 0;
   }
   pcn_out(p, CODE_GAMES, FORMAT_WHITE_NAME_RK_BLACK_NAME_RK_MOVE_SIZE_H_KOMI_BY_FR_);
-  for (i = 0; i < garray_top; i++) {
-    if (garray[i].gstatus != GSTATUS_ACTIVE) continue;
+  for (g0 = 0; g0 < garray_top; g0++) {
+    if (garray[g0].gstatus != GSTATUS_ACTIVE) continue;
     totalcount++;
-    if (selected && selected != i+1) continue;  /* not selected game number */
-    pw = garray[i].white.pnum;
-    pb = garray[i].black.pnum;
+    if (selected && selected != g0+1) continue;  /* not selected game number */
+    pw = garray[g0].white.pnum;
+    pb = garray[g0].black.pnum;
     if (!selected && s 
           && strncmp(s, parray[pw].login, slen)
           && strncmp(s, parray[pb].login, slen))
       continue;  /* player names did not match */
     count++;
-    mnum = mink_movenum(garray[i].minkg);
+    mnum = mink_movenum(garray[g0].minkg);
     pcn_out(p, CODE_CR1|CODE_GAMES, FORMAT_d_s_ss_VS_s_ss_d_d_d_f_d_cc_d_,
-            i + 1,
+            g0 + 1,
 	    parray[pw].pname,
             parray[pw].srank,
             parray[pw].flags.is_rated ? "*" : " ",
@@ -1107,14 +1107,14 @@ int com_games(int p, struct parameter * param)
             parray[pb].srank,
             parray[pb].flags.is_rated ? "*" : " ",
 	    mnum,
-            garray[i].minkg->width,
-            garray[i].minkg->handicap,
-            garray[i].komi,
-            TICS2SECS(garray[i].ts.byoticks) / 60,
-	    (garray[i].rated) ? ' ' : garray[i].teach ? 'T' : 'F',
-/*	    (garray[i].gotype) ? 'I' : '*', */
-	    (garray[i].rules == RULES_NET) ? (parray[pw].match_type == GAMETYPE_TNETGO ? '*' : 'I') : 'G',
-            game_get_num_ob(i));
+            garray[g0].minkg->width,
+            garray[g0].minkg->handicap,
+            garray[g0].komi,
+            TICS2SECS(garray[g0].ts.byoticks) / 60,
+	    (garray[g0].rated) ? ' ' : garray[g0].teach ? 'T' : 'F',
+/*	    (garray[g0].gotype) ? 'I' : '*', */
+	    (garray[g0].rules == RULES_NET) ? (parray[pw].match_type == GAMETYPE_TNETGO ? '*' : 'I') : 'G',
+            game_get_num_ob(g0));
   }
   return COM_OK;
 }
@@ -2084,9 +2084,9 @@ int com_save(int p, struct parameter * param)
 
 int com_moretime(int p, struct parameter * param)
 {
-  int g0, increment;
+  int g0,pb,pw,increment;
 #if WANT_PAIR
-  int g2;
+  int g2,pb2,pw2;
 #endif
 
   increment = param[0].val.integer;
@@ -2099,14 +2099,18 @@ int com_moretime(int p, struct parameter * param)
     return COM_OK;
   }
   g0 = parray[p].session.gnum;
+  pb= garray[g0].black.pnum;
+  pw= garray[g0].white.pnum;
 #if WANT_PAIR
   g2 = garray[g0].pairwith;
+  pb2= garray[g2].black.pnum;
+  pw2= garray[g2].white.pnum;
 #endif
   if (increment > 60000) {
     pcn_out(p, CODE_ERROR, FORMAT_ADDTIME_HAS_A_MAXIMUM_LIMIT_OF_60000_MINUTES_);
     increment = 60000;
   }
-  if (garray[g0].white.pnum == p) {
+  if (pw == p) {
     garray[g0].black.ticksleft += SECS2TICS(increment * 60);
 #if WANT_PAIR
     if (paired(g0)) {
@@ -2114,7 +2118,7 @@ int com_moretime(int p, struct parameter * param)
     }
 #endif
   }
-  if (garray[g0].black.pnum == p) {
+  if (pb == p) {
     garray[g0].white.ticksleft += SECS2TICS(increment * 60);
 #if WANT_PAIR
     if (paired(g0)) {
@@ -2126,12 +2130,12 @@ int com_moretime(int p, struct parameter * param)
 	    increment);
 #if WANT_PAIR
   if (paired(g0)) {
-    if (p == garray[g0].black.pnum) {
-      pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
+    if (p == pb) {
+      pcn_out_prompt(pb2, CODE_INFO, 
                      FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCKn,
                      increment);
     } else {
-      pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
+      pcn_out_prompt(pw2, CODE_INFO, 
                      FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCKn,
                      increment);
     }
@@ -2144,12 +2148,12 @@ int com_moretime(int p, struct parameter * param)
 
 #if WANT_PAIR
   if (paired(g0)) {
-    if (p == garray[g0].black.pnum) {
-      pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
+    if (p == pb) {
+      pcn_out_prompt(pw2, CODE_INFO, 
                      FORMAT_YOUR_OPPONENT_HAS_ADDED_d_MINUTES_TO_YOUR_CLOCK_n,
                      increment);
     } else {
-      pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
+      pcn_out_prompt(pb2, CODE_INFO, 
                      FORMAT_YOUR_OPPONENT_HAS_ADDED_d_MINUTES_TO_YOUR_CLOCK_n,
                      increment);
     }
@@ -2162,9 +2166,9 @@ int com_moretime(int p, struct parameter * param)
 void game_update_time(int g0)
 {
   unsigned now, jiffies;
-  int pw, pb;
+  int pb,pw;
 #if WANT_PAIR
-  int g2;
+  int g2,pb2,pw2;
 #endif
 
   /* If players have "paused" the game */
@@ -2204,6 +2208,8 @@ void game_update_time(int g0)
   pw = garray[g0].white.pnum;
 #if WANT_PAIR
   g2 = garray[g0].pairwith;
+  pb2 = garray[g2].black.pnum;
+  pw2 = garray[g2].white.pnum;
 #endif
 
   /* If players are scoring */
@@ -2217,7 +2223,7 @@ void game_update_time(int g0)
       && garray[g0].white.byostones > 1) {
 #if WANT_PAIR
     if (paired(g0)) {
-      game_ended(g2, garray[g2].black.pnum, END_FLAG);
+      game_ended(g2, pb2, END_FLAG);
     }
 #endif /* WANT_PAIR */
     game_ended(g0, pb, END_FLAG);
@@ -2226,7 +2232,7 @@ void game_update_time(int g0)
           && garray[g0].black.byostones > 1) {
 #if WANT_PAIR
     if (paired(g0)) {
-      game_ended(g2, garray[g2].white.pnum, END_FLAG);
+      game_ended(g2, pw2, END_FLAG);
     }
 #endif /* WANT_PAIR */
     game_ended(g0, pw, END_FLAG);
@@ -2268,17 +2274,17 @@ void game_update_time(int g0)
         garray[g2].white.byostones = garray[g2].ts.byostones;
         garray[g2].white.ticksleft = garray[g2].ts.byoticks;
 	  /* AvK split */
-        pcn_out(garray[g2].white.pnum, CODE_INFO, 
+        pcn_out(pw2, CODE_INFO, 
                     FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
                     parray[garray[g2].white.pnum].pname);
-        pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
+        pcn_out_prompt(pw2, CODE_INFO, 
                     FORMAT_YOU_HAVE_d_STONES_AND_d_MINUTESn,
                     garray[g2].white.byostones,
                     TICS2SECS(garray[g2].white.ticksleft)/60);
-        pcn_out(garray[g2].black.pnum, CODE_INFO, 
+        pcn_out(pb2, CODE_INFO, 
                     FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
                     parray[garray[g2].white.pnum].pname);
-        pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
+        pcn_out_prompt(pb2, CODE_INFO, 
                    FORMAT_HE_HAS_d_STONES_AND_d_MINUTESn,
                     garray[g2].white.byostones,
                     TICS2SECS(garray[g2].white.ticksleft)/60);
@@ -2298,17 +2304,17 @@ void game_update_time(int g0)
       garray[g0].black.byostones = garray[g0].ts.byostones;
       garray[g0].black.ticksleft = garray[g0].ts.byoticks;
 
-      pcn_out(garray[g0].white.pnum, CODE_INFO,
+      pcn_out(pw, CODE_INFO,
               FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
-              parray[garray[g0].black.pnum].pname);
-      pcn_out_prompt(garray[g0].white.pnum, CODE_INFO,
+              parray[pb].pname);
+      pcn_out_prompt(pw, CODE_INFO,
               FORMAT_HE_HAS_d_STONES_AND_d_MINUTESn,
               garray[g0].black.byostones,
               TICS2SECS(garray[g0].black.ticksleft)/60);
-      pcn_out(garray[g0].black.pnum, CODE_INFO,
+      pcn_out(pb, CODE_INFO,
               FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
-              parray[garray[g0].black.pnum].pname);
-      pcn_out_prompt(garray[g0].black.pnum, CODE_INFO,
+              parray[pb].pname);
+      pcn_out_prompt(pb, CODE_INFO,
               FORMAT_YOU_HAVE_d_STONES_AND_d_MINUTESn,
               garray[g0].black.byostones,
               TICS2SECS(garray[g0].black.ticksleft)/60);
@@ -2320,17 +2326,17 @@ void game_update_time(int g0)
         garray[g2].black.byoperiods = 1;
         garray[g2].black.byostones = garray[g2].ts.byostones - 1;
         garray[g2].black.ticksleft = garray[g2].ts.byoticks;
-        pcn_out(garray[g2].white.pnum, CODE_INFO, 
+        pcn_out(pw2, CODE_INFO, 
                FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
-               parray[garray[g2].black.pnum].pname);
-        pcn_out_prompt(garray[g2].white.pnum, CODE_INFO, 
+               parray[pb2].pname);
+        pcn_out_prompt(pw2, CODE_INFO, 
                FORMAT_HE_HAS_d_STONES_AND_d_MINUTESn,
                garray[g2].black.byostones,
                TICS2SECS(garray[g2].black.ticksleft)/60);
-        pcn_out(garray[g2].black.pnum, CODE_INFO, 
+        pcn_out(pb2, CODE_INFO, 
                FORMAT_THE_PLAYER_s_IS_NOW_IN_BYO_YOMI_n,
-               parray[garray[g2].black.pnum].pname);
-        pcn_out_prompt(garray[g2].black.pnum, CODE_INFO, 
+               parray[pb2].pname);
+        pcn_out_prompt(pb2, CODE_INFO, 
                FORMAT_YOU_HAVE_d_STONES_AND_d_MINUTESn,
                garray[g2].black.byostones,
                TICS2SECS(garray[g2].black.ticksleft)/60);
