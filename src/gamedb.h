@@ -131,7 +131,7 @@ struct game {
   float gresult;
 } ;
 
-extern struct game *garray;
+extern struct game garray[];
 extern int garray_top;
 
 int game_new(int, int);

@@ -689,11 +689,14 @@ void mink_printboard(struct minkgame *gp, twodstring buf)
   }
 }
 
-int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
+int mink_raw_printboard(char * buff, size_t buflen, struct minkgame *gp)
 {
   int x,y,len, pos;
 
-  pos = snprintf(buff, buflen, "%p\n" , (void*)gp );
+  pos = snprintf(buff, buflen, "%u\n" , (unsigned)buflen);
+  if (!gp) return pos;
+
+  pos = snprintf(buff, buflen, "0x%p\n" , (void*)gp );
   if (!gp) return pos;
   pos--;
   len = snprintf(buff+pos, buflen-pos, ":%d:%d:%d:%d:%d\n"
@@ -705,6 +708,7 @@ int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *gp)
   if (!gp || !gp->board) return pos;
   /* pos = 0; */
   for (y=1; y <= gp->height; y++) {
+    if (pos+2 >= (int)buflen) break;
     for (x=1; x <= gp->width ; x++) {
       if (pos+2 >= (int)buflen) break;
       /* buff[done++] = BOARDCHARS[gp->board[mink_point(gp,x,gp->height+1-y)]]; */

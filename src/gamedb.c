@@ -122,7 +122,7 @@ nngs_strtof(char *str, char **p)
   return 0.0;
 }
 
-struct game *garray = NULL;
+struct game garray[GARRAY_SIZE];
 int garray_top = 0;
 
 static int get_empty_game_slot(void)
@@ -140,12 +140,15 @@ static int get_empty_game_slot(void)
 #endif
     return i;
   }
+  if (garray_top >= COUNTOF(garray)) return -1;
   garray_top++;
+#if 0
   if (!garray) {	/* garray_top was 0 before */
     garray = malloc(sizeof *garray );
   } else {
     garray = realloc(garray, garray_top * sizeof *garray );
   }
+#endif
   if (conffile.debug_general)
     Logit("get_empty_game_slot, garray_top = %d, i = %d (Had to alloc)", garray_top,i);
   return garray_top - 1;

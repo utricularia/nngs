@@ -1114,11 +1114,11 @@ void commands_init()
 void TerminateCleanup()
 {
   int p1;
-  int g;
+  int g1;
 
-  for (g = 0; g < garray_top; g++) {
-    if (garray[g].gstatus != GSTATUS_ACTIVE) continue;
-    game_ended(g, PLAYER_NEITHER, END_ADJOURN);
+  for (g1 = 0; g1 < garray_top; g1++) {
+    if (garray[g1].gstatus != GSTATUS_ACTIVE) continue;
+    game_ended(g1, PLAYER_NEITHER, END_ADJOURN);
   }
   for (p1 = 0; p1 < parray_top; p1++) {
     if (!parray[p1].slotstat.is_inuse) continue;

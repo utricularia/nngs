@@ -306,6 +306,7 @@ int Logit(const char *format,...)
   va_start(ap, format);
 
   retval = vsprintf(tmp, format, ap);
+  va_end(ap);
   if (strlen(tmp) >= sizeof tmp) {
     fprintf(stderr, "Logit buffer overflow (format=\"%s\")\n", format);
     tmp[sizeof tmp -1] = 0;
@@ -329,7 +330,6 @@ int Logit(const char *format,...)
      fclose(fp);
   }
   in_logit--;
-  va_end(ap);
   return retval;
 }
 
@@ -347,6 +347,7 @@ int pprintf(int p, const char *format, ...)
 	** the strlen() of the resulting string, or -1 on error )
 	*/
   retval = vsprintf(tmp, format, ap);
+  va_end(ap);
 #if 0
   retval = strlen(tmp);
 #endif
@@ -356,7 +357,6 @@ int pprintf(int p, const char *format, ...)
     len = sizeof tmp -1; tmp[len] = 0;
   }
   net_send(parray[p].session.socket, tmp, len);
-  va_end(ap);
   return retval; /* AvK: should be equal to len, but is always ignored anyway */
 }
 
@@ -426,18 +426,27 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
   if (!dummy) {
     char *name;
     name = tempnam(NULL, NULL);
-    if (!name) name = "vsnprintf.tmp" ;
+    if (!name) name = "/tmp/vsnprintf.tmp" ;
     dummy = fopen(name, "w+");
+    if (!dummy) {
+      fprintf(stderr, "Could not open tempfile '%s'", name);
+      name+=5; /* skip /tmp/ */
+      dummy = fopen(name, "w+");
+    }
     if (!dummy) fprintf(stderr, "Could not open tempfile '%s'", name);
     else fprintf(stderr, "Opened tempfile(%d) '%s'", fileno(dummy), name);
+#if 0
     unlink(name);
+#endif
   }
   rewind(dummy);
   wlen = vfprintf(dummy, format, ap);
   fflush(dummy);
+  if (wlen < 0 || wlen >= dstlen) { memcpy(dst,"Badw!",6); return -1; }
   if (wlen < 0 || wlen >= dstlen) { *dst = 0; return -1; }
   rewind(dummy);
   rlen = fread(dst, 1, (size_t) wlen, dummy);
+  if (rlen != wlen && dstlen >= 6) { memcpy(dst, "BadR!", 6) ; return -1; }
   if (rlen != wlen) { *dst = 0; return -1; }
   dst[rlen] = 0;
   return rlen;

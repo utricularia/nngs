@@ -27,6 +27,7 @@
 #define PLAYERDB_H
 
 #define PARRAY_SIZE 260
+#define GARRAY_SIZE 260
 #define MAX_PENDING 5
 #define MAX_OBSERVE 10
 #define MAX_PLAN 10

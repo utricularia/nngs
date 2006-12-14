@@ -91,7 +91,7 @@ int mink_removedead(struct minkgame *g, int p, int c);
 void mink_replay(struct minkgame *g);   /* replay game so as to undo all removes */
 int mink_pass(struct minkgame *g);   /* if pass is i'th consecutive one, return i */
 void mink_printboard(struct minkgame *g, twodstring buf); /* print ascii representation of go board */
-int mink_printboard_raw(char * buff, size_t buflen, struct minkgame *g); /* idem, unformatted */
+int mink_raw_printboard(char * buff, size_t buflen, struct minkgame *gp); /* idem, unformatted */
 void mink_statusdims(struct minkgame *g, int *width, int *height);
 void mink_boardstatus(struct minkgame *g, twodstring buf);
 void mink_countscore(struct minkgame *g, twodstring buf, int *wt, int *bt, int *wo, int *bo);	/* count w/b territory and w/b occupied */

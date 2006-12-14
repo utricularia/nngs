@@ -64,7 +64,7 @@ static int udp_board(char *dst, size_t dstlen, int num);
 
 extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
 
-#define snprintf my_snprintf
+/** #define snprintf my_snprintf **/
 
 /***********************************************************************/
 int udp_command(char *dst, size_t dstlen, char * src )
@@ -119,7 +119,8 @@ size_t pos=0;
     pw = garray[g0].white.pnum;
     /* game# gstatus mink pb pw + bname brank wname wrank + movenum */
     len = snprintf(dst+pos, dstlen-pos, "%d:%d:%d:%d:%d\n"
-      , g0, (int)garray[g0].slotstat.in_use, (int)garray[g0].gstatus
+      , g0
+      , (int)garray[g0].slotstat.in_use, (int)garray[g0].gstatus
       , pb, pw);
     if (len < 0) break; else pos += len;
     if (pb < 0 || pw < 0) continue;
@@ -140,7 +141,8 @@ size_t pos=0;
     len = snprintf(dst+pos, dstlen-pos
     , ":%d:%d:%d:%f:%d:%c:%c\n"
     , (int) mnum
-    , (int) garray[g0].minkg->width, (int) garray[g0].minkg->handicap
+    , (int) garray[g0].minkg->width
+    , (int) garray[g0].minkg->handicap
     , (float) garray[g0].komi
     , (int) TICS2SECS(garray[g0].ts.byoticks) / 60
     , (garray[g0].rated) ? ' ' : garray[g0].teach ? 'T' : 'F'
@@ -162,7 +164,8 @@ size_t pos=0;
 
 len = snprintf(dst, dstlen, "Board %d\n", gnum);
 
-if (len < 0) return len; pos = len;
+if (len < 0) return len;
+pos = len;
 if (pos >= dstlen) {
 	len = snprintf(dst, dstlen, "%d/%u\n", pos, dstlen);
 	return len; }
@@ -172,8 +175,8 @@ if (gnum < 0 || gnum >= garray_top) {
 	return len;
 	}
 
-len = mink_printboard_raw(dst+pos, dstlen-pos, garray[gnum].minkg);
-if (len < 0) return pos; pos += len;
+len = mink_raw_printboard(dst+pos, dstlen-pos, garray[gnum].minkg);
+if (len > 0) pos += len;
 
 return pos;
 }
