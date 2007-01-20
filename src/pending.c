@@ -36,7 +36,7 @@
 #define DEBUG_PENDING 0
 #endif
 
-static struct pending pendingarray[PENDING_SIZE]; 
+static struct pending pendarray[PENDING_SIZE]; 
 static struct pending *pendlist=NULL;
 static struct pending *pendfree=NULL;
 static struct pending **pendtail=NULL;
@@ -66,12 +66,12 @@ void pending_init(void)
   pendtail = &pendlist;
   pendfree= NULL;
   hnd= &pendfree;
-  for(ii=0; ii < COUNTOF(pendingarray); ii++ ) {
-    pendingarray[ii].is_valid = 0;
-    pendingarray[ii].seq = 0;
-    pendingarray[ii].hnd = hnd;
-    *hnd = & pendingarray[ii];
-    hnd = & pendingarray[ii].nxt;
+  for(ii=0; ii < COUNTOF(pendarray); ii++ ) {
+    pendarray[ii].is_valid = 0;
+    pendarray[ii].seq = 0;
+    pendarray[ii].hnd = hnd;
+    *hnd = & pendarray[ii];
+    hnd = & pendarray[ii].nxt;
   }
   *hnd = NULL;
 pendcnt.avail = ii;

@@ -3,7 +3,8 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.21 AvK 2006-12-xx
+1.1.21 AvK 2000-01-xx
+- Say/tell/shout/kibitz/channel/etc-Formatstrings. Sigh.
 - Removed some more double-indexing of [pg]array.
 - (GIFU2006) fixed bugs that were introduced (in 1.1.15??) 
 by changing calloc() -->> malloc(); added some memset()...

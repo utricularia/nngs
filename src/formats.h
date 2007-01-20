@@ -4,6 +4,9 @@
 
 /*
     NNGS - The No Name Go Server
+    Copyright (C) 2007  Adriaan van Kessel
+
+    Adapted from:
     Copyright (C) 1995  Erik Van Riper (geek@imageek.york.cuny.edu)
     and John Tromp (tromp@daisy.uwaterloo.ca/tromp@cwi.nl)
 
@@ -27,7 +30,7 @@
 #include "language.h"
 
 	/* dont forget to update this one after adding #defines! */
-#define FORMAT_CNT 900
+#define FORMAT_CNT (860+1)
 
 	/* AvK
 	** Sorry about this, at the moment I consider
@@ -54,7 +57,7 @@ void language_init(void)
 #define GER(n,s) /*  ger [(n)] = (s) */
 #endif /* WANT_TO_DEFINE */
 
-#define FORMAT_COUNT (852+1)
+#define FORMAT_COUNT (860+1)
 #define FORMAT_empty 0
 ENG(FORMAT_empty,"")
 
@@ -1564,8 +1567,8 @@ ENG(FORMAT_LADDER19_RESULT_s_TAKES_POSITION_d_FROM_s_n,"!! Ladder19 Result: %s t
 #define FORMAT_LADDER9_RESULT_s_TAKES_POSITION_d_FROM_s_n 385
 ENG(FORMAT_LADDER9_RESULT_s_TAKES_POSITION_d_FROM_s_n,"!! Ladder9 Result: %s takes position %d from %s !!\n")
 
-#define FORMAT__s__sn 386
-ENG(FORMAT__s__sn,"*%s* : %s\n")
+#define FORMAT_s_sn 386
+ENG(FORMAT_s_sn,"%s %s\n")
 
 #define FORMAT_s_HAS_JOINED_THE_ADMIN_CHANNEL_n 387
 ENG(FORMAT_s_HAS_JOINED_THE_ADMIN_CHANNEL_n,"## --- ##: %s has joined the ADMIN channel.\n")
@@ -2971,8 +2974,27 @@ ENG(FORMAT__s," %s")
 #define FORMAT_s_arrow_sn 853
 ENG(FORMAT_s_arrow_sn,"%s -->> %s\n")
 
-#define FORMAT_s_sn 854
-ENG(FORMAT_s_sn,"%s %s\n")
+#define FORMATtell_s_sn 854
+ENG(FORMATtell_s_sn,"*%s*: %s\n")
+
+#define FORMATkibitz_sn 855
+ENG(FORMATkibitz_sn,"%s\n")
+
+#define FORMATsay_sn 856
+ENG(FORMATsay_sn," %s\n")
+
+#define FORMATsay_s_sn 857
+ENG(FORMATsay_s_sn,"%s %s\n")
+
+#define FORMATshout_s_sn 858
+ENG(FORMATshout_s_sn,"!%s!: %s\n")
+
+#define FORMATchannel_s_sn 859
+ENG(FORMATchannel_s_sn,"<%s>: %s\n")
+
+#define FORMATchannel_sd_sn 860
+ENG(FORMATchannel_sd_sn,"<%s/%d>: %s\n")
+
 
 /** end insert here */
 #if WANT_TO_DEFINE

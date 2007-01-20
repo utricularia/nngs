@@ -705,7 +705,7 @@ int com_muzzle(int p, struct parameter* param)
     for (p1 = 0; p1 < parray_top; p1++) {
       if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].muzzled)
-	pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
+	pcn_out(p, CODE_INFO, FORMATkibitz_sn, parray[p1].pname);
     }
     return COM_OK;
   }
@@ -733,7 +733,7 @@ int com_bmuzzle(int p, struct parameter* param)
     for (p1 = 0; p1 < parray_top; p1++) {
       if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].bmuzzled)
-        pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
+        pcn_out(p, CODE_INFO, FORMATkibitz_sn, parray[p1].pname);
     }
     return COM_OK;
   }
@@ -761,7 +761,7 @@ int com_gmuzzle(int p, struct parameter* param)
     for (p1 = 0; p1 < parray_top; p1++) {
       if (!parray[p1].slotstat.is_online) continue;
       if (parray[p1].gmuzzled)
-	pcn_out(p, CODE_INFO, FORMAT_sn, parray[p1].pname);
+	pcn_out(p, CODE_INFO, FORMATkibitz_sn, parray[p1].pname);
     }
     return COM_OK;
   }

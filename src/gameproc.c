@@ -1090,8 +1090,8 @@ int com_games(int p, struct parameter * param)
     if (garray[g0].gstatus != GSTATUS_ACTIVE) continue;
     totalcount++;
     if (selected && selected != g0+1) continue;  /* not selected game number */
-    pw = garray[g0].white.pnum;
     pb = garray[g0].black.pnum;
+    pw = garray[g0].white.pnum;
     if (!selected && s 
           && strncmp(s, parray[pw].login, slen)
           && strncmp(s, parray[pb].login, slen))
@@ -2537,8 +2537,8 @@ int com_problem(int p, struct parameter * param)
   garray[g0].white.ticksleft = SECS2TICS(600);
   garray[g0].black.ticksleft = SECS2TICS(600);
   garray[g0].gtitle = mystrdup("Black to play");
-  garray[g0].white.pnum = p;
   garray[g0].black.pnum = p;
+  garray[g0].white.pnum = p;
   mink_loadpos(fp, garray[g0].minkg);
   fclose(fp);
 

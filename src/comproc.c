@@ -1292,14 +1292,14 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
   case TELL_TELL:
   default:
     if (parray[p1].flags.want_bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
-    pcn_out_prompt(p1, CODE_CR1|CODE_TELL, FORMAT__s__sn, parray[p].pname, msg);
+    pcn_out_prompt(p1, CODE_CR1|CODE_TELL, FORMATtell_s_sn, parray[p].pname, msg);
     if (parray[p1].forget.last_tell != p) parray[p1].forget.last_tell_from = p;
     break;
   case TELL_SAY:
-    pcn_out_prompt(p1, CODE_SAY, FORMAT_s_sn, parray[p].pname, msg);
+    pcn_out_prompt(p1, CODE_SAY, FORMATsay_s_sn, parray[p].pname, msg);
     break;
   case TELL_KIBITZ:
-    pcn_out_prompt(p1, CODE_KIBITZ, FORMAT_sn, msg);
+    pcn_out_prompt(p1, CODE_KIBITZ, FORMATkibitz_sn, msg);
     break;
   case TELL_BEEP:
     if (parray[p1].flags.want_bell) pcn_out(p1, CODE_BEEP, FORMAT_a);
@@ -1310,9 +1310,9 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       pcn_out_prompt(p1, CODE_YELL, FORMAT_d_s_sn,
             ch, parray[p].pname, msg);
     } else if (parray[p1].last_channel == ch) {
-        pprintf_prompt(p1, "\n<%s> %s\n", parray[p].pname, msg);
+      pcn_out_prompt(p1, CODE_CR1|CODE_YELL, FORMATchannel_s_sn, parray[p].pname, msg);
     } else {
-        pprintf_prompt(p1, "\n<%s/%d> %s\n", parray[p].pname, ch, msg);
+      pcn_out_prompt(p1, CODE_CR1|CODE_YELL, FORMATchannel_sd_sn, parray[p].pname, ch, msg);
     }
     break;
   }
@@ -2287,7 +2287,7 @@ static void a_who(int p, int cnt, int *plist)
               pos9,
               secs2str_short(player_idle(p1)),
               rtemp);
-    pcn_out(p,CODE_INFO, FORMAT_sn, line);
+    pcn_out(p,CODE_INFO, FORMATkibitz_sn, line);
   }
 }
 
@@ -4595,7 +4595,7 @@ int com_notify(int p, struct parameter * param)
                   parray[p].num_notify);
 
       for(i = 0; i < parray[p].num_notify; i++) {
-        pcn_out(p,CODE_INFO, FORMAT_sn, parray[p].notifyList[i]);
+        pcn_out(p,CODE_INFO, FORMATnotify_sn, parray[p].notifyList[i]);
       }
       return COM_OK;
     }

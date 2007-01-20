@@ -975,8 +975,8 @@ void game_write_complete(int g0, twodstring statstring)
   char wname[sizeof parray[0].pname], bname[sizeof parray[0].pname];
   FILE *fp;
 
-  wp = garray[g0].white.pnum;
   bp = garray[g0].black.pnum;
+  wp = garray[g0].white.pnum;
   strcpy(wname, parray[wp].pname);
   strcpy(bname, parray[bp].pname);
 
