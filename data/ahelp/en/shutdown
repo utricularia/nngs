@@ -13,3 +13,7 @@ If 'cancel' is given then the countdown is stopped.
 
 NOTE: If you think you need to shutdown the server, you're probably wrong.
 
+NOTE: Normally, a shutdown will write the open userfiles to disk.
+      Performing a shutdown while in a disk-full conditions will cause
+      all open files to be truncated.
+

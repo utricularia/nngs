@@ -11,15 +11,12 @@ be in the letter.  (Please record them immediately.)
 
 QUICK-START EXAMPLES:
 
-  "register geek geek@nngs.cosmic.org Erik Van Riper": will register
-  the handle "geek" and send the password to "geek@nngs.cosmic.org"
-  with the real full name of "Erik Van Riper".
+  "register alice alice@wonderland.org Alice in Wonderland": will register
+  the handle "alice" and send the password to "alice@wonderland.org"
+  with the real full name of "Alice in Wonderland".
 
-  "register xzhou xunzhou@CS.SunySB.edu Zhou Xun": will register the handle
-  "xzhou" and send the password to "xunzhou@CS.SunySB.edu Zhou Xun" with
-  the real full name of "Zhou Xun".
 
-NOTE:  We ask for your name so we can say "Hi Erik!" and be more friendly.  :)
+NOTE:  We ask for your name so we can say "Hi Alice!" and be more friendly.  :)
 
 PLEASE BE CAREFUL to spell your email address correctly.
 

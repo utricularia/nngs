@@ -7,5 +7,5 @@ Lists the lists, or the members of a given list.
 
 NOTE: The only list in use is "admin", the rest are not used.
 
-SEE ALSO: addlist sublist
+SEE ALSO: addlist sublist + - =
 

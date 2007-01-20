@@ -20,5 +20,5 @@ NOTES: Removing a player can be very BAD IDEA! In particular, NEVER remove
 
        To stop access please do "asetpasswd name *" instead.
 
-SEE ALSO: nuke
+SEE ALSO: nuke aban
 
