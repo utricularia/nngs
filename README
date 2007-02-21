@@ -8,20 +8,19 @@ The files contained in this tarball comprise the No Name Go Server
 For licencing information, see the file COPYING.
 
 
->> COMPILATION AND INSTALLATION
-
-Before compiling, read and edit src/nngsconfig.h and src/nngsmain.h
-Things like mail program locations are specified therein.
-You may also want to check config.h after running ./configure
-
 >> CONFIGURATION-METHOD HAS CHANGED!
 
-Most of the configuration items are now kept in a single nngs.cnf -file.
-The ./configure just establishes the defaults, basically.
+Most of the configuration items (for the RUNNING PROGRAM) are now
+kept in a single nngs.cnf -file.
+The ./configure just establishes some defaults, basically.
 This will allow you to reconfigure things without recompiling.
-On startup, if not found, nngs will *create* this file, whith the current
+
+At startup, if not found, nngssrv will *create* this file, whith the current
 default-values in it (which have been established by the ./configure ).
 Edit and enjoy...
+After reading the configfile, nngssrv will write the file 'written.cnf'
+into the current directory. You can use this to verify the values that
+the program actually uses. The format is the same.
 
 NNGS needs mlrate. Unfortunately, the original (pem's) mlrate
 is not autoconfd/automaked. If you can't get your hands on an
@@ -29,23 +28,25 @@ AC/AM's copy, you will need to move all of it's
 source, into a src/ subdirectory, and you may need some
 minor changes.
 
+>> STEPS FOR CONFIGURATION COMPILATION AND INSTALLATION.
+
 Configure and compile mlrate and then NNGS.  Here's how:
 (current version numbers may be different...)
 
-tar xvzf mlrate-1.0.xx.tar.gz
-cd mlrate-1.0.xx
-./configure
-make
-cd ..
+# tar xvzf mlrate-1.0.xx.tar.gz
+# cd mlrate-1.0.xx
+# ./configure
+# make
+# cd ..
 
 _READ_ the README file in the mlrate directory.  It contains much useful
 information on how to set up the ratings system to work properly.
 
-tar xvzf nngs-1.1.yy.tar.gz
-cd nngs-1.1.yy
-ln -s ../mlrate-1.0.xx mlrate
-./configure --prefix=/whatever/dir/you/want
-make install
+# tar xvzf nngs-1.1.yy.tar.gz
+# cd nngs-1.1.yy
+# ln -s ../mlrate-1.0.xx mlrate
+# ./configure --prefix=/whatever/dir/you/want
+# make install
 
 The 'make install' command installs the server and all basic
 help files necessary for its functionality.
@@ -56,8 +57,37 @@ Some of these files may grow over time, as the server runs. You might need to
 periodically check and prune these directories.
 
 To run and test it:
-$prefix/bin/nngssrv
-telnet localhost 9696
+# $prefix/bin/nngssrv
+# telnet localhost 9696
+
+>> STEPS FOR EXISTING INSTALLATIONS
+
+If you have already (a previous version of) NNGS:
+* the steps for installing the new version are _basically the same_
+  as for a first install.
+
+* Just make sure you use the same --prefix=/whatever/dir/you/want
+  flag for the configuration as you did on the first installation.
+
+* The installation will *not* overwrite existing files.
+  (except for the nngssrv - binary, of course) .
+
+* Possibly, some new items will be recognised in the conffile.
+  To track these:
+  1) put your conffile in a safe place
+  2) compile&install the new NNGS
+  3) start the new NNGS from a (current) directory, where *no*
+     nngs.cnf file is present.
+     (this will cause NNGS to *create* a nngs.cnf -file)
+  4) Check the differences between the old//new configfile.
+  5) edit your configfile.
+     (probably just the old one, with a few lines inserted/added)
+  6) of course, you'll have to stop and restart NNGS to put
+     the changes in effect.
+  7) check the 'written.cnf' file, to see the config that the
+     server actually uses ;-)
+  8) If the new server cannot find the player-files, it probably
+     expects them somewhere else: check the pathnames!
 
 >> DATA FILES
 
@@ -94,7 +124,11 @@ The easiest way to set things up is:
 
 If you want nngs to run in a chroot()ed environment ('jail'), you'll
 have to do some manual tuning.
-NOTE: if you don't know what chroot() is, you will probably *not* want it!
+
+*************************************************
+*** NOTE: if you don't know what chroot() is, ***
+*** you will probably *not* want it!          ***
+*************************************************
 
 1) the chroot() systemcall itself requires root privileges.
    the program starts as root, then
@@ -188,5 +222,5 @@ Major changes since the beginning of this project:
 The server now works on windows as well!  Here's how:
 - Get and install cygwin (>=1.1.8) from http://www.cygwin.com
 - follow the instructions above to compile and install as on unix
-- NOTE: windows-build not tried since 2002. YMMV.
+- NOTE: windows-build has not been tried since 2002. YMMV.
 
