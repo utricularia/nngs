@@ -374,12 +374,10 @@ int com_remplayer(int p, struct parameter* param)
     player_unfix(p1);
     return COM_OK;
   }
-  if (parray[p1].slotstat.is_registered) {
-    if (parray[p1].slotstat.is_online) {
-      pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
-      player_unfix(p1);
-      return COM_OK;
-    }
+  if (parray[p1].slotstat.is_registered && parray[p1].slotstat.is_online) {
+    pcn_out(p, CODE_ERROR, FORMAT_A_PLAYER_BY_THAT_NAME_IS_LOGGED_IN_n);
+    player_unfix(p1);
+    return COM_OK;
   }
   if (player_kill(playerlower)) {
     pcn_out(p, CODE_ERROR, FORMAT_REMPLAYER_FAILED_ );

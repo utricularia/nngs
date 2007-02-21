@@ -3,7 +3,9 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.21 AvK 2000-01-xx
+1.1.21 AvK 2007-02-21
+- added default_komi and default_komi9 to configurable items.
+- silly tell-command returned prematurely.
 - Say/tell/shout/kibitz/channel/etc-Formatstrings. Sigh.
 - Removed some more double-indexing of [pg]array.
 - (GIFU2006) fixed bugs that were introduced (in 1.1.15??) 

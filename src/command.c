@@ -478,7 +478,6 @@ static void process_login(int p, char *login)
       stolower(login);
       do_copy(parray[p].login,login,sizeof parray[p].login);
       if (player_read(p)) {
-/* #ifdef WANT_NOGUESTS */
 if (conffile.allow_unregistered <= 0) {
         Logit("LOGIN: Unknown userid: %s", login);
         pprintf(p, "\nUser unknown.  Send mail to %s", SERVER_EMAIL);

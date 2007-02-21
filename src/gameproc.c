@@ -795,8 +795,10 @@ int com_ladder(int p, struct parameter * param)
       return COM_OK;
     }
 
-    if (size == 9) { garray[g1].Ladder9 = 1;  garray[g1].komi = (float) 5.5; }
-    if (size == 19) { garray[g1].Ladder19 = 1; garray[g1].komi = (float) 5.5; }
+    if (size == 9) {
+      garray[g1].Ladder9 = 1; garray[g1].komi = conffile.default_komi9;}
+    if (size == 19) {
+      garray[g1].Ladder19 = 1; garray[g1].komi = conffile.default_komi;}
     pcn_out(p, CODE_INFO, FORMAT_THIS_IS_NOW_A_LADDER_RATED_GAME_n );
     pcn_out(p2, CODE_INFO, FORMAT_THIS_IS_NOW_A_LADDER_RATED_GAME_n);
     pcn_out_prompt(p2, CODE_INFO, FORMAT_KOMI_IS_NOW_SET_TO_fn, garray[g1].komi);

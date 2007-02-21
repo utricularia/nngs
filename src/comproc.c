@@ -1254,7 +1254,6 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
     if (!parray[p1].flags.want_tells && !parray[p].slotstat.is_registered) {
       pcn_out(p, CODE_ERROR, FORMAT_PLAYER_qsq_ISN_T_LISTENING_TO_UNREGISTERED_TELLS_,
         parray[p1].pname);
-  case TELL_SAY: /* AvK: always listen to opponent */
       return COM_OK;
     }
 
@@ -1266,15 +1265,20 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       pcn_out(p,CODE_ERROR, FORMAT_PLAYER_qsq_IS_CENSORING_YOU_, parray[p1].pname);
       return COM_OK;
     }
+
     if (TELL_PLAYER_IN_TMATCH(p, p1)) {
       pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CURRENTLY_INVOLVED_IN_A_TOURNEMENT_MATCH_n, parray[p1].pname);
       pcn_out(p, CODE_ERROR, FORMAT_PLEASE_SEND_A_MESSAGE_INSTEAD_);
       return COM_OK;
     }
+
+  case TELL_SAY: /* AvK: always listen to opponent */
+  default:
     break;
   case TELL_BEEP:
     if (player_censored(p1, p) && parray[p].adminLevel < ADMIN_ADMIN) {
-      pcn_out(p, CODE_ERROR, FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
+      pcn_out(p, CODE_ERROR
+        , FORMAT_PLAYER_s_IS_CENSORING_YOU_, parray[p1].pname);
       return COM_OK;
     }
     if (parray[p].bmuzzled) {
@@ -1282,7 +1286,8 @@ static int do_tell(int p, int p1, const char *msg, int why, int ch)
       return COM_OK;
     }
     if (!parray[p].slotstat.is_registered) {
-      pcn_out(p, CODE_ERROR, FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_BEEP_COMMAND_);
+      pcn_out(p, CODE_ERROR
+        , FORMAT_ONLY_REGISTERED_PLAYERS_CAN_USE_THE_BEEP_COMMAND_);
       return COM_OK;
     }
     break;
@@ -3251,7 +3256,7 @@ int create_new_gomatch(int wp, int bp,
     break;
   }
 
-  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g0].komi = 5.5;
+  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g0].komi = conffile.default_komi;
   if (rules == RULES_ING) garray[g0].komi = 8.0;
   if (start_time == 0) {
     garray[g0].ts.time_type = TIMETYPE_UNTIMED;

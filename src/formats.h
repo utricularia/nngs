@@ -2980,8 +2980,7 @@ ENG(FORMATtell_s_sn,"*%s*: %s\n")
 #define FORMATkibitz_sn 855
 ENG(FORMATkibitz_sn,"%s\n")
 
-#define FORMATsay_sn 856
-ENG(FORMATsay_sn," %s\n")
+#undef FORMATsay_sn856
 
 #define FORMATsay_s_sn 857
 ENG(FORMATsay_s_sn,"%s %s\n")

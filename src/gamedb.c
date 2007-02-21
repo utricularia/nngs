@@ -85,36 +85,29 @@ nngs_strtof(char *str, char **p)
   float f = 0.0;
   char *s = str;
 
-  while (isspace((int)*s))
-    ++s;
-  if (*s == '+')
-    ++s;
-  else if (*s == '-')
-  {
+  while (isspace((int)*s)) ++s;
+  if (*s == '+') ++s;
+  else if (*s == '-') {
     sign = -1;
     ++s;
   }
-  while (isdigit((int)*s))
-  {
+  while (isdigit((int)*s)) {
     f = 10 * f + (*s - '0');
     ok = 1;
     ++s;
   }
-  if (*s == '.')
-  {
+  if (*s == '.') {
     float d = 10.0;
 
     ++s;
-    while (isdigit((int)*s))
-    {
+    while (isdigit((int)*s)) {
       f += (*s - '0')/d;
       d *= 10;
       ok = 1;
       ++s;
     }
   }
-  if (ok)
-  {
+  if (ok) {
     *p = s;
     return sign*f;
   }
@@ -656,7 +649,9 @@ static int got_attr_value(struct game *gp, char *attr, char *value, FILE * fp, c
 	Logit("Bad komi value \"%s\"", value);
       else
 	Logit("Bad komi value \"%s\" --> %g", value, gp->komi);
-      gp->komi = 5.5;
+      gp->komi = gp->size == 9 
+        ? conffile.default_komi9
+        : conffile.default_komi;
     }
   } else if (!strcmp(attr, "movesrnext:")) {  /* value meaningless */
     /* PEM: Get the true onMove. */

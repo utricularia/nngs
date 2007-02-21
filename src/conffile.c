@@ -85,6 +85,7 @@ struct confmatch {
 	** OCTAL is like number, but represented in octal.
 	** BOOL is a character used as a boolean value.
 	** -1 := False, > 0 := True; 0 := missing/NULL
+	** REAL is a floating-point number (for Komi)
 	** NB: The last argument is always a string, because it is processed
 	** bij the same logic as the textfile.
 	*/
@@ -93,6 +94,7 @@ struct confmatch {
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
 #define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
 #define NUMBER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
+#define REAL(_n,_i,_d) {'r',(_n),(void*)(_i),(_d)},
 #define OCTAL(_n,_o,_d) {'o',(_n),(void*)(_o),(_d)},
 #define MESSAGE(_m) {'m', (_m),NULL, NULL},
 
@@ -183,7 +185,11 @@ MESSAGE("Use with care...")
 MESSAGE("")
 OCTAL("mode_for_dir", &conffile.mode_for_dir, "0")
 MESSAGE("")
+MESSAGE("These are some default values for players and games.")
+MESSAGE("")
 NAME("def_prompt", &conffile.def_prompt, DEFAULT_PROMPT)
+REAL("default_komi", &conffile.default_komi, DEFAULT_KOMI)
+REAL("default_komi9", &conffile.default_komi9, DEFAULT_KOMI)
 MESSAGE("")
 MESSAGE("Games are saved at every /frequency/ move.")
 MESSAGE("No games are written before /treshold/ moves have been played.")
@@ -208,6 +214,7 @@ BOOL("want_fork", &conffile.want_fork, "Yes" )
 BOOL("want_mail_child", &conffile.want_mail_child, "Yes" )
 
 MESSAGE("")
+MESSAGE("############### end of file ##########################")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
 #undef NUL2
 #undef ZOMBIE
@@ -350,6 +357,7 @@ int conf_file_fixup(void)
       break;
     case 'Z':
     case 'P':
+    case 'r':
     case 'm':
     case 'b':
     case 'i':
@@ -392,6 +400,10 @@ static int conf_set_pair(const char *name, const char *value)
   case 'i':
     if (!value || !*value) value = "0";
     sscanf(value, "%d", (int*)(mp->ptr) );
+    break;
+  case 'r':
+    if (!value || !*value) value = "0.0";
+    sscanf(value, "%f", (float*)(mp->ptr) );
     break;
   case 'b':
     if (!value || !*value) value = "F";

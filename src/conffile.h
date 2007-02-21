@@ -91,6 +91,8 @@ struct confstuff {
   char want_mail_child;
 	/* Misc stuff */
   char *def_prompt;
+  float default_komi;
+  float default_komi9;
   unsigned mode_for_dir;
   int game_save_frequency;
   int game_save_treshold;

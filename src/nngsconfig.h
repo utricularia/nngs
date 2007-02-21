@@ -64,15 +64,6 @@
 /*#undef WANT_NNGSRATED*/
 
 
-/* define this to allow only administrators to be able to register
- * players */
-#undef RESTRICT_REGISTRATION
-
-/* define this to not allow any guest users on the server (i.e. all
- * users must be registered) */
-#undef WANT_NOGUESTS
-
-
 /* define this if we want the "news" (bulleting boards). */
 /* [PEM]: Disabled the news commands. They are undocumented, practically
    never used, and partially very buggy. ("anews all" breaks clients for
