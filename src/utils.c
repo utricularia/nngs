@@ -1360,14 +1360,14 @@ const struct searchresult *search(char *psz)
   char *pcTmp = strchr(psz, ':');
 
   if (!pcTmp)			/* PEM */
-    return 0;
+    return NULL;
   *pcTmp = 0;
   strcpy(sr.szPlayer,pcTmp + 1);
   strcpy(sr.szMailAddr, psz);
 
   pcTmp = strchr(psz, '@');
   if (!pcTmp)			/* PEM */
-    return 0;
+    return NULL;
   *pcTmp = 0;
 
   if (mysearchdata.where == SDATA_HOST) {
@@ -1380,7 +1380,7 @@ const struct searchresult *search(char *psz)
     return &sr;
   }
 
-  return 0;
+  return NULL;
 }
 
 int is_totally_blank(char *str)

@@ -3,6 +3,7 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
+1.1.22 AvK 2007-02-24
 1.1.21 AvK 2007-02-21
 - added default_komi and default_komi9 to configurable items.
 - silly tell-command returned prematurely.

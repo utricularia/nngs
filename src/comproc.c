@@ -4193,8 +4193,8 @@ int com_mailmess(int p, struct parameter * param)
 }
 
 
-int com_mailhelp(int p, struct parameter * param)
-{				/* Sparky  */
+int com_mailhelp(int p, struct parameter *param)
+{
   char buffer[10000];
   char subj[MAX_FILENAME_SIZE+10];
   char fname[MAX_FILENAME_SIZE];
