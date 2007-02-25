@@ -596,7 +596,7 @@ rc = set_data(fd);
 if (rc < 0) { return child_perror("Smtp_data"); }
 if (subj) add_header(fd, "Subject", subj);
 if (conffile.smtp_reply_to) add_header(fd, "Reply-To", conffile.smtp_reply_to);
-if add_header(fd, "X-NNGS-SMTP", "Yes, Baby!" );
+add_header(fd, "X-NNGS-SMTP", "Yes, Baby!" );
 add_header(fd, NULL, 0);
 
 while(fgets(buffie, sizeof buffie, fp)) {

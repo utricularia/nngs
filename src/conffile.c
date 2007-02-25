@@ -83,6 +83,7 @@ struct confmatch {
 	** MESSAGE just puts a comment in the output-config file
 	** NUMBER is a decimal integer. Not altered by program.
 	** OCTAL is like number, but represented in octal.
+	** TIME is like number, but unsigned. Represented in seconds.
 	** BOOL is a character used as a boolean value.
 	** -1 := False, > 0 := True; 0 := missing/NULL
 	** REAL is a floating-point number (for Komi)
@@ -94,6 +95,7 @@ struct confmatch {
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
 #define BOOL(_n,_b,_d) {'b',(_n),(void*)(_b),(_d)},
 #define NUMBER(_n,_i,_d) {'i',(_n),(void*)(_i),(_d)},
+#define TIME(_n,_i,_d) {'t',(_n),(void*)(_i),(_d)},
 #define REAL(_n,_i,_d) {'r',(_n),(void*)(_i),(_d)},
 #define OCTAL(_n,_o,_d) {'o',(_n),(void*)(_o),(_d)},
 #define MESSAGE(_m) {'m', (_m),NULL, NULL},
@@ -193,9 +195,14 @@ REAL("default_komi9", &conffile.default_komi9, DEFAULT_KOMI)
 MESSAGE("")
 MESSAGE("Games are saved at every /frequency/ move.")
 MESSAGE("No games are written before /treshold/ moves have been played.")
+MESSAGE("Max_idle is the max allowed period of non-activity.")
+MESSAGE("Max_login_idle is the same for clients still logging in.")
+MESSAGE("Times in seconds. 0 for no-limit.")
 MESSAGE("")
 NUMBER("game_save_frequency", &conffile.game_save_frequency, "5")
 NUMBER("game_save_treshold", &conffile.game_save_treshold, "3")
+TIME("max_idle", &conffile.max_idle, "1800")
+TIME("max_login_idle", &conffile.max_login_idle, "120")
 MESSAGE("")
 MESSAGE("Debugging flags. Can cause a lot of output to the logfile.")
 MESSAGE("Higher levels will cause more output. Set them to zero to disable.")
@@ -216,14 +223,15 @@ BOOL("want_mail_child", &conffile.want_mail_child, "Yes" )
 MESSAGE("")
 MESSAGE("############### end of file ##########################")
 { 0,  NULL,NULL,NULL } }; /* sentinel */
-#undef NUL2
 #undef ZOMBIE
 #undef NAME
 #undef CHPATH
 #undef MESSAGE
 #undef NUMBER
 #undef OCTAL
+#undef TIME
 #undef BOOL
+#undef REAL
 
 static struct confmatch *conf_find(const char *name);
 static int conf_set_pair(const char *name, const char *value);
@@ -302,6 +310,10 @@ int conf_file_write(const char *fname)
       break;
     case 'o': fprintf(fp, "%s=%o\n", mp->name, (int) *((int*)mp->ptr) );
       break;
+    case 't': fprintf(fp, "%s=%u\n", mp->name, (unsigned int) *((unsigned int*)mp->ptr) );
+      break;
+    case 'r': fprintf(fp, "%s=%f\n", mp->name, (float) *((float*)mp->ptr) );
+      break;
     case 'b': fprintf(fp, "%s=%s\n"
       , mp->name, (mp->ptr && *((char*)mp->ptr)>0)?"Yes":"No" );
       break;
@@ -323,6 +335,8 @@ static void config_fill_defaults(void)
   for (mp = confmatchs; mp->type; mp++) {
     switch (mp->type) {
     case 'o':
+    case 't': if (!*(unsigned int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+      break;
     case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
       break;
     case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
@@ -380,6 +394,12 @@ static int conf_file_fixup1(char * target, char *part, int len)
 }
 
 
+/*
+** Parse name/value - pair.
+** We lookup the name, and if found, determine the variable-type, and
+** where it is located.
+** This will also dictate the format-string.
+*/
 static int conf_set_pair(const char *name, const char *value)
 {
   struct confmatch *mp;
@@ -400,6 +420,10 @@ static int conf_set_pair(const char *name, const char *value)
   case 'i':
     if (!value || !*value) value = "0";
     sscanf(value, "%d", (int*)(mp->ptr) );
+    break;
+  case 't':
+    if (!value || !*value) value = "0";
+    sscanf(value, "%u", (unsigned int*)(mp->ptr) );
     break;
   case 'r':
     if (!value || !*value) value = "0.0";

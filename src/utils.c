@@ -635,7 +635,7 @@ int pxysend_raw_file(int p, int num, ...)
 
   if (!is_regfile(filename1)) { fclose(fp); return -1; }
 
-  while ((cnt = fread(tmp, sizeof(char), sizeof tmp, fp)) > 0) {
+  while ((cnt = fread(tmp, 1, sizeof tmp, fp)) > 0) {
     net_send(parray[p].session.socket, tmp, cnt);
   }
   fclose(fp);

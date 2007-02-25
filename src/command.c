@@ -994,13 +994,14 @@ int process_heartbeat(int *fdp)
       if (!parray[p].slotstat.is_inuse) continue;
       if (!parray[p].slotstat.is_connected) continue;
       if (!parray[p].slotstat.is_online 
-          && (player_idle(p) > MAX_LOGIN_IDLE))    { 
+          && conffile.max_login_idle
+          && (player_idle(p) > conffile.max_login_idle))    { 
         *fdp = parray[p].session.socket;
         return COM_LOGOUT;
       }
       if (parray[p].adminLevel >= ADMIN_ADMIN) continue;
       if (parray[p].i_robot) continue;	/* [PEM]: Don't timeout robots. */
-      if (player_idle(p) > MAX_IDLE
+      if (conffile.max_idle  && player_idle(p) > conffile.max_idle
         && parray[p].session.protostate == STAT_WAITING
         && parray[p].session.pstatus == PSTATUS_PROMPT) pcommand(p, "quit");
     }

@@ -31,8 +31,11 @@
 
 /* Number of seconds that an idle connection can stand at login or password
  * prompt. */
+#if 0
 #define MAX_LOGIN_IDLE (2*60)
 #define MAX_IDLE (90*60)
+#endif
+
 #define NUM_LADDERS 2
 #define LADDERSIZE 500 
 
@@ -68,12 +71,6 @@ struct mvinfo {
 
 /* This is the socket that the current command came in on */
 extern int current_socket;
-
-/* Arguments */
-/*
-extern int port;
-extern int withConsole;
-*/
 
 extern int Ladder9;
 extern int Ladder19;
