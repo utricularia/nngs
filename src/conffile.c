@@ -334,10 +334,12 @@ static void config_fill_defaults(void)
 
   for (mp = confmatchs; mp->type; mp++) {
     switch (mp->type) {
-    case 'o':
     case 't': if (!*(unsigned int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
       break;
+    case 'o':
     case 'i': if (!*(int*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
+      break;
+    case 'r': if (!*(float*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
       break;
     case 'b': if (!*(char*)(mp->ptr)) conf_set_pair(mp->name, mp->dflt);
       break;
@@ -371,11 +373,12 @@ int conf_file_fixup(void)
       break;
     case 'Z':
     case 'P':
-    case 'r':
-    case 'm':
     case 'b':
     case 'i':
+    case 't':
+    case 'r':
     case 'o':
+    case 'm':
     default: continue;
     }
   }
