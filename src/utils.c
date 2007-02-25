@@ -730,7 +730,7 @@ int xpsend_dir(int p, int num)
   }
   for (cnt = 0; ep = readdir(dp); ) {
     if (ep->d_name[0] == '.') continue;
-    pprintf(p, "%s%c", ep->d_name,  (++cnt % 4)  ? "\t": "\n" );
+    pprintf(p, "%s%c", ep->d_name,  (++cnt % 4)  ? '\t': '\n' );
   }
   if (cnt % 4) pprintf(p, "\n" );
   closedir(dp);
