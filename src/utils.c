@@ -435,7 +435,7 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
     }
     if (!dummy) fprintf(stderr, "Could not open tempfile '%s'", name);
     else fprintf(stderr, "Opened tempfile(%d) '%s'", fileno(dummy), name);
-#if 0
+#if 1
     unlink(name);
 #endif
   }

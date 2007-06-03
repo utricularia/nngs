@@ -34,7 +34,9 @@ typedef unsigned long xulong; /* better create our own typedef names */
 
 #define MINK_EDGE	-1
 #define MINK_PASS	-1
+#if WANT_MINKKOMI
 #define MINK_KOMI 5.5		/* default value for komi */
+#endif
 
 #define FIXEDHCAP 1             /* If you want fixed handicaps by default */
 

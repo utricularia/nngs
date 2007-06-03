@@ -3256,7 +3256,7 @@ int create_new_gomatch(int wp, int bp,
     break;
   }
 
-  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g0].komi = conffile.default_komi;
+  if (!strcmp(parray[wp].srank, parray[bp].srank)) garray[g0].komi = conffile.default_komi19;
   if (rules == RULES_ING) garray[g0].komi = 8.0;
   if (start_time == 0) {
     garray[g0].ts.time_type = TIMETYPE_UNTIMED;
@@ -4789,19 +4789,35 @@ int player_notify(int p, char *note1, char *note2)
  * automatch.c               by Erik Ekholm                Created 960305 *
  **************************************************************************/
 
+/* NOTE Avk: This will go away.
+** automatch seemed to #define it's own constants for KOMIxx
+** Instead of #defining them, I try to hook them to conffile.default_komiXX.
+*/
 
 /* KOMIn is the standard komi for an even game on an nxn board. The value of
    one stone is twice as much. */
 
-#define KOMI19 5.5  /*standard komi = 5.5 => one stone is worth 11 points
-		      From this follows that each komi point corresponds
-		      to a 9 (100/11) point rating difference */
+#ifdef DEFAULT_KOMI19
+#define KOMI19 (conffile.default_komi19)
+#else
+#define KOMI19 5.5 /*standard komi = 5.5 => one stone is worth 11 points
+                     From this follows that each komi point corresponds
+                     to a 9 (100/11) point rating difference */
+#endif
 
-#define KOMI13 8.5  /* From the Go FAQ. (Note BTW that the table in the FAQ
-		       isn't quite consistent; the gap between kyu diff.
-		       3 and 4 is much larger than between 2 and 3.) */
+#ifdef DEFAULT_KOMI13
+#define KOMI13 (conffile.default_komi13)
+#else
+#define KOMI13 8.5 /* From the Go FAQ. (Note BTW that the table in the FAQ
+                     isn't quite consistent; the gap between kyu diff.
+                     3 and 4 is much larger than between 2 and 3.) */
+#endif
 
-#define KOMI9  5.5  /* 5.5 according to some pro-pro games. */
+#ifdef DEFAULT_KOMI9
+#define KOMI9 (conffile.default_komi9)
+#else
+#define KOMI9  5.5 /* 5.5 according to some pro-pro games. */
+#endif
 
 
 
@@ -4843,8 +4859,9 @@ void AutoMatch(int ratingdiff, int boardsize, int *stones, float *komi)
 {
   int units;  /* help variable, number of total komi units. */
 
-  switch ( boardsize ) {
+  switch (boardsize) {
 
+  default:
   case 19:
     units = (ratingdiff + OFFSET19) / (STONEPTS19 / (KOMI19 * 2.0));
     *stones = 1 + (units + THRESHOLD19) / (KOMI19 * 2);
@@ -4892,6 +4909,7 @@ static int index_lookup(char* found , char * find)
       continue;
     }
     if (!strncmp(found, find, namelen)) break;
+    rights= -1;
   }
   fclose(fp);
   return rights;

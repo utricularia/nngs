@@ -91,7 +91,8 @@ struct confstuff {
   char want_mail_child;
 	/* Misc stuff */
   char *def_prompt;
-  float default_komi;
+  float default_komi19;
+  float default_komi13;
   float default_komi9;
   unsigned mode_for_dir;
   int game_save_frequency;
@@ -105,7 +106,7 @@ struct confstuff {
   };
 
 #if CONFFILE_C
-struct confstuff conffile = {NULL,};
+struct confstuff conffile = {NULL,NULL,NULL};
 #else
 extern struct confstuff conffile;
 #endif

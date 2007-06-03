@@ -910,12 +910,12 @@ skip_fysical_read:
 #else
   parray[p].rating = 0;
   strcpy(parray[p].srank,parray[p].ranked);
-  if (strcmp(parray[p].srank, "NR")) {
+  if (!strcmp(parray[p].srank, "NR")) parray[p].orating = 0;
+  else {
     sscanf(parray[p].srank, "%u%c", &rat, &trnk);
     rat = parse_rank(rat, trnk);
     parray[p].orating = rat * 100;
-  } else
-    parray[p].orating = 0;
+  }
 #endif /* WANT_NNGSRATED */
   return 0;
 }

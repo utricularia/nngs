@@ -649,9 +649,12 @@ static int got_attr_value(struct game *gp, char *attr, char *value, FILE * fp, c
 	Logit("Bad komi value \"%s\"", value);
       else
 	Logit("Bad komi value \"%s\" --> %g", value, gp->komi);
-      gp->komi = gp->size == 9 
-        ? conffile.default_komi9
-        : conffile.default_komi;
+      switch(gp->size) {
+        case 9 : gp->komi = conffile.default_komi9; break;
+        case 13 : gp->komi = conffile.default_komi13; break;
+        default:
+        case 19 : gp->komi = conffile.default_komi19; break;
+      }
     }
   } else if (!strcmp(attr, "movesrnext:")) {  /* value meaningless */
     /* PEM: Get the true onMove. */

@@ -40,7 +40,9 @@
 #define LADDERSIZE 500 
 
 #define DEFAULT_PROMPT "#> "
-#define DEFAULT_KOMI "5.5"
+#define DEFAULT_KOMI19 "6.5"
+#define DEFAULT_KOMI13 "8.5"
+#define DEFAULT_KOMI9 "5.5"
 
 #define LINESIZE        80
 #define NUMLINES        24 /* Things break if larger, run out of screen space,
