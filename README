@@ -22,7 +22,8 @@ After reading the configfile, nngssrv will write the file 'written.cnf'
 into the current directory. You can use this to verify the values that
 the program actually uses. The format is the same.
 
-NNGS needs mlrate. Unfortunately, the original (pem's) mlrate
+NNGS needs mlrate, even if you don't use it.
+Unfortunately, the original (pem's) mlrate
 is not autoconfd/automaked. If you can't get your hands on an
 AC/AM's copy, you will need to move all of it's
 source, into a src/ subdirectory, and you may need some
@@ -51,6 +52,8 @@ information on how to set up the ratings system to work properly.
 The 'make install' command installs the server and all basic
 help files necessary for its functionality.
 All files needed by the server are installed under the --prefix.
+The "/whatever/dir/you/want" -directory must of course be writeable by
+(the user that runs) the NNGS binary.
 Once running, the server will put all of it's data (players,games,logfile)
 under this prefix, too.
 Some of these files may grow over time, as the server runs. You might need to
@@ -92,6 +95,7 @@ If you have already (a previous version of) NNGS:
 >> DATA FILES
 
 Data and logfiles will be in $prefix/share/nngssrv/*
+You can change this, but you'll have to change it in the conffile, too.
 
 Several files need to be installed manually to avoid damage
 when you update an existing server.
@@ -146,8 +150,8 @@ have to do some manual tuning.
    part of the /lib/*so, and maybe more)
    If you configure the mailer to be SMTP (by setting mail_program=SMTP),
    a built-in mailer is used. This will only need gethostbyname(), which
-   relies on /etc/hosts and/or /etc/resolv.conf. These need to be present
-   in the jail, or mail won't work.
+   relies on /etc/hosts and/or /etc/resolv.conf. These files need to be
+   present in the jail, or mail won't work.
 3) For safety: if anything fails (chroot, setuid, ...) the program will
    refuse to work and will exit() before doing anything useful.
 4) Maybe (?depending on platform?) other files (/dev/zero?) are needed.
@@ -164,8 +168,12 @@ When you install NNGS for the first time, you'll need to manually
 create a user with 'admin' - rights. This can be ANY valid name.
 Once there is an admin-account, it can be used to grant admin-rights
 to other users.
+
 NOTE: the admin-status is stored in TWO places: the userfile proper,
 and a lists/admin - file. You'l need both.
+NOTE2: a running NNGS-server may have most of it's files cached.
+editing the underlying files may not have the desired effects.
+To be safe: stop the server before editing the files.
 
 There already is a user 'admin' in the lists/admins.default -file
 , you'll need to
@@ -214,6 +222,7 @@ Major changes since the beginning of this project:
 - added some caching, to reduce reading/writing of playerdb to/from disk.
 - changed clock resolution for games to 0.1 sec.
 - moved configuration into .cnf file.
+- removed (most of) the compiled-in filenames.
 - added chroot() support.
 - experimental UDP port, to be used by a PHP/web interface.
 

@@ -1044,7 +1044,8 @@ int process_heartbeat(int *fdp)
 	    int orat;
 
             if (!strcmp(parray[p].ranked, "NR")) continue;
-            if (!parray[p].slotstat.is_registered) {
+            if (parray[p].slotstat.is_online
+              && !parray[p].slotstat.is_registered) {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_PLEASE_SEE_qHELP_REGISTERqn);
 	      continue;
             }
