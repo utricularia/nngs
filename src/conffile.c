@@ -78,7 +78,7 @@ struct confmatch {
 	** always filled with the initial value.
 	** CHPATH is read from file, default wil be applied,
 	** and chroot will trim it's prefix off.
-	** NAME is read from file, default wil be applied,
+	** NAME is read from file, default will be applied,
 	** but chroot will *not* alter it.
 	** MESSAGE just puts a comment in the output-config file
 	** NUMBER is a decimal integer. Not altered by program.
@@ -88,7 +88,7 @@ struct confmatch {
 	** -1 := False, > 0 := True; 0 := missing/NULL
 	** REAL is a floating-point number (for Komi)
 	** NB: The last argument is always a string, because it is processed
-	** bij the same logic as the textfile.
+	** by the same logic as the textfile.
 	*/
 #define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
@@ -202,8 +202,11 @@ MESSAGE("Times in seconds. 0 for no-limit.")
 MESSAGE("")
 NUMBER("game_save_frequency", &conffile.game_save_frequency, "5")
 NUMBER("game_save_treshold", &conffile.game_save_treshold, "3")
+TIME("idle_check_interval", &conffile.idle_check_interval, "60")
 TIME("max_idle", &conffile.max_idle, "1800")
 TIME("max_login_idle", &conffile.max_login_idle, "120")
+TIME("rating_read_interval", &conffile.rating_read_interval, "120")
+TIME("ladder_sift_interval", &conffile.ladder_sift_interval, "21600")
 MESSAGE("")
 MESSAGE("Debugging flags. Can cause a lot of output to the logfile.")
 MESSAGE("Higher levels will cause more output. Set them to zero to disable.")

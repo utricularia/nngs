@@ -97,8 +97,11 @@ struct confstuff {
   unsigned mode_for_dir;
   int game_save_frequency;
   int game_save_treshold;
+  unsigned idle_check_interval;
   unsigned max_idle;
   unsigned max_login_idle;
+  unsigned rating_read_interval;
+  unsigned ladder_sift_interval;
 	/* Debugging stuff */
   int debug_general;
   int debug_parray;

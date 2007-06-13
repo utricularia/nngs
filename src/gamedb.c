@@ -821,20 +821,20 @@ int game_save_complete(int g0, FILE *fp, twodstring statstring)
     fprintf(fp, ";");
     n = 0;
     for (x = 0; x < garray[g0].minkg->height; x++)
-      for (y = 0; y < garray[g0].minkg->width; y++)
-        if (statstring[x][y] == '5') {
-          if (!(n%18)) fprintf(fp, "\n");
-          if (!n++) fprintf(fp, "TB");
-          fprintf(fp, "[%c%c]", 'a' + x, 'a' + y);
+      for (y = 0; y < garray[g0].minkg->width; y++) {
+        if (statstring[x][y] != '5') continue;
+        if (!(n%18)) fprintf(fp, "\n");
+        if (!n++) fprintf(fp, "TB");
+        fprintf(fp, "[%c%c]", 'a' + x, 'a' + y);
         }
 
     n = 0;
     for (x = 0; x < garray[g0].minkg->height; x++)
-      for (y = 0; y < garray[g0].minkg->width; y++)
-        if (statstring[x][y] == '4') {
-          if (!(n%18)) fprintf(fp, "\n");
-          if (!n++) fprintf(fp, "TW");
-          fprintf(fp, "[%c%c]", 'a' + x, 'a' + y);
+      for (y = 0; y < garray[g0].minkg->width; y++) {
+        if (statstring[x][y] != '4') continue;
+        if (!(n%18)) fprintf(fp, "\n");
+        if (!n++) fprintf(fp, "TW");
+        fprintf(fp, "[%c%c]", 'a' + x, 'a' + y);
         }
     fprintf(fp, "\n");
   }
@@ -1037,8 +1037,10 @@ void game_write_complete(int g0, twodstring statstring)
     rdbm_player_t rp;
     char wrank[8], brank[8];
     struct tm *tp = localtime((time_t *)&now);
+    char fname[MAX_FILENAME_SIZE];
 
-    if (!(rdb = rdbm_open(NRATINGS_FILE,0)))
+    xyfilename(fname, FILENAME_NRATINGS );
+    if (!(rdb = rdbm_open(fname,0)))
     {
       strcpy(wrank, "-");
       strcpy(brank, "-");

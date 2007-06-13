@@ -881,8 +881,10 @@ skip_fysical_read:
     parray[p].orating = 1;
   } else {
     rdbm_t rdb;
+    char fname[MAX_FILENAME_SIZE];
 
-    if ((rdb = rdbm_open(NRATINGS_FILE,0))) {
+    xyfilename(fname, FILENAME_NRATINGS );
+    if ((rdb = rdbm_open(fname,0))) {
       rdbm_player_t rp;
 
       if (rdbm_fetch(rdb, parray[p].pname, &rp)) {

@@ -2963,8 +2963,10 @@ get_nrating(int p, double *ratp)
 #if WANT_NNGSRATED
   rdbm_t db;
   rdbm_player_t rp;
+  char fname[MAX_FILENAME_SIZE];
 
-  if (!(db = rdbm_open(NRATINGS_FILE,0)))
+  xyfilename(fname, FILENAME_NRATINGS );
+  if (!(db = rdbm_open(fname,0)))
     return 0;
   if (rdbm_fetch(db, parray[p].pname, &rp))
   {
@@ -4400,6 +4402,7 @@ int com_nrating(int p, struct parameter * param)
   rdbm_t db;
   rdbm_player_t rp;
   char ratstr[32];
+  char fname[MAX_FILENAME_SIZE];
 
   strcpy(ratstr, "No Confidence");
 
@@ -4408,7 +4411,8 @@ int com_nrating(int p, struct parameter * param)
   else
     do_copy(name, param[0].val.word, sizeof name);
 
-  if (!(db = rdbm_open(NRATINGS_FILE,0)))
+  xyfilename(fname, FILENAME_NRATINGS );
+  if (!(db = rdbm_open(fname,0)))
   {
     pcn_out(p, CODE_ERROR, FORMAT_AN_UNLUCKY_CHANCE_OCCUREDn);
     return COM_OK;

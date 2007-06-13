@@ -977,8 +977,9 @@ int process_heartbeat(int *fdp)
 #if WANT_NNGSRATED
   static int resu = 0;
   static int last_results = 0;
-  static struct stat ratingsbuf1, ratingsbuf2;
+  static struct stat old_stat, new_stat;
   rdbm_t rdb;
+  char fname[MAX_FILENAME_SIZE];
 #endif /* WANT_NNGSRATED */
 
   game_update_times();
@@ -989,13 +990,13 @@ int process_heartbeat(int *fdp)
     return COM_OK;
 
     /* Check for timed out connections */
-  if (last_idle_check > 60) {  /* Now only check every minute for idle */
+  if (last_idle_check > conffile.idle_check_interval) {
     for (p = 0; p < parray_top; p++) {
       if (!parray[p].slotstat.is_inuse) continue;
       if (!parray[p].slotstat.is_connected) continue;
       if (!parray[p].slotstat.is_online 
           && conffile.max_login_idle
-          && (player_idle(p) > conffile.max_login_idle))    { 
+          && player_idle(p) > conffile.max_login_idle)    { 
         *fdp = parray[p].session.socket;
         return COM_LOGOUT;
       }
@@ -1009,11 +1010,11 @@ int process_heartbeat(int *fdp)
   } else {
     last_idle_check++;
   }
-  if (last_ratings == 0) {
-    last_ratings = (now - (5 * 60 * 60)) + 120;	/* Do one in 2 minutes */
+  if (last_ratings == 0) { /* Do one 2 minutes after startup */
+    last_ratings = now - conffile.ladder_sift_interval + 120;
   }
   else {
-    if (last_ratings + 6 * 60 * 60 < now) { /* Every 6 hours */
+    if (last_ratings + conffile.ladder_sift_interval < now) { /* Every 6 hours */
       last_ratings = now;
 #if WANT_LADDERSIFT
       Logit("Sifting 19x19 ladder");
@@ -1026,23 +1027,22 @@ int process_heartbeat(int *fdp)
 #if WANT_NNGSRATED
   if (!last_results) {
     last_results = now;
-    stat(NRATINGS_FILE, &ratingsbuf1);  /* init the stat buf */
-    stat(NRATINGS_FILE, &ratingsbuf2);
+    xystat(&new_stat, FILENAME_NRATINGS);
+    old_stat = new_stat;
   } else {
-    if (last_results + (60 * 2) < now) { /* every 2 minutes */
+    if (last_results + conffile.ratings_read_interval < now) {
       last_results = now;
-      stat(NRATINGS_FILE, &ratingsbuf2);
-      resu = ratingsbuf2.st_mtime - ratingsbuf1.st_mtime;
+      xystat(&new_stat, FILENAME_NRATINGS);
+      resu = new_stat.st_mtime - old_stat.st_mtime;
       if (resu > 0) {
-        stat(NRATINGS_FILE, &ratingsbuf1);  /* re-init the stat buf */
-        stat(NRATINGS_FILE, &ratingsbuf2);  /* re-init the stat buf */
+        old_stat = new_stat;
         Logit("Time to re-read the ratings file.  :)");
-        if ((rdb = rdbm_open(NRATINGS_FILE, 0))) {
+        xyfilename(fname, FILENAME_NRATINGS );
+        if ((rdb = rdbm_open(fname, 0))) {
           for (p = 0; p < parray_top; p++) {
             rdbm_player_t rp;
 	    int orat;
 
-            if (!parray[p].slotstat.is_online)     continue;
             if (!strcmp(parray[p].ranked, "NR")) continue;
             if (!parray[p].slotstat.is_registered) {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_PLEASE_SEE_qHELP_REGISTERqn);
@@ -1055,6 +1055,8 @@ int process_heartbeat(int *fdp)
 	    orat = parray[p].rating;
 	    parray[p].rating = parray[p].orating = (int)(rp.rating * 100);
 	    parray[p].numgam = rp.wins + rp.losses;
+
+            if (!parray[p].slotstat.is_online)     continue;
 	    if (orat == parray[p].rating) {
 	      pcn_out_prompt(p, CODE_INFO, FORMAT_RATINGS_UPDATE_YOU_ARE_STILL_ss_d_d_RATED_GAMES_n,
 	      parray[p].srank,
