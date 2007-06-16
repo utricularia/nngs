@@ -77,33 +77,51 @@ If you have already (a previous version of) NNGS:
 
 * Possibly, some new items will be recognised in the conffile.
   To track these:
-  1) put your conffile in a safe place
-  2) compile&install the new NNGS
-  3) start the new NNGS from a (current) directory, where *no*
+  1) put (a copy of) your conffile in a safe place
+  2) compile the new NNGS
+  3) shutdown the server
+  4) install the new NNGS
+  5) start the new NNGS from a (current) directory, where *no*
      nngs.cnf file is present.
      (this will cause NNGS to *create* a nngs.cnf -file)
-  4) Check the differences between the old//new configfile.
-  5) edit your configfile.
+  6) Check the differences between the old//new configfile.
+  7) edit your configfile.
      (probably just the old one, with a few lines inserted/added)
-  6) of course, you'll have to stop and restart NNGS to put
+  8) of course, you'll have to stop and restart NNGS to put
      the changes in effect.
-  7) check the 'written.cnf' file, to see the config that the
+  9) check the 'written.cnf' file, to see the config that the
      server actually uses ;-)
-  8) If the new server cannot find the player-files, it probably
+  10) If the new server cannot find the player-files, it probably
      expects them somewhere else: check the pathnames!
 
 >> DATA FILES
 
-Data and logfiles will be in $prefix/share/nngssrv/*
-You can change this, but you'll have to change it in the conffile, too.
+Prior to nngs-1.1.22, Data and logfiles lived in $prefix/share/nngssrv/*
+In NNGS-1.1.22, this has been changed to $prefix/nngssrv/*
+When upgrading from pre-1.1.22 installations, you'll have to manually
+move your existing files.
+
+The easyest way to do this is:
+1) shutdown server
+2) cd $prefix/share
+3) mv * ../
+4) cd ../
+5) rmdir share
+6) edit your conffile, removing all instances of 'share/'
+
+This should be done before the install NNGS' step (item#4 above)
+(If you are using alternate locations, you probably know what to do :)
+
+You can change these locations, but you'll have to reflect the change
+your conffile.
 
 Several files need to be installed manually to avoid damage
 when you update an existing server.
 
-In $prefix/share/nngssrv/ladder you will find two example ladder
+In $prefix/nngssrv/ladder you will find two example ladder
 files.  Copy them (or remame them) to remove the '.example'
 
-In $prefix/share/nngssrv/messages you will find default message
+In $prefix/nngssrv/messages you will find default message
 files for login, logout, etc.  Rename them to remove the 'default.'
 part to activate them.
 
@@ -210,7 +228,7 @@ Major changes since the beginning of this project:
 - clean source tree
 ... all help files, admin files etc. included
 ... a 'make install' will install a working server
-... all data dirs organized into one place ($prefix/share/nngssrv)
+... all data dirs organized into one place ($prefix/nngssrv)
 ... all game and player dirs created on install
 - nngs local malloc() and salloc() removed
 - mlrate cleaned up

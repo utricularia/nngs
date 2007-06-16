@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CPP EGREP RANLIB ac_ct_RANLIB GCC_ONLY NNGS_SOME_WARNINGS NNGS_ALL_WARNINGS NO_WARNINGS MAILPROGRAM DMALLOCLIB LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CPP EGREP RANLIB ac_ct_RANLIB GCC_ONLY NNGS_SOME_WARNINGS NNGS_ALL_WARNINGS NO_WARNINGS MAILPROGRAM DMALLOCLIB LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1312,7 +1312,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
           ac_config_headers="$ac_config_headers config.h"
 
 
-am__api_version="1.8"
+am__api_version="1.9"
 ac_aux_dir=
 for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
   if test -f $ac_dir/install-sh; then
@@ -1489,13 +1489,21 @@ echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
 if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
-  # Keeping the `.' argument allows $(mkdir_p) to be used without
-  # argument.  Indeed, we sometimes output rules like
+  # We used to keeping the `.' as first argument, in order to
+  # allow $(mkdir_p) to be used without argument.  As in
   #   $(mkdir_p) $(somedir)
-  # where $(somedir) is conditionally defined.
-  # (`test -n '$(somedir)' && $(mkdir_p) $(somedir)' is a more
-  # expensive solution, as it forces Make to start a sub-shell.)
-  mkdir_p='mkdir -p -- .'
+  # where $(somedir) is conditionally defined.  However this is wrong
+  # for two reasons:
+  #  1. if the package is installed by a user who cannot write `.'
+  #     make install will fail,
+  #  2. the above comment should most certainly read
+  #     $(mkdir_p) $(DESTDIR)$(somedir)
+  #     so it does not work when $(somedir) is undefined and
+  #     $(DESTDIR) is not.
+  #  To support the latter case, we have to write
+  #     test -z "$(somedir)" || $(mkdir_p) $(DESTDIR)$(somedir),
+  #  so the `.' trick is pointless.
+  mkdir_p='mkdir -p --'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
   # recognize any option.  It will interpret all options as
@@ -1639,9 +1647,6 @@ AUTOHEADER=${AUTOHEADER-"${am_missing_run}autoheader"}
 
 MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 
-
-AMTAR=${AMTAR-"${am_missing_run}tar"}
-
 install_sh=${install_sh-"$am_aux_dir/install-sh"}
 
 # Installed binaries are usually stripped using `strip' when the user
@@ -1734,6 +1739,13 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 
 # We need awk for the "check" target.  The system "awk" is bad on
 # some platforms.
+# Always define AMTAR for backward compatibility.
+
+AMTAR=${AMTAR-"${am_missing_run}tar"}
+
+am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
+
+
 
 
 
@@ -2834,9 +2846,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CC_dependencies_compiler_type=$depmode
         break
       fi
@@ -3293,9 +3310,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CXX_dependencies_compiler_type=$depmode
         break
       fi
@@ -5818,9 +5840,7 @@ fi
 
 
 
-
-
-for ac_func in setlinebuf alarm vsnprintf snprintf gettimeofday usleep \
+for ac_func in vsnprintf snprintf gettimeofday usleep \
  random popen pclose ftruncate
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -6004,127 +6024,127 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define AHELP_DIR "$prefix/share/${PACKAGE}/ahelp"
+#define AHELP_DIR "$prefix/${PACKAGE}/ahelp"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define HELP_DIR "$prefix/share/${PACKAGE}/help"
+#define HELP_DIR "$prefix/${PACKAGE}/help"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define INFO_DIR "$prefix/share/${PACKAGE}/info"
+#define INFO_DIR "$prefix/${PACKAGE}/info"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define MESSAGE_DIR "$prefix/share/${PACKAGE}/messages"
+#define MESSAGE_DIR "$prefix/${PACKAGE}/messages"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define PLAYER_DIR "$prefix/share/${PACKAGE}/players"
+#define PLAYER_DIR "$prefix/${PACKAGE}/players"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define STATS_DIR "$prefix/share/${PACKAGE}/stats"
+#define STATS_DIR "$prefix/${PACKAGE}/stats"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define SPOOL_DIR "$prefix/share/${PACKAGE}/spool"
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define GAME_DIR "$prefix/share/${PACKAGE}/games"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define CGAME_DIR "$prefix/share/${PACKAGE}/cgames"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define LIST_DIR "$prefix/share/${PACKAGE}/lists"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define NEWS_DIR "$prefix/share/${PACKAGE}/news"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define PROBLEM_DIR "$prefix/share/${PACKAGE}/problems"
+#define SPOOL_DIR "$prefix/${PACKAGE}/spool"
 _ACEOF
 
 
 
 cat >>confdefs.h <<_ACEOF
-#define LADDER9_FILE "$prefix/share/${PACKAGE}/ladder/ladder9"
+#define GAME_DIR "$prefix/${PACKAGE}/games"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define LADDER19_FILE "$prefix/share/${PACKAGE}/ladder/ladder19"
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define EMOTES_FILE "$prefix/share/${PACKAGE}/emotestr"
+#define CGAME_DIR "$prefix/${PACKAGE}/cgames"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define INTERGO_FILE "$prefix/share/${PACKAGE}/intergo/intergo"
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define RATINGS_FILE "$prefix/share/${PACKAGE}/results-rated"
+#define LIST_DIR "$prefix/${PACKAGE}/lists"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define NRATINGS_FILE "$prefix/share/${PACKAGE}/ratdb"
+#define NEWS_DIR "$prefix/${PACKAGE}/news"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define RESULTS_FILE "$prefix/share/${PACKAGE}/results"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define NRESULTS_FILE "$prefix/share/${PACKAGE}/nresults"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define FIND_FILE "$prefix/share/${PACKAGE}/find.out"
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define NOTE_FILE "$prefix/share/${PACKAGE}/note"
+#define PROBLEM_DIR "$prefix/${PACKAGE}/problems"
 _ACEOF
 
 
 
 cat >>confdefs.h <<_ACEOF
-#define LOG_FILE "$prefix/share/${PACKAGE}/stats/logfile"
+#define LADDER9_FILE "$prefix/${PACKAGE}/ladder/ladder9"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define LOGONS_FILE "$prefix/share/${PACKAGE}/stats/logons"
+#define LADDER19_FILE "$prefix/${PACKAGE}/ladder/ladder19"
+_ACEOF
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define EMOTES_FILE "$prefix/${PACKAGE}/emotestr"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define INTERGO_FILE "$prefix/${PACKAGE}/intergo/intergo"
+_ACEOF
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define RATINGS_FILE "$prefix/${PACKAGE}/results-rated"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define NRATINGS_FILE "$prefix/${PACKAGE}/ratdb"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define RESULTS_FILE "$prefix/${PACKAGE}/results"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define NRESULTS_FILE "$prefix/${PACKAGE}/nresults"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define FIND_FILE "$prefix/${PACKAGE}/find.out"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define NOTE_FILE "$prefix/${PACKAGE}/note"
+_ACEOF
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define LOG_FILE "$prefix/${PACKAGE}/stats/logfile"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define LOGONS_FILE "$prefix/${PACKAGE}/stats/logons"
 _ACEOF
 
 
@@ -6855,7 +6875,6 @@ s,@AUTOCONF@,$AUTOCONF,;t t
 s,@AUTOMAKE@,$AUTOMAKE,;t t
 s,@AUTOHEADER@,$AUTOHEADER,;t t
 s,@MAKEINFO@,$MAKEINFO,;t t
-s,@AMTAR@,$AMTAR,;t t
 s,@install_sh@,$install_sh,;t t
 s,@STRIP@,$STRIP,;t t
 s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
@@ -6864,6 +6883,9 @@ s,@mkdir_p@,$mkdir_p,;t t
 s,@AWK@,$AWK,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
 s,@am__leading_dot@,$am__leading_dot,;t t
+s,@AMTAR@,$AMTAR,;t t
+s,@am__tar@,$am__tar,;t t
+s,@am__untar@,$am__untar,;t t
 s,@MAINTAINER_MODE_TRUE@,$MAINTAINER_MODE_TRUE,;t t
 s,@MAINTAINER_MODE_FALSE@,$MAINTAINER_MODE_FALSE,;t t
 s,@MAINT@,$MAINT,;t t
@@ -7523,27 +7545,21 @@ echo X"$mf" |
   else
     continue
   fi
-  grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
-  # Extract the definition of DEP_FILES from the Makefile without
-  # running `make'.
+  # Extract the definition of DEPDIR, am__include, and am__quote
+  # from the Makefile without running `make'.
   DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
   test -z "$DEPDIR" && continue
+  am__include=`sed -n 's/^am__include = //p' < "$mf"`
+  test -z "am__include" && continue
+  am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
   # When using ansi2knr, U may be empty or an underscore; expand it
   U=`sed -n 's/^U = //p' < "$mf"`
-  test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
-  # We invoke sed twice because it is the simplest approach to
-  # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n '
-    /^DEP_FILES = .*\\\\$/ {
-      s/^DEP_FILES = //
-      :loop
-	s/\\\\$//
-	p
-	n
-	/\\\\$/ b loop
-      p
-    }
-    /^DEP_FILES = / s/^DEP_FILES = //p' < "$mf" | \
+  # Find all dependency output files, they are included files with
+  # $(DEPDIR) in their names.  We invoke sed twice because it is the
+  # simplest approach to changing $(DEPDIR) to its actual value in the
+  # expansion.
+  for file in `sed -n "
+    s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
        sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g' -e 's/\$U/'"$U"'/g'`; do
     # Make sure the directory exists.
     test -f "$dirpart/$file" && continue
