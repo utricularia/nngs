@@ -96,27 +96,13 @@ If you have already (a previous version of) NNGS:
 
 >> DATA FILES
 
-Prior to nngs-1.1.22, Data and logfiles lived in $prefix/share/nngssrv/*
-In NNGS-1.1.22, this has been changed to $prefix/nngssrv/*
-When upgrading from pre-1.1.22 installations, you'll have to manually
-move your existing files.
-
-The easyest way to do this is:
-1) shutdown server
-2) cd $prefix/share
-3) mv * ../
-4) cd ../
-5) rmdir share
-6) edit your conffile, removing all instances of 'share/'
-
-This should be done before the install NNGS' step (item#4 above)
-(If you are using alternate locations, you probably know what to do :)
+Data and logfiles lives in $prefix/share/nngssrv/*
 
 You can change these locations, but you'll have to reflect the change
-your conffile.
+your conffile. See below under alternate locations.
 
-Several files need to be installed manually to avoid damage
-when you update an existing server.
+To avoid damage to customised data, some are not installed automatically.
+You'll need to install them manually.
 
 In $prefix/nngssrv/ladder you will find two example ladder
 files.  Copy them (or remame them) to remove the '.example'

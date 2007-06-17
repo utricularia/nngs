@@ -4,9 +4,6 @@
 
 
 1.1.22 AvK 2007-02-24
-- removed the silly /share/ in the default installation paths.
-Note: You will need to do some manual file-juggling when installing over
-existing older versions.
 - added idle_check & ratings-intervals to configurable items.
 - changed rdbm_open()s to use xyfilename() instead of hard-coded pathnames.
 - idem xystat() for nratingsfile.
