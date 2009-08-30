@@ -77,32 +77,34 @@ static void player_zero(int p);
 static void player_write(int p);
 static void player_swapslots(int p0, int p1, int keepfds);
 
+static int got_player_attr_value(int p, char *attr, char *value, FILE * fp, char *fname);
+
 char * player_dumpslot(int p)
 {
-  size_t idx;
-  static char buff[100];
+  size_t pos;
   int diff;
+  char buff[100];
 
   if (p < 0) {
-    idx=sprintf(buff,"DumpSlot: negative slotnr :%d", p);
-    return buff;
+    pos = sprintf(buff,"DumpSlot: negative slotnr :%d", p);
+    return statstr_dup(buff, pos);
   }
 
   diff = (int) (parray[p].slotstat.timestamp - globclock.time);
 
-  idx = sprintf(buff,"[%d/%d]", p, parray[p].session.socket);
-  buff[idx++] = (parray[p].slotstat.is_inuse) ? 'u' : '-' ;
-  buff[idx++] = (parray[p].slotstat.is_valid) ? 'v' : '-' ;
-  buff[idx++] = (parray[p].slotstat.is_dirty) ? 'd' : '-' ;
-  buff[idx++] = (parray[p].slotstat.is_connected) ? 'c' : '-' ;
-  buff[idx++] = (parray[p].slotstat.is_online) ? 'o' : '-' ;
-  buff[idx++] = (parray[p].slotstat.is_registered) ? 'r' : '-' ;
-  idx += sprintf(buff+idx,"%u", (unsigned) parray[p].slotstat.fixcount);
-  idx += sprintf(buff+idx,"[%+d]", diff);
+  pos = sprintf(buff,"[%d/%d]", p, parray[p].session.socket);
+  buff[pos++] = (parray[p].slotstat.is_inuse) ? 'u' : '-' ;
+  buff[pos++] = (parray[p].slotstat.is_valid) ? 'v' : '-' ;
+  buff[pos++] = (parray[p].slotstat.is_dirty) ? 'd' : '-' ;
+  buff[pos++] = (parray[p].slotstat.is_connected) ? 'c' : '-' ;
+  buff[pos++] = (parray[p].slotstat.is_online) ? 'o' : '-' ;
+  buff[pos++] = (parray[p].slotstat.is_registered) ? 'r' : '-' ;
+  pos += sprintf(buff+pos,"%u", (unsigned) parray[p].slotstat.fixcount);
+  pos += sprintf(buff+pos,"[%+d]", diff);
 
-  idx += sprintf(buff+idx,"%s", parray[p].login);
-  idx += sprintf(buff+idx," %s", parray[p].pname);
-  return buff;
+  pos += sprintf(buff+pos,"%s", parray[p].login);
+  pos += sprintf(buff+pos," %s", parray[p].pname);
+  return statstr_dup(buff, pos);
 }
 
 void player_fix(int p)
@@ -483,7 +485,7 @@ static void player_free(int p)
   if (parray[p].alias_list) alias_free(parray[p].alias_list);
   parray[p].alias_list = NULL;
 
-  for (ch = 0; ch < MAX_NCHANNELS; ch++) channel_remove(ch, p);
+  for (ch = 0; ch < MAX_NCHANNEL; ch++) channel_remove(ch, p);
 
   return ;
 }
@@ -532,7 +534,7 @@ void player_disconnect(int p)
     if (parray[p1].forget.last_pzz == p) parray[p1].forget.last_pzz = -1;
     if (parray[p1].cruft.last_opponent == p) parray[p1].cruft.last_opponent = -1;
   }
-  for (p1 = 0; p1 < MAX_NCHANNELS; p1++) channel_remove(p1, p);
+  for (p1 = 0; p1 < MAX_NCHANNEL; p1++) channel_remove(p1, p);
 
   parray[p].slotstat.is_connected = 0;
   parray[p].slotstat.is_online = 0;
@@ -1033,7 +1035,7 @@ static int player_save_extended(int p)
   fprintf(fp, "silent_login: %d\n", parray[p].silent_login);
   fprintf(fp, "language: %d\n", parray[p].language);
 
-  for (i = 0; i < MAX_NCHANNELS; i++) {
+  for (i = 0; i < MAX_NCHANNEL; i++) {
     if (on_channel(i, p))
       fprintf(fp, "Channel: %d\n", i);
   }
@@ -1141,7 +1143,7 @@ static void player_write(int p)
   fprintf(fp, "silent_login: %d\n", parray[p].silent_login);
   fprintf(fp, "language: %d\n", parray[p].language);
 
-  for (i = 0; i < MAX_NCHANNELS; i++) {
+  for (i = 0; i < MAX_NCHANNEL; i++) {
     if (on_channel(i, p))
       fprintf(fp, "Channel: %d\n", i);
   }
@@ -1240,9 +1242,9 @@ int player_censored(int p, int p1)
 }
 
 
-int player_count()
+unsigned int player_count()
 {
-  int count = 0;
+  unsigned int count = 0;
   int i;
 
   for (i = 0; i < parray_top; i++) {
@@ -1255,7 +1257,7 @@ int player_count()
 }
 
 
-int player_idle(int p)
+unsigned int player_idle(int p)
 {
   if (parray[p].slotstat.is_online)
     return globclock.time - parray[p].forget.last_command_time;
@@ -1264,7 +1266,7 @@ int player_idle(int p)
 }
 
 
-int player_ontime(int p)
+unsigned int player_ontime(int p)
 {
   return globclock.time - parray[p].session.logon_time;
 }
@@ -1318,7 +1320,7 @@ time_t player_lastconnect(int p)
 {
   FILE *fp;
   int inout;
-  time_t thetime, registered, last = 0;
+  time_t thetime,registered,last = 0;
   char loginName[MAX_LOGIN_NAME+1];
   char ipstr[20];
   char buff[MAX_LINE_SIZE];
@@ -1326,16 +1328,14 @@ time_t player_lastconnect(int p)
   fp = xyfopen(FILENAME_PLAYER_cs_LOGONS, "r", parray[p].login);
   if (!fp)
     return 0;
-  inout=1; 
   while (fgets(buff,sizeof buff, fp)) {
-    if (inout == P_LOGIN)
-      last = thetime;
     if (sscanf(buff, "%d %s %d %d %s", &inout, loginName, (int*) &thetime, 
-                       &registered, ipstr) != 5) {
-      Logit( "Error in login info format. %s", filename() );
+                       (int*) &registered, ipstr) != 5) {
+      Logit( "Error in login info format. %s: %s", filename(), statstr_trim(buff, 0) );
       fclose(fp);
       return 0;
     }
+    if (inout == P_LOGIN) last = thetime;
   }
   fclose(fp);
   return last;
@@ -1344,23 +1344,21 @@ time_t player_lastconnect(int p)
 int player_lastdisconnect(int p)
 {
   FILE *fp;
-  int inout, thetime, registered;
-  int last = 0;
+  int inout;
+  time_t thetime, registered, last = 0;
   char ipstr[20];
   char loginName[MAX_LOGIN_NAME+1];
   char buff[MAX_LINE_SIZE];
 
   fp = xyfopen(FILENAME_PLAYER_cs_LOGONS, "r", parray[p].login);
-  if (!fp)
-    return 0;
+  if (!fp) return 0;
   while (fgets(buff,sizeof buff, fp)) {
-    if (sscanf(buff, "%d %s %d %d %s", &inout, loginName, &thetime, &registered, ipstr) != 5) {
-      Logit( "Error in login info format. %s", filename() );
+    if (sscanf(buff, "%d %s %d %d %s", &inout, loginName, (int*) &thetime, (int*) &registered, ipstr) != 5) {
+      Logit( "Error in login info format. %s: %s", filename(), statstr_trim(buff, 0) );
       fclose(fp);
       return 0;
     }
-    if (inout == P_LOGOUT)
-      last = thetime;
+    if (inout == P_LOGOUT) last = thetime;
   }
   fclose(fp);
   return last;

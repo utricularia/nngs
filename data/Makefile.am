@@ -18,17 +18,17 @@ mydata_DATA=emotestr
 install-data-hook:
 ## This is from autobook 14.3 install-data-local:
 install-data-hook:
-	@for m in ${MESSAGEDIRS}; do\
-	for f in $$m/[a-z]* ; do\
+	@for m in ${MESSAGEDIRS}; do \
+	for f in $$m/[a-z]* ; do \
 	  d="`echo $$f | sed -e 's,/[^/]*$$,,'`"; \
 	  ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d; \
 	  if test -f ${srcdir}/$$f; then p=${srcdir}/$$f; else p=$$f; fi; \
 	  ${INSTALL_DATA} $$p ${DESTDIR}${mydatadir}/$$f; \
 	  done \
 	done
-	@for d in ${WITHSUBTREEDIRS}; do\
+	@for d in ${WITHSUBTREEDIRS}; do \
 	  ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d; \
-	  for s in $(ONELETTER) ; do\
+	  for s in $(ONELETTER) ; do \
 	    ${mkinstalldirs} ${DESTDIR}${mydatadir}/$$d/$$s; \
 	  done \
 	done

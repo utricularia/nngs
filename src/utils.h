@@ -80,6 +80,11 @@ char *eatword(char *);
 char *eatwhite(char *);
 /* Returns the next word in a given string >eatwhite(eatword(foo))< */
 char *nextword(char *);
+/* Return pointers into a static pool. */
+char * statstr_new(size_t len);
+char * statstr_dup(const char *str, size_t len);
+char * statstr_trim(const char *str, size_t len);
+
 
 int mail_pst(int, const char *, char *);
 int mail_psn(int, const char *, const char *);
@@ -94,12 +99,6 @@ int pprintf_prompt(int, const char *, ...);
 int cpprintf_prompt(int, int, const char *, ...);
 int my_vsnprintf(char *, size_t, const char *, va_list);
 int my_snprintf(char *, size_t, const char *, ...);
-#if (!HAVE_VSNPRINTF)
-#define vsnprintf my_vsnprintf
-#endif
-#if (!HAVE_SNPRINTF)
-#define snprintf my_snprintf
-#endif
 int psend_raw_file(int p, const char *, const char *);
 int psend_file(int p, const char *, const char *);
 int pxysend_raw_file(int p, int num, ...);
@@ -132,7 +131,7 @@ char *time2str_file(const time_t *);
 /* unsigned read_tick(void); */
 char *tenth_str(unsigned int, int);
 int untenths(unsigned int);
-int do_copy(char *, const char *, int);
+size_t do_copy(char *, const char *, size_t);
 
 int truncate_file(char *, int);
 
@@ -141,7 +140,7 @@ const char *file_wplayer(const char *);
 const char *file_bplayer(const char *);
 
 int xyfilename(char *dst, int num, ...);
-FILE * xfopen(const char *,const char *);
+FILE * xfopen(const char *name,const char *mode);
 FILE * xyfopen(int num, const char *, ...);
 FILE * pxyfopen(int p, int num, const char *, ...);
 int xyrename(int num1, int num2, ...);
@@ -154,6 +153,7 @@ DIR * xyopendir(int num, ...);
 char * filename(void);
 int pcn_out(int, int, int, ...);
 int pcn_out_prompt(int p, int code, int num, ...);
+int fake_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap);
 
 char *dotQuad(unsigned int);
 int asc2ipaddr(char *str, unsigned *add);

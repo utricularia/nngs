@@ -167,6 +167,8 @@ static void game_zero(struct game *gp, int size)
   gp->black.pnum = -1;
   gp->white.old_pnum = -1;
   gp->black.old_pnum = -1;
+  gp->slotstat.is_playing = 0;
+  gp->slotstat.is_stored = 0;
   gp->gstatus = (size > 0) ? GSTATUS_NEW : GSTATUS_EMPTY;
   gp->rated = 1;
   /* gp->nocaps = 0; */
@@ -229,10 +231,10 @@ static void game_free(struct game *gp)
 {
   if (gp->gotype >= GAMETYPE_GO) {
     gp->gotype = 0;
-    if (gp->minkg) freeminkgame(gp->minkg); gp->minkg = NULL;
+    if (gp->minkg) {freeminkgame(gp->minkg); gp->minkg = NULL; }
     if (gp->mvinfos) freemvinfos(gp);
-    if (gp->gtitle) free(gp->gtitle); gp->gtitle = NULL;
-    if (gp->gevent) free(gp->gevent); gp->gevent = NULL;
+    if (gp->gtitle) {free(gp->gtitle); gp->gtitle = NULL; }
+    if (gp->gevent) {free(gp->gevent); gp->gevent = NULL; }
   }
 }
 
@@ -244,6 +246,8 @@ int game_remove(int g0)
   game_free(&garray[g0]);
   game_zero(&garray[g0],0);
   garray[g0].slotstat.in_use = 0;
+  garray[g0].slotstat.is_playing = 0;
+  garray[g0].slotstat.is_stored = 0;
   garray[g0].gstatus = GSTATUS_EMPTY; 
   return 0;
 }
@@ -510,6 +514,8 @@ int NewOldGame(int g0)
   RemoveOldGamesForPlayer(garray[g0].black.pnum);
   garray[g0].white.old_pnum = garray[g0].white.pnum;
   garray[g0].black.old_pnum = garray[g0].black.pnum;
+  garray[g0].slotstat.is_playing = 0;
+  garray[g0].slotstat.is_stored = 1;
   garray[g0].gstatus = GSTATUS_STORED;
   AddOldGame(g0);
   return 0;
@@ -723,6 +729,7 @@ int game_read(struct game *gp, int wp, int bp)
   }
 
   fclose(fp);
+  gp->slotstat.is_playing = 1;
   gp->gstatus = GSTATUS_ACTIVE;
   gp->starttick = globclock.tick;
   gp->lastMovetick = gp->starttick;
@@ -969,7 +976,7 @@ void game_write_complete(int g0, twodstring statstring)
 {
   char fdate[40];
   int wp, bp;
-  int now = globclock.time;
+  time_t now = globclock.time;
   char wname[sizeof parray[0].pname], bname[sizeof parray[0].pname];
   FILE *fp;
 
@@ -1070,11 +1077,14 @@ void game_write_complete(int g0, twodstring statstring)
 #endif /* WANT_NNGSRATED */
 }
 
-int game_count()
+unsigned int game_count()
 {
-  int g0, count = 0;
+  int g0;
+  unsigned count = 0;
 
   for (g0 = 0; g0 < garray_top; g0++) {
+    if (!garray[g0].slotstat.in_use ) continue;
+    if (!garray[g0].slotstat.is_playing) continue;
     if (garray[g0].gstatus != GSTATUS_ACTIVE) continue;
     count++;
   }

@@ -890,9 +890,9 @@ CHI(FORMAT_SORRY_YOU_MUST_REGISTER_TO_PLAY_ON_THE_LADDER_,"©êºp, ±z¥²¶·¨Ï¥Î¤wµù¥
 ENG(FORMAT_THERE_ARE_NO_PLAYERS_THAT_MATCH_YOUR_FLAG_SET_n,"There are no players that match your flag set.\n")
 CHI(FORMAT_THERE_ARE_NO_PLAYERS_THAT_MATCH_YOUR_FLAG_SET_n,"¨S¦³§ä¨ì¥ô¦ó¤@¦ì²Å¦X±z´M§ä±ø¥óªº¨Ï¥ÎªÌ.\n")
 
-#define FORMAT_d_PLAYERS_FOUND_n 204
-ENG(FORMAT_d_PLAYERS_FOUND_n,"%d players found.\n")
-CHI(FORMAT_d_PLAYERS_FOUND_n,"§ä¨ì %d ¦ì¨Ï¥ÎªÌ.\n")
+#define FORMAT_u_PLAYERS_FOUND_n 204
+ENG(FORMAT_u_PLAYERS_FOUND_n,"%u players found.\n")
+CHI(FORMAT_u_PLAYERS_FOUND_n,"§ä¨ì %u ¦ì¨Ï¥ÎªÌ.\n")
 
 #define FORMAT_POSITION_NAME_W_L_DATE_LAST_PLAYEDn 205
 ENG(FORMAT_POSITION_NAME_W_L_DATE_LAST_PLAYEDn,"Position      Name       W    L       Date last played\n")
@@ -1025,9 +1025,9 @@ ENG(FORMAT_MOVE_LIMIT_2_147_483_648n,"Move limit: 2,147,483,648\n")
 ENG(FORMAT_GAMES_PLAYED_SINCE_RESTART_dn,"Games played since restart: %d\n")
 CHI(FORMAT_GAMES_PLAYED_SINCE_RESTART_dn,"±Ò°Ê«á¶i¦æ¹L¤§§½¼Æ: %d\n")
 
-#define FORMAT_LOGINS_d_LOGOUTS_d_NEW_PLAYERS_dn 238
-ENG(FORMAT_LOGINS_d_LOGOUTS_d_NEW_PLAYERS_dn,"Logins: %d   Logouts: %d   New Players: %d\n")
-CHI(FORMAT_LOGINS_d_LOGOUTS_d_NEW_PLAYERS_dn,"¶i¯¸¤H¦¸: %d   Â÷¯¸¤H¦¸: %d   ·sµù¥U¨Ï¥ÎªÌ: %d\n")
+#define FORMAT_LOGINS_u_LOGOUTS_u_NEW_PLAYERS_un 238
+ENG(FORMAT_LOGINS_u_LOGOUTS_u_NEW_PLAYERS_un,"Logins: %d   Logouts: %d   New Players: %d\n")
+CHI(FORMAT_LOGINS_u_LOGOUTS_u_NEW_PLAYERS_un,"¶i¯¸¤H¦¸: %d   Â÷¯¸¤H¦¸: %d   ·sµù¥U¨Ï¥ÎªÌ: %d\n")
 
 #define FORMAT_d_I_W_H_F_d_Cn 239
 CHI(FORMAT_d_I_W_H_F_d_Cn,"½u¤W¦³ %d ¦ì¨Ï¥ÎªÌ, ¤W¦¸±Ò°Ê¦Ü¤µ³Ì¦h´¿¹F %d ¦ì¤W½u¡C\n")
@@ -1522,8 +1522,8 @@ ENG(FORMAT_MATCH_dXd_IN_d_MINUTES_REQUESTED_WITH_s_AS_s_n,"Match [%dx%d] in %d m
 #define FORMAT_nn 370
 ENG(FORMAT_nn,"\n\n")
 
-#define FORMAT_d_PLAYERS_d_TOTAL_GAMES_ 371
-ENG(FORMAT_d_PLAYERS_d_TOTAL_GAMES_,"                ******** %3d Players %d Total Games ********")
+#define FORMAT_u_PLAYERS_u_TOTAL_GAMES_ 371
+ENG(FORMAT_u_PLAYERS_u_TOTAL_GAMES_,"                ******** %3d Players %d Total Games ********")
 
 #define FORMAT_AUTOMATIC_SERVER_SHUTDOWN_n 372
 ENG(FORMAT_AUTOMATIC_SERVER_SHUTDOWN_n,"    **** Automatic Server shutdown. ****\n")
@@ -1600,11 +1600,11 @@ ENG(FORMAT_d_MINUTES_WERE_ADDED_TO_YOUR_OPPONENTS_CLOCK,"%d minutes were added t
 #define FORMAT_d_OFFERS_WITHDRAWN 396
 ENG(FORMAT_d_OFFERS_WITHDRAWN,"%d offers withdrawn")
 
-#define FORMAT_d_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n 397
-ENG(FORMAT_d_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n,"%d players in  9x9  ladder.  Player '%s' is #1!\n")
+#define FORMAT_u_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n 397
+ENG(FORMAT_u_PLAYERS_IN_9X9_LADDER_PLAYER_s_IS_1_n,"%u players in  9x9  ladder.  Player '%s' is #1!\n")
 
-#define FORMAT_d_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n 398
-ENG(FORMAT_d_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n,"%d players in 19x19 ladder.  Player '%s' is #1!\n")
+#define FORMAT_u_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n 398
+ENG(FORMAT_u_PLAYERS_IN_19X19_LADDER_PLAYER_s_IS_1_n,"%u players in 19x19 ladder.  Player '%s' is #1!\n")
 
 #define FORMAT_d_s_sn 399
 ENG(FORMAT_d_s_sn,"%d:%s: %s\n")
@@ -2487,11 +2487,11 @@ ENG(FORMAT_THEN_TYPE_qPAIR_q_WHERE_IS_s_S_GAME_NUMBER_n,"Then type \"pair #\" wh
 #define FORMAT_THEN_USE_RAISEDEAD_OLDNAME_NEWNAME_ 702
 ENG(FORMAT_THEN_USE_RAISEDEAD_OLDNAME_NEWNAME_,"Then use raisedead [oldname] [newname].")
 
-#define FORMAT_THERE_ARE_CURRENTLY_d_GAMES_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n 703
-ENG(FORMAT_THERE_ARE_CURRENTLY_d_GAMES_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n,"There are currently %d games, with a high of %d since last restart.\n")
+#define FORMAT_THERE_ARE_CURRENTLY_u_GAMES_WITH_A_HIGH_OF_u_SINCE_LAST_RESTART_n 703
+ENG(FORMAT_THERE_ARE_CURRENTLY_u_GAMES_WITH_A_HIGH_OF_u_SINCE_LAST_RESTART_n,"There are currently %u games, with a high of %u since last restart.\n")
 
-#define FORMAT_THERE_ARE_CURRENTLY_d_PLAYERS_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n 704
-ENG(FORMAT_THERE_ARE_CURRENTLY_d_PLAYERS_WITH_A_HIGH_OF_d_SINCE_LAST_RESTART_n,"There are currently %d players, with a high of %d since last restart.\n")
+#define FORMAT_THERE_ARE_CURRENTLY_u_PLAYERS_WITH_A_HIGH_OF_u_SINCE_LAST_RESTART_n 704
+ENG(FORMAT_THERE_ARE_CURRENTLY_u_PLAYERS_WITH_A_HIGH_OF_u_SINCE_LAST_RESTART_n,"There are currently %u players, with a high of %u since last restart.\n")
 
 #define FORMAT_THERE_ARE_NO_PLAYERS_LOGGED_IN_THAT_MATCH_YOUR_FLAG_SET_n 705
 ENG(FORMAT_THERE_ARE_NO_PLAYERS_LOGGED_IN_THAT_MATCH_YOUR_FLAG_SET_n,"There are no players logged in that match your flag set.\n")

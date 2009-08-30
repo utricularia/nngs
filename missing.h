@@ -18,11 +18,11 @@ extern int pclose(FILE *fp);
 #if ( !HAVE_VSNPRINTF )
 #define HAVE_SNPRINTF 0
 #include <stdarg.h>
-extern int vsnprintf(char *buff,size_t s, const char *format, va_list ap);
+extern int vsnprintf(char *buff, size_t s, const char *format, va_list ap);
 #endif
 
 #if ( !HAVE_SNPRINTF )
-extern int snprintf(char *buff,size_t s, const char *format, ...);
+extern int snprintf(char *buff, size_t s, const char *format, ...);
 #endif
 
 #if ( !HAVE_FTRUNCATE )

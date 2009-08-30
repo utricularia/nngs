@@ -24,20 +24,21 @@
 
 /* This is coded without the use of ctype functions
  * to make it independent of LOCALE
- * Returns 0 if it's not a likely email address,
- * 1 otherwise.
+ * Returns 0 if it's a likely email address,
+ * 1 if it refers to localhost
+ * < 0 if it is otherwise invalid
  */
 int
 chkaddr(const char *s)
 {
   int dotcount;
-  const char *p = s;
+  const char *p = s, *dom;
 
   /* We allow any sequence of [A-Za-z0-9._-] in the user name.
      this is rather liberal, but we have little control over what
      some systems allow here. */
   if (*p == '@')
-    return 0;			/* Can't begin with @ */
+    return -1;			/* Can't begin with @ */
   do {
     char c = *p++;
 
@@ -45,13 +46,14 @@ chkaddr(const char *s)
     if (!NAME_CHAR_UNION(c) &&
 	(c != '.') &&
 	(c != '_'))
-      return 0;
+      return -1;
   } while (*p != '@');
 
   /* Post condition: *p == '@' */
   if (*++p == '\0')
-    return 0;			/* Can't end with @ */
+    return -1;			/* Can't end with @ */
 
+  dom = p;
   /* In the domain part, we're more strict.
      Only sequences of name parts separated by '.' (no leading or
      trailing '.' allowed), with at least one '.'. The name parts
@@ -61,7 +63,7 @@ chkaddr(const char *s)
   do {
 
 		/* Dot in the wrong place (first, last or double) */
-    if (*p == '.' || *p == '\0') return 0;
+    if (*p == '.' || *p == '\0') return -2;
     dotcount += 1;
     do {
       char c = *p++;
@@ -71,8 +73,11 @@ chkaddr(const char *s)
 
   } while (*p++ == '.');
 
-  if (dotcount < 1) return 0;			/* Too few dots */
-  return 1;
+  if (dotcount < 1) {		/* Too few dots */
+    if (!strcmp(dom, "localhost")) return 1;
+    return -3;
+  }
+  return 0;
 }
 
 #if WANT_MAIN

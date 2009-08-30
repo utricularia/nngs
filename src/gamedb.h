@@ -35,7 +35,7 @@
 #define GSTATUS_NEW 1
 #define GSTATUS_ACTIVE 2
 #define GSTATUS_STORED 3
-#define GSTATUS_ANALYSIS 4   /* for analysis mode */
+/* #define GSTATUS_ANALYSIS 4   for analysis mode */
 
 #define MAX_GO_MOVES 1000
 
@@ -77,6 +77,8 @@ struct game {
   int gstatus;
   struct {
     unsigned in_use: 1;
+    unsigned is_playing: 1;
+    unsigned is_stored: 1;
   } slotstat;
 #if WANT_PAIR
   int pairwith;
@@ -168,7 +170,7 @@ int game_save(int);
 
 int pgames(int, FILE *);
 void game_write_complete(int, twodstring);
-int game_count(void);
+unsigned int game_count(void);
 int game_get_num_ob(int);
 int write_g_out(int, FILE *, int, char *);
 int game_save_complete(int, FILE *, twodstring);

@@ -193,6 +193,7 @@ static void  flushWrites(void);
 
 
 #include "udp_commands.h"
+
 static int  do_read_udp(int fd);
 static char udpbuff[2*4096];
 /**********************************************************************
@@ -507,7 +508,8 @@ void  net_select(int timeout)
 
 static int  do_read_udp(int fd)
 {
-  int rlen, wlen, alen;
+  int rlen, wlen;
+  unsigned alen;
   struct sockaddr_in addr;
 
   alen = sizeof addr;
@@ -516,7 +518,7 @@ static int  do_read_udp(int fd)
   , 0 , (struct sockaddr *) &addr, &alen
   );
 	/* We could check the ip address here ... */
-  if (rlen >= sizeof netarray[fd].in_buff) rlen = sizeof netarray[fd].in_buff;
+  if (rlen >= (int) sizeof netarray[fd].in_buff) rlen = sizeof netarray[fd].in_buff;
   if (rlen <= 0) return 0;
   netarray[fd].fromHost = ntohl(addr.sin_addr.s_addr);
   netarray[fd].fromport = ntohs(addr.sin_port);
@@ -547,7 +549,7 @@ static int  do_accept(int listenFd)
 {
   int  newFd;
   struct sockaddr_in  addr;
-  int  addrLen = sizeof addr;
+  unsigned  addrLen = sizeof addr;
 
   newFd = accept(listenFd, (struct sockaddr *)&addr, &addrLen);
   if (newFd < 0)
@@ -923,7 +925,7 @@ int net_isalive(int fd) {
 
 char * net_dumpslot(int fd)
 {
-static char buff[400];
+char buff[400];
 size_t pos;
 int rc;
 struct stat statje;
@@ -948,6 +950,6 @@ struct stat statje;
     , netarray[fd].in_end
     , netarray[fd].parse_dst, netarray[fd].parse_src
     );
-return buff;
+return statstr_dup(buff, pos);
 }
 

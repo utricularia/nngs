@@ -54,8 +54,8 @@ struct minkgame {
   int width, height;	/* board dimensions */
   int rules;		/* what rules are we playing by? */
   struct minkmove *moves;		/* move history */
-  int mvsize,movenr;	/* size of moves and number of moves played */
   int *board;		/* current state of go-board */
+  int mvsize,movenr;	/* size of moves and number of moves played */
   int *uf;		/* union-find structure */
   struct uf_log_ *uflog;	/* log of changes to uf */
   int logsize,logid;	/* size of uflog & number of changes to uf */

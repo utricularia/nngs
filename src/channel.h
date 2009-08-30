@@ -26,22 +26,20 @@
 #define CHANNEL_H
 
 /* Set the number of channels (100+6 is plenty) */
-/* AvK: NCHANNELS==normal channels, OCHANNELS=special */
-#define MAX_NCHANNELS 100
-#define MAX_OCHANNELS 106
+/* AvK: NCHANNEL := normal channels, OCHANNEL := special purpose channels */
+#define MAX_NCHANNEL 100
+#define MAX_OCHANNEL 106
 #define MAX_CHANNELS 106
-
-/* Set the number of "special" channels, like shout, etc */
 
 #define YELL_STACK_SIZE 20
 
 /* define the different "special" channel types */
-#define CHANNEL_ASHOUT 100  /* Admin shouts, for admins only */
-#define CHANNEL_SHOUT  101  /* Regular shouts */
-#define CHANNEL_GSHOUT 102  /* GoBot shouts */
-#define CHANNEL_LSHOUT 103  /* Ladder shouts */
-#define CHANNEL_LOGON  104  /* Player login announcments */
-#define CHANNEL_GAME   105  /* Game announcments */
+#define CHANNEL_ASHOUT (MAX_NCHANNEL+0)  /* Admin shouts, for admins only */
+#define CHANNEL_SHOUT  (MAX_NCHANNEL+1)  /* Regular shouts */
+#define CHANNEL_GSHOUT (MAX_NCHANNEL+2)  /* GoBot shouts */
+#define CHANNEL_LSHOUT (MAX_NCHANNEL+3)  /* Ladder shouts */
+#define CHANNEL_LOGON  (MAX_NCHANNEL+4)  /* Player login announcments */
+#define CHANNEL_GAME   (MAX_NCHANNEL+5)  /* Game announcments */
 
 struct channel {
 	unsigned is_special:1;	/* If this channel is an "special" channel */
@@ -55,7 +53,7 @@ struct channel {
 	int *members;
 	} ;
 
-struct channel carray[MAX_OCHANNELS];
+struct channel carray[MAX_CHANNELS];
 
 void channel_init(void);
 int on_channel(int, int);

@@ -109,14 +109,26 @@ struct searchdata mysearchdata;
 static char filename1[MAX_FILENAME_SIZE];
 static char filename2[MAX_FILENAME_SIZE];
 
-static int pcvprintf(int, int, const char *, va_list);
+/* This is ugly: to avoid dynamic memory allocation,
+ * we create a pool where 'temporary' strings are put.
+ * This memory is never 'free()'d, but recycled in a round-robin-fashion.
+ * This is introduced to avoid functions to return 
+ * a pointer to their own static char buff[]'s.
+ * The functions statstr_get() and statstr_dup()
+ * return pointers into this pool.
+ */
+static char statstr_buff[16 * 1024] ;
+static size_t statstr_top = 0;
 
-static int mkdir_p(const char *);
-static int pprompt(int);
+static int pcvprintf(int p, int code, const char *format, va_list ap);
+
+static int mkdir_p(const char * pathname, int mode);
+static int pprompt(int p0);
 static size_t vafilename(char *buf,int num, va_list ap);
 static int lines_file(char *file);
 static FILE * vafopen(int num, const char * mode, va_list ap);
 static FILE * pvafopen(int p, int num, const char * mode, va_list ap);
+
 
 extern int vfprintf(FILE *fp, const char *fmt, va_list ap);
 extern int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
@@ -143,65 +155,53 @@ int iswhitespace(int c)
 
 char *KillTrailWhiteSpace(char *str)
 {
-  int len, stop;
-  stop = 0;
-  len = strlen(str);
+  size_t len;
 
-  while (!stop) {
-    if (iswhitespace(str[len - 1])) {
-      str[len - 1] = '\0';
-      len--;
-    }
-    else stop = 1;
+  for( len = strlen(str); len; len--) {
+    if (!iswhitespace(str[len-1])) break;
+    str[len-1] = '\0';
   }
   return str;
 }
 
 char *getword(char *str)
 {
-  int i;
-  static char word[MAX_WORD_SIZE];
+  int len;
+  char word[MAX_WORD_SIZE];
 
-  i = 0;
-  while (*str && !iswhitespace(*str)) {
-    word[i] = *str;
-    str++;
-    i++;
-    if (i == sizeof word) {
-      i = i - 1;
-      break;
-    }
-  }
-  word[i] = '\0';
-  return word;
+  for( len = 0; !iswhitespace(str[len] ); len++) {;}
+  
+  return statstr_dup(str, len);
 }
 
 /* This code defines the TYPE of message that is to be sent by adding
    a prefix to the message. */
 const char *SendCode(int p, int Code)
 {
-  static char word[MAX_WORD_SIZE];
+  char word[MAX_WORD_SIZE];
+  int len=0;
 
   if (!parray[p].flags.is_client) {
     switch(Code) {
-      case CODE_SHOUT: strcpy(word, "\n");
-                  break;
-      default: word[0]= 0;
-                  break;
+      case CODE_SHOUT:
+        strcpy(word, "\n"); len = 1; break;
+      default:
+        word[0]= 0; break;
     }
-    return word;
   }
-
-  switch(Code) {
-    case CODE_MOVE:
-    case CODE_INFO: sprintf(word, "%d ", Code);
-               break;
-    case CODE_SHOUT: sprintf(word, "\n%d ", Code);
-               break;
-    default: sprintf(word, "%d ", Code);
-               break;
+  else {
+    switch(Code) {
+      case CODE_MOVE:
+      case CODE_INFO:
+        len = sprintf(word, "%d ", Code); break;
+      case CODE_SHOUT:
+        len = sprintf(word, "\n%d ", Code); break;
+      default:
+        len = sprintf(word, "%d ", Code); break;
+    }
   }
-  return word;
+  if (len < 0) len = 0;
+  return statstr_dup(word, len);
 }
 
 char *eatword(char *str)
@@ -271,15 +271,15 @@ int mail_asn(const char *addr, const char *subj, const char *fname)
 int pcommand(int p, const char *comstr, ...)
 {
   va_list ap;
-  char tmp[MAX_LINE_SIZE];
+  char buff[MAX_LINE_SIZE];
   int retval;
   int fd = parray[p].session.socket;
 
   va_start(ap, comstr);
-  vsnprintf(tmp, sizeof tmp, comstr, ap);
+  my_vsnprintf(buff, sizeof buff, comstr, ap);
   va_end(ap);
 
-  retval = process_input(fd, tmp);
+  retval = process_input(fd, buff);
   if (retval == COM_LOGOUT) {
     process_disconnection(fd);
     /* net_close(fd); */
@@ -292,7 +292,7 @@ int Logit(const char *format,...)
   va_list ap;
   FILE *fp;
   char fname[MAX_FILENAME_SIZE];
-  char tmp[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
+  char textbuff[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
 				   stuff */
   int retval;
   time_t time_in;
@@ -305,17 +305,17 @@ int Logit(const char *format,...)
   time_in = globclock.time;
   va_start(ap, format);
 
-  retval = vsprintf(tmp, format, ap);
+  retval = vsprintf(textbuff, format, ap);
   va_end(ap);
-  if (strlen(tmp) >= sizeof tmp) {
+  if (strlen(textbuff) >= sizeof textbuff) {
     fprintf(stderr, "Logit buffer overflow (format=\"%s\")\n", format);
-    tmp[sizeof tmp -1] = 0;
+    textbuff[sizeof textbuff -1] = 0;
   }
 
   sprintf(fname, "%s", conffile.log_file);
   
 	/* Terminate the mutual recursion Logit() <--> xfopen()
-	** (this only happens if the logfile does not exist)
+	** (this can only occur if the logfile does not exist)
 	*/
   if (in_logit++) {
      /* fprintf(stderr, "In_logit(recursion(%d)) '%s'\n",in_logit, fname); */
@@ -325,9 +325,18 @@ int Logit(const char *format,...)
      fprintf(stderr, "Error opening logfile '%s': %d(%s)\n"
        ,fname, err, strerror(err) );
   } else  {
-     fprintf(fp, "%s %s", tmp, asctime(localtime(&time_in)));
-     fflush (fp);
-     fclose(fp);
+      size_t len;
+      char timebuff[30];
+      strcpy ( timebuff, asctime(localtime(&time_in)));
+      len = strlen(timebuff);
+      if (len) timebuff[len-1] = 0;
+    if (conffile.want_new_log_style > 0) {
+      fprintf(fp, "%s %s\n", timebuff, textbuff);
+    } else {
+      fprintf(fp, "%s %s\n", textbuff, timebuff );
+    }
+    fflush (fp);
+    fclose(fp);
   }
   in_logit--;
   return retval;
@@ -337,7 +346,7 @@ int Logit(const char *format,...)
 int pprintf(int p, const char *format, ...)
 {
   va_list ap;
-  char tmp[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
+  char buff[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
 				   stuff */
   int retval;
   size_t len;
@@ -346,61 +355,93 @@ int pprintf(int p, const char *format, ...)
 	** (the printf() family _is_supposed_ to return 
 	** the strlen() of the resulting string, or -1 on error )
 	*/
-  retval = vsprintf(tmp, format, ap);
+  retval = vsprintf(buff, format, ap);
   va_end(ap);
 #if 0
-  retval = strlen(tmp);
+  retval = strlen(buff);
 #endif
   len = retval;
-  if (retval < 0 || retval >= sizeof tmp) {
-    Logit("pprintf buffer overflow: %d > %u", retval, (unsigned) sizeof tmp);
-    len = sizeof tmp -1; tmp[len] = 0;
+  if (retval < 0 || (unsigned) retval >= sizeof buff) {
+    Logit("pprintf buffer overflow: %d > %u", retval, (unsigned) sizeof buff);
+    len = sizeof buff -1; buff[len] = 0;
   }
-  net_send(parray[p].session.socket, tmp, len);
+  net_send(parray[p].session.socket, buff, len);
   return retval; /* AvK: should be equal to len, but is always ignored anyway */
 }
 
 static int pcvprintf(int p, int code, const char *format, va_list ap)
 {
-  char bigtmp[10 * MAX_LINE_SIZE];
+  char buff[10 * MAX_LINE_SIZE];
 
   int rc, len;
   int idx = 0;
 
 #if SUPPRESS_SYMPTOMS /* :-) */
-  memset(bigtmp,0,sizeof bigtmp);
+  memset(buff,0,sizeof buff);
 #endif
 
 	/* A leading \n can be printed *before* the sendcode */
   if (code & CODE_CR1) {
     code &= ~CODE_CR1;
-    idx = sprintf(bigtmp,"\n");
+    idx = sprintf(buff,"\n");
   }
 	/* CODE_NONE == 0: Dont send code or propt */
   if (code) {
     const char *cp;
     cp = SendCode(p, code);
     len = strlen(cp);
-    memcpy(bigtmp+idx,cp,len);
+    memcpy(buff+idx,cp,len);
     idx += len;
 /* debugging info
     fprintf(stderr,"format='%s'",format);
-    fprintf(stderr,"cp='%s' idx=%d bigtmp='%s'\n",cp,idx,bigtmp);
+    fprintf(stderr,"cp='%s' idx=%d buff='%s'\n",cp,idx,buff);
 */
   }
 
-  rc = vsnprintf(bigtmp+idx,sizeof bigtmp -idx, format, ap);
+  rc = my_vsnprintf(buff+idx,sizeof buff -idx, format, ap);
 
   if (rc < 0) {
     Logit("pcvprintf buffer overflow code==%d, format==\"%s\"",code,format);
-    len = sizeof bigtmp -1; bigtmp[len] = 0;
+    len = sizeof buff -1; buff[len] = 0;
     strcpy(NULL, "myabort()" );
   }
   else len = idx+rc;
 
-  net_send(parray[p].session.socket, bigtmp, len);
+  net_send(parray[p].session.socket, buff, len);
 
   return len;
+}
+
+/*
+ * Wrappers around [v]snprintf().
+ * They only differ in the returnvalue:
+ * If the formatted string does not fit into dstlen, [v]snprintf()
+ * does not write beyond dst[dstlen-1], but it will return > dstlen.
+ * These my_xxxx functions return <0 on EVERY error.
+ */
+int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
+{
+  int rc;
+
+#if (HAVE_VSNPRINTF)
+  rc = vsnprintf(dst, dstlen, format, ap);
+#else
+  rc = fake_vsnprintf(dst, dstlen, format, ap);
+#endif
+  if (rc >= (int) dstlen) rc = -1;
+  return rc;
+}
+
+int my_snprintf(char *dst, size_t siz, const char *format, ... )
+{
+  va_list ap;
+  int rc;
+
+  va_start(ap, format);
+  rc = my_vsnprintf(dst, siz, format, ap);
+  va_end(ap);
+
+  return rc;
 }
 
 #if (1 || !HAVE_VSNPRINTF || !HAVE_SNPRINTF)
@@ -417,7 +458,7 @@ static int pcvprintf(int p, int code, const char *format, va_list ap)
  * A better, but very big implementation can be found in the
  * Apache sources.
  */
-int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
+int fake_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
 {
   static FILE * dummy = NULL;
   int rlen, wlen;
@@ -425,8 +466,8 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
 
   if (!dummy) {
     char *name;
-    name = tempnam(NULL, NULL);
-    if (!name) name = "/tmp/vsnprintf.tmp" ;
+    name = tempnam("/tmp/" , "nngs_");
+    if (!name) name = mystrdup( "/tmp/vsnprintf.tmp") ;
     dummy = fopen(name, "w+");
     if (!dummy) {
       fprintf(stderr, "Could not open tempfile '%s'", name);
@@ -437,13 +478,14 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
     else fprintf(stderr, "Opened tempfile(%d) '%s'", fileno(dummy), name);
 #if 1
     unlink(name);
+    free(name);
 #endif
   }
   rewind(dummy);
   wlen = vfprintf(dummy, format, ap);
   fflush(dummy);
-  if (wlen < 0 || wlen >= dstlen) { memcpy(dst,"Badw!",6); return -1; }
-  if (wlen < 0 || wlen >= dstlen) { *dst = 0; return -1; }
+  if (wlen < 0 || wlen >= (int) dstlen) { memcpy(dst,"Badw!",6); return -1; }
+  if (wlen < 0 || wlen >= (int) dstlen) { *dst = 0; return -1; }
   rewind(dummy);
   rlen = fread(dst, 1, (size_t) wlen, dummy);
   if (rlen != wlen && dstlen >= 6) { memcpy(dst, "BadR!", 6) ; return -1; }
@@ -452,17 +494,6 @@ int my_vsnprintf(char *dst, size_t dstlen, const char *format, va_list ap)
   return rlen;
 }
 
-int my_snprintf(char *dst, size_t siz, const char *format, ... )
-{
-  va_list ap;
-  int rc;
-
-  va_start(ap, format);
-  rc = my_vsnprintf(dst, siz, format, ap);
-  va_end(ap);
-
-  return rc;
-}
 #endif
 
 int cpprintf(int p, int code, const char *format, ...)
@@ -482,19 +513,19 @@ int cpprintf(int p, int code, const char *format, ...)
 int pprintf_prompt(int p, const char *format,...)
 {
   va_list ap;
-  char tmp[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
+  char buff[10 * MAX_LINE_SIZE];	/* Make sure you can handle 10 lines worth of
 				   stuff */
   int retval;
   size_t len;
 
   va_start(ap, format);
 
-  retval = vsprintf(tmp, format, ap);
-  if ((len = strlen(tmp)) >= sizeof tmp) {
+  retval = vsprintf(buff, format, ap);
+  if ((len = strlen(buff)) >= sizeof buff) {
     Logit("pprintf_prompt buffer overflow");
-    len = sizeof tmp -1; tmp[len] = 0;
+    len = sizeof buff -1; buff[len] = 0;
   }
-  net_send(parray[p].session.socket, tmp, len);
+  net_send(parray[p].session.socket, buff, len);
 
   pprompt(p);
   va_end(ap);
@@ -516,27 +547,27 @@ int cpprintf_prompt(int p, int code, const char *format,...)
   return retval;
 }
 
-static int pprompt(int p)
+static int pprompt(int p0)
 {
-  char tmp[MAX_LINE_SIZE];
+  char buff[MAX_LINE_SIZE];
   int len = 0;
 
-  if (parray[p].flags.is_client) {
-    len = sprintf(tmp, "%d %d\n", CODE_PROMPT, parray[p].session.protostate);
+  if (parray[p0].flags.is_client) {
+    len = sprintf(buff, "%d %d\n", CODE_PROMPT, parray[p0].session.protostate);
   }
-  else if (parray[p].session.protostate == STAT_SCORING) {
-    len = sprintf(tmp,"Enter Dead Group: "); 
+  else if (parray[p0].session.protostate == STAT_SCORING) {
+    len = sprintf(buff,"Enter Dead Group: "); 
   } else {
-    if (parray[p].extprompt) {
-      len = sprintf(tmp, "|%s/%d%s| %s ", 
-        parray[p].forget.last_tell >= 0 ? parray[parray[p].forget.last_tell].pname : "",
-        parray[p].last_channel, 
-        parray[p].busy[0] ? "(B)" : "",
-        parray[p].prompt);
+    if (parray[p0].extprompt) {
+      len = sprintf(buff, "|%s/%d%s| %s ", 
+        parray[p0].forget.last_tell >= 0 ? parray[parray[p0].forget.last_tell].pname : "",
+        parray[p0].last_channel, 
+        parray[p0].busy[0] ? "(B)" : "",
+        parray[p0].prompt);
     }
-    else len = sprintf(tmp, "%s",parray[p].prompt);
+    else len = sprintf(buff, "%s", parray[p0].prompt);
   }
- if (len>0) net_send(parray[p].session.socket, tmp, len);
+ if (len>0) net_send(parray[p0].session.socket, buff, len);
   return len;
 }
 
@@ -555,7 +586,7 @@ is_regfile(char *path)
 int psend_raw_file(int p, const char *dir, const char *file)
 {
   FILE *fp;
-  char tmp[MAX_LINE_SIZE * 2];
+  char buff[MAX_LINE_SIZE * 2];
   char fname[MAX_FILENAME_SIZE];
   int num;
 
@@ -570,8 +601,8 @@ int psend_raw_file(int p, const char *dir, const char *file)
     fprintf(stderr,"psend_raw_file: File '%s' not found!\n",fname);
     return -1;
   }
-  while ((num = fread(tmp, sizeof(char), sizeof tmp, fp)) > 0) {
-    net_send(parray[p].session.socket, tmp, num);
+  while ((num = fread(buff, sizeof(char), sizeof buff, fp)) > 0) {
+    net_send(parray[p].session.socket, buff, num);
   }
   fclose(fp);
   return 0;
@@ -580,7 +611,7 @@ int psend_raw_file(int p, const char *dir, const char *file)
 int psend_file(int p, const char *dir, const char *file)
 {
   FILE *fp;
-  char tmp[MAX_LINE_SIZE * 2];
+  char buff[MAX_LINE_SIZE * 2];
   char fname[MAX_FILENAME_SIZE];
   int lcount = 1;
   char *cp;
@@ -599,9 +630,9 @@ int psend_file(int p, const char *dir, const char *file)
 
   if (conffile.debug_general) Logit("Opened \"%s\"", fname);
   if (parray[p].flags.is_client) pcn_out(p, CODE_HELP, FORMAT_FILEn);
-  while ((cp = fgets( tmp, sizeof tmp, fp))) {
+  while ((cp = fgets( buff, sizeof buff, fp))) {
     if (lcount >= (parray[p].d_height-1)) break;
-    net_sendStr(parray[p].session.socket, tmp);
+    net_sendStr(parray[p].session.socket, buff);
     lcount++;
   }
   if (cp) {
@@ -622,7 +653,7 @@ int pxysend_raw_file(int p, int num, ...)
   va_list ap;
   FILE *fp;
   int cnt;
-  char tmp[MAX_LINE_SIZE * 2];
+  char buff[MAX_LINE_SIZE * 2];
   va_start(ap, num);
 
   fp = pvafopen(p, num, "r", ap);
@@ -635,8 +666,8 @@ int pxysend_raw_file(int p, int num, ...)
 
   if (!is_regfile(filename1)) { fclose(fp); return -1; }
 
-  while ((cnt = fread(tmp, 1, sizeof tmp, fp)) > 0) {
-    net_send(parray[p].session.socket, tmp, cnt);
+  while ((cnt = fread(buff, 1, sizeof buff, fp)) > 0) {
+    net_send(parray[p].session.socket, buff, cnt);
   }
   fclose(fp);
   return 0;
@@ -671,7 +702,7 @@ int pxysend_file(int p, int num, ...)
 int pmore_file( int p )
 {  
   FILE *fp;
-  char tmp[MAX_LINE_SIZE * 2];
+  char buff[MAX_LINE_SIZE * 2];
   int lcount = 1;
   char *cp;
 
@@ -689,10 +720,10 @@ int pmore_file( int p )
   if (parray[p].flags.is_client) {
   pcn_out(p, CODE_HELP, FORMAT_FILEn);
   }
-  while((cp = fgets(tmp, sizeof tmp, fp))) {
+  while((cp = fgets(buff, sizeof buff, fp))) {
     if (lcount >= (parray[p].forget.last_file_line + parray[p].d_height-1)) break;
     if (lcount >= parray[p].forget.last_file_line) 
-      net_sendStr(parray[p].session.socket, tmp);
+      net_sendStr(parray[p].session.socket, buff);
     lcount++;
   }
   if (cp) {
@@ -728,7 +759,7 @@ int xpsend_dir(int p, int num)
     Logit("diropen failed: %d:%s", errno, strerror(errno) );
     return -1;
   }
-  for (cnt = 0; ep = readdir(dp); ) {
+  for (cnt = 0; (ep = readdir(dp)); ) {
     if (ep->d_name[0] == '.') continue;
     pprintf(p, "%s%c", ep->d_name,  (++cnt % 4)  ? '\t': '\n' );
   }
@@ -838,7 +869,7 @@ int printablestring(const char *str)
 
 char * mystrdup(const char *str)
 {
-  char *tmp;
+  char *new;
   size_t len;
 
   if (!str) {
@@ -846,14 +877,15 @@ char * mystrdup(const char *str)
     return NULL;
   }
   len = strlen(str);
-  tmp = malloc(len + 1);
-  memcpy(tmp, str, len); tmp[len] = 0;
-  return tmp;
+  new = malloc(len + 1);
+  memcpy(new, str, len); new[len] = 0;
+  return new;
 }
 
 char *secs2str_short(int t)
 {
-  static char tstr[20];
+  char tstr[20];
+  int len;
   int h, m, s;
 
   h = t / 3600;
@@ -861,30 +893,31 @@ char *secs2str_short(int t)
   m = t / 60;
   s = t % 60;
   if (h > 99) h = 99;
-  if (h) sprintf(tstr, "%dh", h);
-  else if (m) sprintf(tstr, "%dm", m);
-  else sprintf(tstr, "%ds", s);
-
-  return tstr;
+  if (h) len = sprintf(tstr, "%dh", h);
+  else if (m) len = sprintf(tstr, "%dm", m);
+  else len = sprintf(tstr, "%ds", s);
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *secs2hms_long(int t)
 {
-  static char tstr[60];
-  int h, m, s;
+  char tstr[60];
+  int len, h, m, s;
 
   h = t / 3600;
   t = t % 3600;
   m = t / 60;
   s = t % 60;
 
-  sprintf(tstr, "%d hours, %d minutes, %d seconds", h ? h:0, m ? m:0, s ? s:0);
-  return tstr;
+  len = sprintf(tstr, "%d hours, %d minutes, %d seconds", h ? h:0, m ? m:0, s ? s:0);
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *secs2hms_mask(int t, int mask)
 {
-  static char tstr[20];
+  char tstr[20], *this;
   int h, m, s;
   int pos = 0;
 
@@ -904,7 +937,9 @@ char *secs2hms_mask(int t, int mask)
     if (mask&8) pos += sprintf(tstr+pos, " : %02d", s);
     else pos += sprintf(tstr+pos, ":%02d", s);
   }
-  return tstr;
+  if (pos <0) pos = 0;
+  this = statstr_dup(tstr, pos);
+  return this;
 }
 
 
@@ -917,9 +952,10 @@ static const char *montharray[] =
 
 static char *tm2str(struct tm * stm)
 {
-  static char tstr[100];
+  char tstr[100];
+  int len;
 
-  sprintf(tstr, "%s %3.3s %2d %02d:%02d:%02d %4d",
+  len = sprintf(tstr, "%s %3.3s %2d %02d:%02d:%02d %4d",
 	  dayarray[stm->tm_wday],
 	  montharray[stm->tm_mon],
 	  stm->tm_mday,
@@ -927,42 +963,49 @@ static char *tm2str(struct tm * stm)
 	  stm->tm_min,
           stm->tm_sec,
           stm->tm_year + 1900);
-  return tstr;
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *tm2str_ccyy_mm_dd(const struct tm * stm)
 {
-  static char tstr[12];
+  char tstr[16];
+  int len;
 
-  sprintf(tstr, "%4d-%02d-%02d",
+  len = sprintf(tstr, "%4d-%02d-%02d",
           stm->tm_year + 1900,
           stm->tm_mon + 1,
           stm->tm_mday);
-  return tstr;
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *ResultsDate(char *fdate)
 {
-  static char tstr[12];
+  char tstr[12];
+  int len;
 
-  sprintf(tstr, "%c%c/%c%c/%c%c%c%c", fdate[4], fdate[5], fdate[6], fdate[7],
+  len = sprintf(tstr, "%c%c/%c%c/%c%c%c%c", fdate[4], fdate[5], fdate[6], fdate[7],
                                       fdate[0], fdate[1], fdate[2], fdate[3]);
 
-  return tstr;
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *time2str_file(const time_t * clk)
 {
-  static char tstr[14];
+  char tstr[14];
   struct tm *stm = gmtime(clk);
+  int len;
 
-  sprintf(tstr, "%04d%02d%02d%02d%02d",
+  len = sprintf(tstr, "%04d%02d%02d%02d%02d",
           stm->tm_year + 1900,
           stm->tm_mon + 1,
 	  stm->tm_mday,
 	  stm->tm_hour,
 	  stm->tm_min);
-  return tstr;
+  if (len < 0) len = 0;
+  return statstr_dup(tstr, len);
 }
 
 char *time2str_sgf(const time_t * clk)
@@ -1148,12 +1191,12 @@ static int lines_file(char *file)
 {
   FILE *fp;
   int lcount = 0;
-  char tmp[MAX_LINE_SIZE];
+  char new[MAX_LINE_SIZE];
 
   fp = xfopen(file, "r");
   if (!fp)
     return 0;
-  while (fgets(tmp, sizeof tmp, fp))
+  while (fgets(new, sizeof new, fp))
     lcount++;
 
   fclose(fp);
@@ -1170,9 +1213,49 @@ int file_has_pname(const char *fname, const char *plogin)
   return 0;
 }
 
+char * statstr_new(size_t len)
+{
+  char *this;
+
+  if (statstr_top + len > sizeof statstr_buff) statstr_top = 0;
+  this = statstr_buff + statstr_top;
+  statstr_top += len;
+  return this;
+}
+
+char * statstr_dup(const char *str, size_t len)
+{
+  char *new;
+
+  if (!len) len = strlen(str);
+  new = statstr_new(len+1);
+  memcpy (new, str, len);
+  new[len] = 0;
+  return new;
+}
+
+char * statstr_trim(const char *str, size_t len)
+{
+  size_t ltrim, end;
+
+  if (!len) len = strlen(str);
+  ltrim = strspn(str, " \t\r\n");
+  str += ltrim, len -= ltrim;
+  for (end=len; end > 0; end-- ) {
+	if (str[end-1] == ' ') continue;
+	if (str[end-1] == '\t') continue;
+	if (str[end-1] == '\n') continue;
+	if (str[end-1] == '\r') continue;
+	break;
+	}
+  return  statstr_dup(*str, end);
+}
+
+/* Functions to extract the white and black names from a string
+ * "/optiona/path/leading/to/whitename-blackname-optional-date"
+ */
 const char *file_wplayer(const char *fname)
 {
-  static char tmp[sizeof parray[0].pname];
   const char *ptr;
   size_t len;
 
@@ -1181,17 +1264,12 @@ const char *file_wplayer(const char *fname)
   if (!ptr) ptr = fname;
   else ptr++;
   len = strcspn(ptr, "-");
-  do_copy(tmp, ptr, sizeof tmp);
-  ptr = strrchr(tmp, '-');
-  if (!ptr) return "";
-  if (len < sizeof tmp) tmp[len] = 0;
-  return (const char *) tmp;
+  return statstr_dup(ptr, len);
 }
 
 
 const char *file_bplayer(const char *fname)
 {
-  static char tmp[sizeof parray[0].pname];
   const char *ptr;
   size_t len;
 
@@ -1199,13 +1277,10 @@ const char *file_bplayer(const char *fname)
   ptr = strrchr(fname, '/');
   if (!ptr) ptr = fname;
   else ptr++;
-  ptr = strrchr(fname, '-');
-  if (!ptr) return "";
-  else ptr++;
-  len = strcspn(ptr, "-");
-  do_copy(tmp, ptr, sizeof tmp);
-  if (len < sizeof tmp) tmp[len] = 0;
-  return (const char *) tmp;
+  ptr = strrchr(ptr, '-');
+  if (ptr) len = strlen(ptr);
+  else len = 0;
+  return statstr_dup(ptr, len);
 }
 
 #if HAVE_ENDIAN_H
@@ -1213,22 +1288,26 @@ const char *file_bplayer(const char *fname)
 #endif
 char *dotQuad(unsigned int a)
 {
-  static char buff[40];
-  static char *tmp = NULL;
+  char buff[20];
+  int len;
 
-  tmp = (tmp == buff) ? buff+20: buff;
 #if !(BYTE_ORDER ==LITTLE_ENDIAN)
-  sprintf(tmp, "%d.%d.%d.%d", (a & 0xff),
-	  (a & 0xff00) >> 8,
-	  (a & 0xff0000) >> 16,
-	  (a & 0xff000000) >> 24);
+  len = sprintf(buff, "%d.%d.%d.%d"
+	, (a & 0xff)
+	, (a & 0xff00) >> 8
+	, (a & 0xff0000) >> 16
+	, (a & 0xff000000) >> 24
+	);
 #else
-  sprintf(tmp, "%d.%d.%d.%d", (a & 0xff000000) >> 24,
-	  (a & 0xff0000) >> 16,
-	  (a & 0xff00) >> 8,
-	  (a & 0xff));
+  len = sprintf(buff, "%d.%d.%d.%d"
+	, (a & 0xff000000) >> 24
+	, (a & 0xff0000) >> 16
+	, (a & 0xff00) >> 8
+	, (a & 0xff)
+	);
 #endif
-  return tmp;
+  if (len < 0) len = 0;
+  return statstr_dup(buff,len);
 }
 
 #if OBSOLETE_SOURCE
@@ -1300,7 +1379,7 @@ int search_directory(char *buff, int bufsiz, char *filter, int num, ...)
   }
 
   filtlen = strlen(filter);
-  for (pos = cnt = 0; ep = readdir(dp); ) {
+  for (pos = cnt = 0; (ep = readdir(dp)); ) {
     if (ep->d_name[0] == '.') continue;
     len = 1+strlen(ep->d_name);
     if (pos + len >= bufsiz) { break; }
@@ -1396,37 +1475,31 @@ int is_totally_blank(char *str)
 }
 
 
-int do_copy(char *dest, const char *s, int max)
+size_t do_copy(char *dest, const char *src, size_t maxlen)
 {
-  /* [PEM]: If the logging is not really necessary, it's probably
-     more efficient to skip this. */
-  /* AvK: changed semantics: max is the declared/allocated
-  ** size for dest[] , so dest[max-1] is the last element
+  /* AvK: changed semantics: maxlen is the declared/allocated
+  ** size for dest[] , so dest[maxlen-1] is the last element
   ** and will *always* be set to '\0' */
-#if 1
-  int i;
 
-  i = strlen(s);
-  if (i >= max) {
-    Logit("Attempt to copy large string %s (len = %d, max = %d)", s, i, max);
-    i = max -1;
+  size_t len;
+
+  len = strlen(src);
+  if (len >= maxlen) {
+    Logit("Attempt to copy large string %s (len = %d, maxlen = %d)", src, len, maxlen);
+    len = maxlen -1;
   }
 
-  memcpy(dest, s, i);
-  dest[i] = '\0';
-#else
-  if (max > 0) max -= 1;
-  strncpy(dest, s, max);
-  dest[max] = '\0';		/* [PEM]: Make sure it's terminated. */
-#endif
-  return i;
+  if (len) memcpy(dest, src, len);
+  dest[len] = '\0';
+  return len;
 }
 
 /* AvK: this function is a wrapper around fopen.
 ** If mode is not read and a directory does not exists,
 ** it will create the entire path to the file (if allowed).
-** This feature is only intended as an aid for testers, cause
-** getting all the paths right takes a lot of time.
+** This feature is only intended as an aid for testing, 
+** because getting all the paths right takes a lot of time.
+**
 ** In a "production" server all the directories should exist.
 ** Behaviour depends on the global variable mode_for_dirs:
 ** when zero, no directories are created.
@@ -1439,7 +1512,7 @@ FILE * xfopen(const char * name, const char * mode)
   FILE *fp;
   int err;
 
-  do {
+  while (1) {
     fp = fopen(name,mode);
     if (fp) break;
     err = errno;
@@ -1447,23 +1520,30 @@ FILE * xfopen(const char * name, const char * mode)
 /* Don't log missing files when mode is read.
 ** (unregistered players, missing messagefiles, etc)
 */
-    if (*mode =='r') break;
+    switch (*mode) {
+    case 'r' :
+      if (conffile.log_missing_files_on_read < 1) break;
+    default:
+      Logit("Xfopen: fopen(\"%s\", mode=\"%s\") failed: %d (%s)"
+	  , name, mode
+	  , err, strerror(err) );
+      break;
+    }
 
-    Logit("Xfopen: fopen(\"%s\", \"%s\") failed: %d, %s"
-	  ,name,mode, err,strerror(err) );
-
-    if (*mode =='r') break;
+    if (*mode == 'r') err = 0;
 
     switch(err) {
     case ENOENT:
       if (conffile.mode_for_dir) {
-        err =mkdir_p(name);
+        err = mkdir_p(name, conffile.mode_for_dir);
         if (err> 0) continue;
 	}
+      else {;} /*FALLTRU*/
+    case 0:
     default:
       goto quit;
     }
-  } while(!fp);
+  }
 
 quit:
   return fp;
@@ -1886,7 +1966,7 @@ filename_ahelp_l_index_0:
     i1 = va_arg(ap,int);
     len = sprintf(buf, "%s/%s%d", conffile.spool_dir, cp1, i1);
     break;
-  default: /* this will fail on open, and show up in the log ... */
+  default: /* This invalid filename will fail on open, and show up in the log ... */
     len = sprintf(buf, "/There/was/a/default/filename:%d", num);
     break;
   }
@@ -1908,12 +1988,17 @@ char * filename(void)
 	** It assumes *name to be a pathname/filename.
 	** all the nodes in the pathname-part are created
 	** (if they don't exist yet)
+	** duplicate slashes are ignored.
+	** NOTE: the part _after_ the last slash is not created;
+	**  to indicate an empty directory add a trailing slash 
+	** to the argument, (and omit the filename part).
+	** So, "/path/to/file.txt" , "/path/to/" and "//path//to/" all should give the same result.
 	** Function fails on first unrecoverable) error.
 	** returns :
 	** (return >= 0) := number of nodes that were created
 	** (return < 0) := -errno
 	*/
-static int mkdir_p(const char * name)
+static int mkdir_p(const char * pathname, int mode)
 {
   int err = 0;
   size_t len;
@@ -1923,8 +2008,9 @@ static int mkdir_p(const char * name)
   char buff[MAX_FILENAME_SIZE];
   struct stat statbuff;
 
-  len = strlen(name);
-  memcpy(buff,name,len);
+  len = strlen(pathname);
+  if (len >= sizeof buff) return -EINVAL;
+  memcpy(buff,pathname,len);
   buff[len] = 0;
 
   for(slash = buff; (slash = strchr(slash+1, '/' )); ) {
@@ -1932,22 +2018,22 @@ static int mkdir_p(const char * name)
     if (slash[-1] == '/') continue;
     *slash = 0 ;
     rc = stat(buff, &statbuff);
-    if (!rc) err =EEXIST; /* this is used to skip existing prefix */
+    if (!rc) err = EEXIST; /* this is used to skip existing prefix */
     else {
-      rc = mkdir(buff, conffile.mode_for_dir);
+      rc = mkdir(buff, mode);
       err = (rc) ? errno: 0;
       }
     switch(err) {
     case 0:
       cnt++;
-      Logit("Mkdir_p[%d](\"%s\", %04o) := Ok", cnt, buff, conffile.mode_for_dir );
+      Logit("Mkdir_p[%d](\"%s\", %04o) := Ok", cnt, buff, mode );
     case EEXIST: 
       break;
     case ENOTDIR: 
     case EACCES: 
     default:
       Logit("Mkdir_p(\"%s\", %04o) := [rc=%d] Err= %d (%s)"
-           , buff, conffile.mode_for_dir, rc, err, strerror(err) );
+           , buff, mode, rc, err, strerror(err) );
       *slash = '/' ;
       goto quit;
     }

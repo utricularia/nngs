@@ -1,6 +1,7 @@
 /* chkaddr.h
 **
 ** Per-Erik Martin (pem@nngs.cosmic.org) 1999-11-25
+** AvK: flipped polarity of returnvalue...
 */
 
 #ifndef CHKADDR_H
@@ -12,8 +13,9 @@
  * sequence of [A-Za-z0-9-]+ names, with at least one dot.
  * (Note that '_' is NOT a legal character in domainnames.)
  *
- * Returns 0 if it's not a likely email address,
- * 1 otherwise.
+ * Returns 0 if it's a likely email address,
+ * 1 if it refers to user@localhost
+ * < 0 otherwise.
  */
 int chkaddr(const char *s);
 

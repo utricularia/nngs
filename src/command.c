@@ -77,8 +77,8 @@
 #endif /* WANT_NNGSRATED */
 
 time_t startuptime;
-int player_high;
-int game_high;
+unsigned int player_high = 0;
+unsigned int game_high = 0;
 
 char orig_command[MAX_STRING_LENGTH];
 
@@ -103,12 +103,12 @@ static int process_prompt(int p, char *command);
 static int parse_command(char *com_string, char **comm, char **parameters)
 {
   *comm = com_string;
-  *parameters = eatword(com_string);
-  if (**parameters) {
-    **parameters = '\0';
-    (*parameters)++;
-    *parameters = eatwhite(*parameters);
+  com_string = eatword(com_string);
+  if (*com_string) {
+    *com_string++ = '\0';
+    com_string = eatwhite(com_string);
   }
+  *parameters = com_string;
   if (strlen(*comm) >= MAX_COM_LENGTH) {
     return COM_BADCOMMAND;
   }
@@ -118,10 +118,10 @@ static int parse_command(char *com_string, char **comm, char **parameters)
 /* Puts alias substitution into alias_string */
 static void alias_substitute(int p, char *com_str, char **alias_str)
 {
-  char *save_str = com_str;
+  char *src = com_str;
   char tmp[MAX_COM_LENGTH];
-  static char outalias[MAX_STRING_LENGTH];
-  int i = 0, done = 0;
+  char outalias[MAX_STRING_LENGTH];
+  int pos ;
   static struct alias * i_alias_list = NULL; /* The internal, sorted alias list. */
   char *alias;
 
@@ -135,33 +135,30 @@ static void alias_substitute(int p, char *com_str, char **alias_str)
       alias_add(ap->comm_name, ap->alias, i_alias_list);
   }
 
-  while (com_str && !iswhitespace(*com_str) && !done) {
-    if (i >= MAX_COM_LENGTH) {	/* Too long for an alias */
-      *alias_str = save_str;
-      return;
+  for( pos=0; src[pos]; pos++) {
+    if (iswhitespace(src[pos])) break;
+    if (ispunct(src[pos])) break;
+    if (pos >= MAX_COM_LENGTH) {	/* Too long for an alias */
+      *alias_str = com_str; return;
     }
-    tmp[i] = *com_str;
-    com_str++;
-    if (ispunct((int)tmp[i]))
-      done = 1;
-    i++;
+    tmp[pos] = src[pos];
   }
-  tmp[i] = '\0';
+  tmp[pos] = '\0';
 
   if ((alias = alias_lookup(tmp, parray[p].alias_list))) {
-    if (com_str)
-      sprintf(outalias, "%s%s", alias, com_str);
+    if (src)
+      pos = sprintf(outalias, "%s%s", alias, src);
     else
-      sprintf(outalias, "%s", alias);
-    *alias_str = outalias;
+      pos = sprintf(outalias, "%s", alias);
+    *alias_str = statstr_dup(outalias, pos);
   } else if ((alias = alias_lookup(tmp, i_alias_list))) {
-    if (com_str)
-      sprintf(outalias, "%s%s", alias, com_str);
+    if (src)
+      pos = sprintf(outalias, "%s%s", alias, src);
     else
-      sprintf(outalias, "%s", alias);
-    *alias_str = outalias;
+      pos = sprintf(outalias, "%s", alias);
+    *alias_str = statstr_dup(outalias, pos);
   } else
-    *alias_str = save_str;
+    *alias_str = com_str;
 }
 
 
@@ -228,25 +225,24 @@ int match_command(const char *comm)
 /* Gets the parameters for this command */
 static int get_parameters(int command, char *string, struct parameter * params)
 {
-  int i, parlen;
-  int paramLower;
+  int i, parcnt;
+  int mustlower;
   int ch;
-  static char punc[2];
+  char punc[2] = "\0";	/* Holds punc parameters */
 
-  punc[1] = '\0';		/* Holds punc parameters */
   for (i = 0; i < MAXNUMPARAMS; i++)
     params[i].type = TYPE_NULL;	/* Set all parameters to NULL */
 
-  parlen = strlen(command_list[command].param_string);
+  parcnt = strlen(command_list[command].param_string);
 
-  for (i = 0; i < parlen; i++) {
+  for (i = 0; i < parcnt; i++) {
     ch = command_list[command].param_string[i];
 
     if (isupper(ch)) {
-      paramLower = 0;
+      mustlower = 0;
       ch = tolower(ch);
     } else {
-      paramLower = 1;
+      mustlower = 1;
     }
 
     switch (ch) {
@@ -262,16 +258,13 @@ static int get_parameters(int command, char *string, struct parameter * params)
 	params[i].type = TYPE_WORD;
 	if (ispunct(*string)) {
 	  punc[0] = *string;
-	  params[i].val.word = punc;
+	  params[i].val.word = statstr_dup(punc,1);
 	  string++;
 	} else {
 	  string = eatword(string);
-	  if (*string) {
-	    *string = '\0';
-	    string++;
-	  }
+	  if (*string) *string++ = '\0';
 	}
-	if (paramLower)
+	if (mustlower)
 	  stolower(params[i].val.word);
 	break;
       case 'd':			/* integer */
@@ -286,10 +279,7 @@ static int get_parameters(int command, char *string, struct parameter * params)
 	  return COM_BADPARAMETERS;
 	params[i].type = TYPE_INT;
 	string = eatword(string);
-	if (*string) {
-	  *string = '\0';
-	  string++;
-	}
+	if (*string) *string++ = '\0';
 	break;
       case 'f':
 	string = eatwhite(string);
@@ -299,10 +289,7 @@ static int get_parameters(int command, char *string, struct parameter * params)
 	  return COM_BADPARAMETERS;
 	params[i].type = TYPE_FLOAT;
 	string = eatword(string);
-	if (*string) {
-	  *string = '\0';
-	  string++;
-	}
+	if (*string) *string++ = '\0';
 	break;
       case 'i':			/* word or integer */
 	string = eatwhite(string);
@@ -325,13 +312,10 @@ static int get_parameters(int command, char *string, struct parameter * params)
 	  string++;
 	} else {
 	  string = eatword(string);
-	  if (*string) {
-	    *string = 0;
-	    string++;
-	  }
+	  if (*string) *string++ = '\0';
 	}
 	if (params[i].type == TYPE_WORD)
-	  if (paramLower)
+	  if (mustlower)
 	    stolower(params[i].val.word);
 	break;
       case 's':			/* string to end */
@@ -344,7 +328,7 @@ static int get_parameters(int command, char *string, struct parameter * params)
 	params[i].type = TYPE_STRING;
 	while (*string)
 	  string = nextword(string);
-	if (paramLower)
+	if (mustlower)
 	  stolower(params[i].val.string);
 	break;
     }
@@ -358,7 +342,7 @@ static int get_parameters(int command, char *string, struct parameter * params)
 
 static void printusage(int p, const char *command_str)
 {
-  int i, parlen;
+  int i, parcnt;
   int command;
   int ch;
 
@@ -366,8 +350,8 @@ static void printusage(int p, const char *command_str)
     pcn_out(p, CODE_ERROR, FORMAT_UNKNOWN_COMMANDn);
     return;
   }
-  parlen = strlen(command_list[command].param_string);
-  for (i = 0; i < parlen; i++) {
+  parcnt = strlen(command_list[command].param_string);
+  for (i = 0; i < parcnt; i++) {
     ch = command_list[command].param_string[i];
     if (isupper(ch)) ch = tolower(ch);
     switch (ch) {
@@ -478,7 +462,7 @@ static void process_login(int p, char *login)
       stolower(login);
       do_copy(parray[p].login,login,sizeof parray[p].login);
       if (player_read(p)) {
-if (conffile.allow_unregistered <= 0) {
+if (conffile.allow_unregistered < 1) {
         Logit("LOGIN: Unknown userid: %s", login);
         pprintf(p, "\nUser unknown.  Send mail to %s", SERVER_EMAIL);
         pprintf(p, "\nfor registration information\n");
@@ -554,7 +538,7 @@ static int process_password(int p, char *password)
 	  dotQuad(parray[p].thisHost));
       fd = parray[p].session.socket;
       fromHost = parray[p].thisHost;
-      for (i=0; i < MAX_OCHANNELS; i++) {
+      for (i=0; i < MAX_OCHANNEL; i++) {
 	if (on_channel(i, p)) {
 	  channel_remove(i, p);
 	}
@@ -661,7 +645,7 @@ static int process_password(int p, char *password)
     }
 
   }
-  for (i = 0; i < MAX_NCHANNELS; i++) {
+  for (i = 0; i < MAX_NCHANNEL; i++) {
     if (carray[i].is_special) continue;
     if (on_channel(i, p)) {
       pcn_out(p, CODE_INFO, FORMAT_CHANNEL_d_TOPIC_sn, i, carray[i].ctitle);
@@ -912,7 +896,7 @@ void process_disconnection(int fd)
     num_logouts++;
   }
 
-  for (i = 0; i < MAX_NCHANNELS; i++) {
+  for (i = 0; i < MAX_NCHANNEL; i++) {
     if (!on_channel(i, p)) continue;
     for (j = 0; j < carray[i].count; j++) {
       p1 = carray[i].members[j];
@@ -990,7 +974,7 @@ int process_heartbeat(int *fdp)
     return COM_OK;
 
     /* Check for timed out connections */
-  if (last_idle_check > conffile.idle_check_interval) {
+  if (last_idle_check > (int) conffile.idle_check_interval) {
     for (p = 0; p < parray_top; p++) {
       if (!parray[p].slotstat.is_inuse) continue;
       if (!parray[p].slotstat.is_connected) continue;
@@ -1010,11 +994,11 @@ int process_heartbeat(int *fdp)
   } else {
     last_idle_check++;
   }
-  if (last_ratings == 0) { /* Do one 2 minutes after startup */
+  if (last_ratings == 0) { /* Schedule one 2 minutes after startup */
     last_ratings = now - conffile.ladder_sift_interval + 120;
   }
   else {
-    if (last_ratings + conffile.ladder_sift_interval < now) { /* Every 6 hours */
+    if (last_ratings + conffile.ladder_sift_interval < (unsigned) now) {
       last_ratings = now;
 #if WANT_LADDERSIFT
       Logit("Sifting 19x19 ladder");
@@ -1030,7 +1014,7 @@ int process_heartbeat(int *fdp)
     xystat(&new_stat, FILENAME_NRATINGS);
     old_stat = new_stat;
   } else {
-    if (last_results + conffile.ratings_read_interval < now) {
+    if (last_results + conffile.ratings_read_interval < (unsigned) now) {
       last_results = now;
       xystat(&new_stat, FILENAME_NRATINGS);
       resu = new_stat.st_mtime - old_stat.st_mtime;
@@ -1120,6 +1104,8 @@ void TerminateCleanup()
   int g1;
 
   for (g1 = 0; g1 < garray_top; g1++) {
+    if (!parray[p1].slotstat.is_inuse) continue;
+    if (!garray[g1].slotstat.is_playing) continue;
     if (garray[g1].gstatus != GSTATUS_ACTIVE) continue;
     game_ended(g1, PLAYER_NEITHER, END_ADJOURN);
   }

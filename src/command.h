@@ -36,8 +36,8 @@
 extern mode_t mode_for_dir;
 
 extern time_t startuptime;
-extern int player_high;
-extern int game_high;
+extern unsigned int player_high;
+extern unsigned int game_high;
 extern int MailGameResult;
 
 extern struct stat RatingsBuf1, RatingsBuf2;

@@ -19,7 +19,7 @@
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-int random(void);
+/* int random(void); */
 #endif
 
 #include <assert.h>
@@ -46,7 +46,8 @@ int random(void);
 #include "mink.h"
 #include "utils.h"
 
-int snprintf(char *dst, size_t dstlen, const char *fmt, ...);
+int my_snprintf(char *dst, size_t dstlen, const char *fmt, ...);
+#define snprintf my_snprintf
 
 #define MOVECOLOR(i)	(((i) & 1) ? MINK_BLACK : MINK_WHITE)
 #define LASTCOLOR(g)	MOVECOLOR((g)->movenr)
@@ -321,7 +322,7 @@ int mink_sethcap(struct minkgame *gp, int n)	/* returns 1 if succesful */
 
 
 #if 0
-static int libs(struct minkgame *gp, int p)	/* find #liberty-edges of p's group */
+static int mink_libs(struct minkgame *gp, int p)	/* find #liberty-edges of p's group */
 {
   while ((p = gp->uf[p]) > 0) ;
   return -p;
@@ -693,11 +694,13 @@ int mink_raw_printboard(char * buff, size_t buflen, struct minkgame *gp)
 {
   int x,y,len, pos;
 
-  pos = snprintf(buff, buflen, "%u\n" , (unsigned)buflen);
-  if (!gp) return pos;
+  len = snprintf(buff, buflen, "buff[%u]\n" , (unsigned)buflen);
+  if (len < 0) return len;
 
-  pos = snprintf(buff, buflen, "0x%p\n" , (void*)gp );
-  if (!gp) return pos;
+  pos = len;
+  len = snprintf(buff+pos, buflen-pos, "0x%p\n" , (void*)gp );
+  if (len < 0) return pos;
+  if (!gp) return pos+len;
   pos--;
   len = snprintf(buff+pos, buflen-pos, ":%d:%d:%d:%d:%d\n"
 	, (int)gp->height, (int)gp->width
@@ -708,7 +711,6 @@ int mink_raw_printboard(char * buff, size_t buflen, struct minkgame *gp)
   if (!gp || !gp->board) return pos;
   /* pos = 0; */
   for (y=1; y <= gp->height; y++) {
-    if (pos+2 >= (int)buflen) break;
     for (x=1; x <= gp->width ; x++) {
       if (pos+2 >= (int)buflen) break;
       /* buff[done++] = BOARDCHARS[gp->board[mink_point(gp,x,gp->height+1-y)]]; */

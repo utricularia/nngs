@@ -70,6 +70,7 @@
 #include "command.h"
 #include "channel.h"
 #include "playerdb.h"
+#include "adminproc.h"
 #include "utils.h"
 #include "ladder.h"
 #include "emote2.h"
@@ -191,6 +192,8 @@ int main(int argc, char *argv[])
     conf_file_write(confname);
     Logit("Created \"%s\"", confname);
   }
+  Logit("Starting %s (%s %s) From: %s"
+  , conffile.version_string, conffile.compile_date, conffile.compile_time, confname);
   if (daemonise()) {
     Logit("Failed to daemonise, giving up");
     main_exit(1);
@@ -204,14 +207,15 @@ int main(int argc, char *argv[])
   signal(SIGPIPE, BrokenPipe);
 #endif
   signal(SIGCHLD, reapchild);
+  mink_init();
+  startuptime = time(NULL);
+  srand(startuptime);
   read_ban_ip_list();
   if (!all_the_internets() ) {
     fprintf(stderr, "Network initialize failed on ports %s.\n"
     , conffile.server_ports);
     main_exit(1);
   }
-  startuptime = time(NULL);
-  srand(startuptime);
   player_high = 0;
   game_high = 0;
   bytes_sent = 0;
@@ -253,8 +257,9 @@ int main(int argc, char *argv[])
     fclose(fp);
   }
 
-  mink_init();
-  Logit("Server up and running at");
+  // mink_init();
+  if (conffile.admin_name) create_admin_account(conffile.admin_name );
+  Logit("Server up and running.");
   main_event_loop();
   Logit("Closing down.");
   net_closeAll();
@@ -271,7 +276,7 @@ int pos, len, rc, cnt;
     rc = sscanf(conffile.server_ports+pos, "%d%n", &port, &len );
     if (rc < 0) break;
     if (rc < 1) { len=1; continue; }
-    if (net_init(port, conffile.want_udp_port)) {
+    if (net_init(port, conffile.want_udp_port > 0 ? 1 : 0)) {
       Logit("Init failed on port %d.", port);
       continue;
       }
@@ -382,8 +387,8 @@ static int daemonise(void)
     return rc;
   }
   if (conffile.want_fork > 0) {
-    if (rc=fork()) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
-    if (rc=fork()) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
+    if ((rc=fork())) { fprintf(stderr, "Fork1 = %d\n", rc); _exit(0); }
+    if ((rc=fork())) { fprintf(stderr, "Fork2 = %d\n", rc);  _exit(0); }
   }
 
   if (uid && (euid = geteuid()) != uid) {

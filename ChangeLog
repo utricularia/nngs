@@ -3,10 +3,29 @@
 *** then re-run autoconf to regenerate configure from configure.in ***
 
 
-1.1.22 AvK 2007-02-24
-- added idle_check & ratings-intervals to configurable items.
+1.1.22 AvK 2007-02-24, 2009-05-20, 2009-08-30
+- added more configuarable items:
+  - idle_check_interval
+  - ratings-intervals
+  - max_idle
+  - max_login_idle
+  - rating_read_interval
+  - ladder_sift_interval
+  - conffile.default_komi19
+  - conffile.default_komi13
+  - conffile.default_komi9
 - changed rdbm_open()s to use xyfilename() instead of hard-coded pathnames.
 - idem xystat() for nratingsfile.
+- fixed missing spaces in install-scripts for datafiles/directories.
+- replaced all references to [v]snprintf() by my_[v]snprintf()
+This was needed because the library-functions MAY return values >= dstlen.
+- introduced automatic creation of admin-account
+- removed various function-static buffers
+- instead added utils.c/poolstr_dup() as a poor man's garbage collector.
+- allow logfile to have the datetime at the beginning of the lines,
+instead of at the end.
+- refixed missing space in install-data shell scripts.
+
 1.1.21 AvK 2007-02-21
 - added default_komi and default_komi9 to configurable items.
 - silly tell-command returned prematurely.
@@ -26,7 +45,8 @@ plan to reuse it.
 succesfully. (defined by newsize > oldsize/2, which seems fair enough).
 This will result in NNGS to retry writing if previous writes were
 unsuccessful (caused by disk-full conditions).
-Previously, playerfiles would be truncated on disk-full conditions.
+Previously, playerfiles could get truncated on disk-full conditions.
+
 1.1.20 AvK 2005-10-19
 - removed a silly bug (looking for a sentinel in command_list, while there was
 no sentinel. Problem was that it compiled fine on my home machines (probably

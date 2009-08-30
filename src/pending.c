@@ -46,10 +46,10 @@ static struct{
 	} pendcnt = {0,0,0,0};
 
 static struct pending * pending_alloc(void);
-static void pending_free(struct pending * ptr);
-static void pending_ins(struct pending **hnd, struct pending * ins);
-static void pending_cut(struct pending * ptr);
-static void pending_add(struct pending * ins);
+static void pending_free(struct pending * this);
+static void pending_ins(struct pending **hnd, struct pending * this);
+static void pending_cut(struct pending * this);
+static void pending_add(struct pending * this);
 #if DEBUG_PENDING
 static char * pending_dmp(void);
 #endif /* DEBUG_PENDING */
@@ -83,84 +83,82 @@ Logit("Pending_init : %s", pending_dmp());
 
 static struct pending * pending_alloc(void)
 {
-  struct pending * ptr;
+  struct pending * this;
 
-  ptr= pendfree;
-  if (!ptr) return NULL;
-  pending_cut(ptr);
+  this= pendfree;
+  if (!this) return NULL;
+  pending_cut(this);
   pendcnt.avail--;
   pendcnt.valid++;
-  ptr->is_valid=1;
-  return ptr;
+  this->is_valid=1;
+  return this;
 }
 
 
-static void pending_free(struct pending * ptr)
+static void pending_free(struct pending * this)
 {
-  if (!ptr) return;
-  if (pendtail == &ptr->nxt) pendtail = NULL;
-  pending_cut(ptr);
-  pending_ins(&pendfree,ptr);
+  if (!this) return;
+  if (pendtail == &this->nxt) pendtail = NULL;
+  pending_cut(this);
+  pending_ins(&pendfree,this);
   pendcnt.avail++;
-  if (ptr->is_valid) pendcnt.valid++;
-  ptr->is_valid = 0;
+  if (this->is_valid) pendcnt.valid++;
+  this->is_valid = 0;
 }
 	/* cut ptr out of linked list. */
-static void pending_cut(struct pending * ptr)
+static void pending_cut(struct pending * this)
 {
   struct pending * nxt;
 
-  if (!ptr) return;
-  nxt = ptr->nxt;
-  if (nxt==ptr) nxt= NULL;
-  if (ptr->hnd) *(ptr->hnd) = nxt;
-  if (nxt) nxt->hnd = ptr->hnd;
-#if 1
-  ptr->hnd=NULL;
-  ptr->nxt=NULL;
-#endif
+  if (!this) return;
+  nxt = this->nxt;
+  if (nxt==this) nxt= NULL;
+  if (this->hnd) *(this->hnd) = nxt;
+  if (nxt) nxt->hnd = this->hnd;
+  this->hnd=NULL;
+  this->nxt=NULL;
 }
 
 	/* insert ins before *hnd */
-static void pending_ins(struct pending **hnd, struct pending * ins)
+static void pending_ins(struct pending **hnd, struct pending * this)
 {
-  if (!ins) return;
-  ins->nxt = *hnd;
-  ins->hnd= hnd;
-  *hnd = ins;
-  if (ins->nxt) {
-    hnd = &ins->nxt;
-    ins = ins->nxt;
-    ins->hnd= hnd;
+  if (!this) return;
+  this->nxt = *hnd;
+  this->hnd= hnd;
+  *hnd = this;
+  if (this->nxt) {
+    hnd = &this->nxt;
+    this = this->nxt;
+    this->hnd= hnd;
   }
 }
 
 	/* append at tail */
-static void pending_add(struct pending * ins)
+static void pending_add(struct pending * this)
 {
-  if (!ins) return;
+  if (!this) return;
   if (!pendtail) pendtail = &pendlist;
 
   while (*pendtail) pendtail = &(*pendtail)->nxt;
-  pending_ins(pendtail,ins);
+  pending_ins(pendtail,this);
   while (*pendtail) pendtail = &(*pendtail)->nxt;
 }
 
 	/* Allocate pending structure */
 struct pending *pending_new(int from, int to, int type)
 {
-  struct pending *ptr;
+  struct pending *new;
 
-  ptr= pending_alloc();
-  if (ptr) {
-    ptr->seq=0;
-    ptr->whofrom = from;ptr->whoto = to;ptr->type = type;
-    pending_add(ptr);
+  new= pending_alloc();
+  if (new) {
+    new->seq=0;
+    new->whofrom = from;new->whoto = to;new->type = type;
+    pending_add(new);
   }
 #if DEBUG_PENDING
-Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,ptr,pending_dmp() );
+Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,new,pending_dmp() );
 #endif /* DEBUG_PENDING */
-  return ptr;
+  return new;
 }
 
 	/* Free pending structure instance by setting it's is_valid field
@@ -170,14 +168,14 @@ Logit("Pending_new(%d,%d,%d) := %p%s", from,to,type,ptr,pending_dmp() );
 	** all this is done to support the silly count/find/next
 	** iterator.
 	*/
-void pending_delete(struct pending *ptr)
+void pending_delete(struct pending *this)
 {
-  if (!ptr) return;
-  if (ptr->is_valid) pendcnt.valid--;
-  ptr->is_valid=0;
+  if (!this) return;
+  if (this->is_valid) pendcnt.valid--;
+  this->is_valid=0;
 #if DEBUG_PENDING
 Logit("Pending_delete(%p:%d,%d,%d) : %s"
-	, ptr,ptr->whofrom,ptr->whoto,ptr->type, pending_dmp() );
+	, this,this->whofrom,this->whoto,this->type, pending_dmp() );
 #endif /* DEBUG_PENDING */
   return ;
 }
@@ -211,34 +209,34 @@ else
   return ptr;
 }
 
-struct pending * pending_next(struct pending *ptr, int from, int to, int type)
+struct pending * pending_next(struct pending *this, int from, int to, int type)
 {
   unsigned seq=0;
   struct pending *nxt;
 
-  if (!ptr) return NULL;
-  seq=ptr->seq;
-  for (ptr=ptr->nxt; ptr ; ptr=nxt) {
-    if (ptr->nxt==ptr) ptr->nxt=NULL;
-    nxt = ptr->nxt;
-    if (!ptr->is_valid) {
-      pending_free(ptr);
+  if (!this) return NULL;
+  seq=this->seq;
+  for (this=this->nxt; this ; this=nxt) {
+    if (this->nxt==this) this->nxt=NULL;
+    nxt = this->nxt;
+    if (!this->is_valid) {
+      pending_free(this);
       continue;
     }
-    if (ptr->whofrom != from && from >= 0) continue;
-    if (ptr->whoto != to && to >= 0) continue;
-    if (ptr->type != type && type >= 0) continue;
-    ptr->seq = ++seq;
+    if (this->whofrom != from && from >= 0) continue;
+    if (this->whoto != to && to >= 0) continue;
+    if (this->type != type && type >= 0) continue;
+    this->seq = ++seq;
     break;
   }
 #if DEBUG_PENDING
-if (ptr)
+if (this)
 	Logit("Pending_next(%d,%d,%d):= %p:{%d,%d,%d}",from,to,type
-	,ptr,ptr->whofrom,ptr->whoto,ptr->type);
+	,this,this->whofrom,this->whoto,this->type);
 else
 	Logit("Pending_next(%d,%d,%d):= %p:{%d,%d,%d}",from,to,type);
 #endif /* DEBUG_PENDING */
-  return ptr;
+  return this;
 }
 
 int pending_count(int from, int to, int type)
@@ -268,8 +266,9 @@ Logit("Pending_count(%d,%d,%d):= %d:%s",from,to,type,count, pending_dmp() );
 #if DEBUG_PENDING
 static char * pending_dmp(void)
 {
-  static char buff[100];
+  int pos;
   struct pending *ptr;
+  char buff[100];
 
   pendcnt.used=0;
   for (ptr=pendlist; ptr; ptr=ptr->nxt) {
@@ -281,8 +280,9 @@ static char * pending_dmp(void)
     pendcnt.free++;
   }
 
-sprintf(buff,"Avail=%d,Valid=%d,Free=%d,Used=%d"
+  pos = sprintf(buff,"Avail=%d,Valid=%d,Free=%d,Used=%d"
 	, pendcnt.avail,pendcnt.valid,pendcnt.free,pendcnt.used);
-return buff;
+
+return statstr_dup(buff, pos);
 }
 #endif /* DEBUG_PENDING */

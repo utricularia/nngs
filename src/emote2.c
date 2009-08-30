@@ -133,12 +133,12 @@ FILE *fp;
 size_t len;
 int rc;
 char *cp=NULL;
-static char linebuff[ 2000 ];
+char linebuff[ 2000 ];
     
-fp=xyfopen(FILENAME_EMOTE, "r");
-if (!fp) return NULL; 
+  fp = xyfopen(FILENAME_EMOTE, "r");
+  if (!fp) return NULL; 
 
-len = strlen(key);
+  len = strlen(key);
 
   while ((rc=utabgets(fp, linebuff, sizeof linebuff)) > 0) {
     cp = linebuff;
@@ -148,11 +148,12 @@ len = strlen(key);
     while (*cp && isspace((int)*cp)) { cp++; }
     break;
   }
-fclose(fp);
-len=strlen(cp);
-if (len) len--;
-if (cp[len] == '\n') cp[len] = 0;
-return cp;
+
+  fclose(fp);
+  len = strlen(cp);
+  if (len) len--;
+  if (cp[len] == '\n') cp[len] = 0;
+  return statstr_dup(cp,len);
 }
 
 void EmoteInit(const char *path)
@@ -168,11 +169,11 @@ int EmoteLook(const char *key)
 
 const char *EmoteMkStr(char *key, char *username, char *args, int isclient)
 {
-static char outbuff[ 2000 ];
 char *fmt;
 int idx = 0;
 size_t len=0;
 char *arg;
+char outbuff[ 2000 ];
 
 fmt = findkey(key);
 
@@ -211,8 +212,7 @@ while ((outbuff[idx] = *fmt++) ) {
     }
   }
 done:
-  outbuff[idx] = 0;
-  return outbuff;
+  return statstr_dup(outbuff,idx);
 }
 
 static char * emote_init_arg(char *str)

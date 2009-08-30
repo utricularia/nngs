@@ -359,7 +359,7 @@ static int set_channel(int p, const char *var, const char *val)
 
   if (!val) return VAR_BADVAL;
   if (sscanf(val, "%d", &v) != 1) return VAR_BADVAL;
-  if (v < 0 || v >= MAX_NCHANNELS) return VAR_BADVAL;
+  if (v < 0 || v >= MAX_NCHANNEL) return VAR_BADVAL;
   parray[p].last_channel = v;
   pcn_out(p, CODE_INFO, FORMAT_DEFAULT_CHANNEL_SET_TO_d_n, v);
   return VAR_OK;

@@ -40,6 +40,7 @@ struct confstuff {
   char *server_http;
   char *server_email;
   char *geek_email;
+  char *admin_name;
 	/* mail/SMTP stuff */
   char *mail_program;
   char *smtp_from;
@@ -85,10 +86,13 @@ struct confstuff {
 	/* Boolean flags */
   char allow_registration;
   char allow_unregistered;
+  char allow_mail_to_localhost;
   char unregs_can_shout;
+  char log_missing_files_on_read;
   char want_udp_port;
   char want_fork;
   char want_mail_child;
+  char want_new_log_style;
 	/* Misc stuff */
   char *def_prompt;
   float default_komi19;
@@ -109,7 +113,7 @@ struct confstuff {
   };
 
 #if CONFFILE_C
-struct confstuff conffile = {NULL,NULL,NULL};
+struct confstuff conffile = {NULL,NULL,NULL,NULL,};
 #else
 extern struct confstuff conffile;
 #endif

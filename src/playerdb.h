@@ -142,7 +142,7 @@ struct player_ {
     int lastColor;
     int gametype; /* Never used ... */
   /* int teach;    unused:: A teaching account */
-    }cruft;
+    } cruft;
 	/* These members are initialized and used when online,
 	** buth forgotten on logout
 	*/
@@ -263,9 +263,9 @@ int player_notified_departure(int);
 int player_notify_present (int);
 int player_notify(int, char *, char *);
 
-int player_count(void);
-int player_idle(int);
-int player_ontime(int);
+unsigned int player_count(void);
+unsigned int player_idle(int);
+unsigned int player_ontime(int);
 
 void player_write_loginout(int, int);
 time_t player_lastconnect(int);

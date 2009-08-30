@@ -144,7 +144,7 @@ int com_anews(int p, struct parameter* param)
   FILE *fp;
   char junk[MAX_LINE_SIZE];
   char *junkp;
-  int crtime;
+  time_t crtime;
   char count[10];
   int flag, len;
 
@@ -453,8 +453,7 @@ int com_raisedead(int p, struct parameter* param)
 static int shutdownTime = 0;
 static int lastTimeLeft;
 static int shutdownStartTime;
-static char downer[1024];
-
+static char downer[sizeof parray[0].pname];
 void ShutDown()
 {
   int p1;
@@ -515,7 +514,7 @@ int com_shutdown(int p, struct parameter* param)
   char *ptr;
   int p1, secs;
 
-  strcpy(downer, parray[p].pname);
+  do_copy(downer, parray[p].pname, sizeof downer);
   shutdownStartTime = globclock.time;   
   if (shutdownTime) {         /* Cancel any pending shutdowns */
     for (p1 = 0; p1 < parray_top; p1++) {
@@ -582,7 +581,7 @@ int server_shutdown(int secs, char *why)
     /* Server is already shutting down, I'll let it go */
     return 0;
   }
-  strcpy(downer, "Automatic");
+  do_copy(downer, "Automatic", sizeof downer);
   shutdownTime = secs;
   shutdownStartTime = globclock.time;
   for (p1 = 0; p1 < parray_top; p1++) {
@@ -988,6 +987,45 @@ int com_asetadmin(int p, struct parameter* param)
   return COM_OK;
 }
 
+/* This pseudo command is used to "bootstrap" the player database
+ */
+void create_admin_account(char *name)
+{
+  int p1, oldlevel;
+
+  if (!name || !*name) return;
+  p1 = player_fetch(name);
+  if (p1 >= 0) {
+    oldlevel = parray[p1].adminLevel;
+    parray[p1].adminLevel = 100;
+    Logit("Boot: altered %s adminlevel from %d to %d", parray[p1].pname, oldlevel, 100);
+    parray[p1].slotstat.is_registered = 1;
+    parray[p1].slotstat.is_valid = 1;
+    player_dirty(p1);
+    player_unfix(p1);
+    return ;
+    }
+  p1 = player_new();
+  if (p1 >= 0) {
+    oldlevel = parray[p1].adminLevel;
+    parray[p1].adminLevel = 100;
+    do_copy(parray[p1].pname, name, sizeof parray[p1].pname);
+    do_copy(parray[p1].login, name, sizeof parray[p1].login);
+    do_copy(parray[p1].fullname, name, sizeof parray[p1].fullname);
+    do_copy(parray[p1].email, "", sizeof parray[p1].email);
+    do_copy(parray[p1].rank, "NR", sizeof parray[p1].email);
+    do_copy(parray[p1].ranked, " ", sizeof parray[p1].ranked);
+    do_copy(parray[p1].srank, "NR", sizeof parray[p1].srank);
+    Logit("Boot: created %s with adminlevel from %d to %d", parray[p1].pname, oldlevel, 100);
+    parray[p1].slotstat.is_registered = 1;
+    parray[p1].slotstat.is_valid = 1;
+    player_dirty(p1);
+    player_unfix(p1);
+    }
+ 
+  return ;
+}
+
 
 int com_asetwater(int p, struct parameter* param)
 {
@@ -1038,7 +1076,7 @@ int com_actitle(int p, struct parameter* param)
 {
   int i;
 
-  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
+  if (param[0].val.integer >= MAX_NCHANNEL || param[0].val.integer < 0) {
     return COM_OK;
   }
 
@@ -1086,7 +1124,7 @@ int com_hide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
+  if (param[0].val.integer >= MAX_NCHANNEL || param[0].val.integer < 0) {
     return COM_OK;
   }
 
@@ -1102,7 +1140,7 @@ int com_unhide(int p, struct parameter* param)
   int i;
   UNUSED(p);
 
-  if (param[0].val.integer >= MAX_NCHANNELS || param[0].val.integer < 0) {
+  if (param[0].val.integer >= MAX_NCHANNEL || param[0].val.integer < 0) {
     return COM_OK;
   }
 

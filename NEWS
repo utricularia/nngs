@@ -44,12 +44,22 @@ Version 1.1.19 (2005 Oct xx)
 - added smtp mailer, which is needed in a chrooted environment.
 - added experimental udp-port, intended to be used by a web/PHP client.
 - more cleanup
+
 Version 1.1.20 (2005 Oct xx)
 - vsnprintf() <--> Logit mutual recursion avoided
 - fixed missing sentinel in command_list[]
 - moved more stuff to conffile
+
 Version 1.1.21 (2007 Feb 22)
 - fixed calloc() damage
 - fixed tell/say/talk formats
 - added default_komi/default_komi9 to conffile.
-Version 1.1.22 (2007 Feb 24)
+
+Version 1.1.22 (2007 Feb 24) (2009 May 09)
+- more configurable items
+- fixed snprintf() usage
+- allow logfile to have the date-field at the beginning of the line.
+- automatic creation of admin-account at first start (if not present)
+- replaced functions returning pointers to static buffers to 
+  instead use a common pool.
+- more cleanup

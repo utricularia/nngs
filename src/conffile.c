@@ -61,9 +61,9 @@
 #endif
 
 	/* This is the mapping between names and variables.
-	** The ->ptr points to the actual storage,
+	** The .ptr points to the actual storage location,
 	** for ints, this is an (int*), for strings it is a (char **)
-	** dflt is a STRING, containing the default value.
+	** .dflt is a STRING, containing the default value.
 	*/
 struct confmatch {
   int type;
@@ -71,25 +71,46 @@ struct confmatch {
   void *ptr;
   const char *dflt;
   };
-
-	/* Behaviour of configuration items differs:
+        /*
+	** Configuration items are 
+	** 1) read from the config file
+	** 2) if still uninitialized : set to their defaults
+	** 3) if the item is a pathname, and chroot is in effect, the resulting
+	**	value will be altered to represent the pathname in the chroot()ed situation.
+	**
+	** The behaviour of configuration items differs, depending on their type:
+	** 
 	** MESSAGE is ignored, but written (as a comment) into configfile.
-	** ZOMBIE is not read from file, even if present, so is
-	** always filled with the initial value.
-	** CHPATH is read from file, default wil be applied,
-	** and chroot will trim it's prefix off.
-	** NAME is read from file, default will be applied,
-	** but chroot will *not* alter it.
+	**
+	** ZOMBIE is not read from file, even if present, so it is
+	**	always filled with the initial value.
+	**	It is used to store compiled-in defaults, such as the version and compile date.
+	**
+	** CHPATH will be interpreted as a full pathname.
+	**	If chroot is active the matching prefix will be trimmed off.
+	**
 	** MESSAGE just puts a comment in the output-config file
+	**
+	** NAME is an ordinary string
+	**	it will _not_ be interpreted as a pathname,
+	**	so chroot will not alter it.
+	**
 	** NUMBER is a decimal integer. Not altered by program.
+	**
 	** OCTAL is like number, but represented in octal.
+	**
 	** TIME is like number, but unsigned. Represented in seconds.
+	**
 	** BOOL is a character used as a boolean value.
-	** -1 := False, > 0 := True; 0 := missing/NULL
+	**	-1 := False, > 0 := True; 0 := uninitialized/missing/NULL
+	**
 	** REAL is a floating-point number (for Komi)
-	** NB: The last argument is always a string, because it is processed
-	** by the same logic as the textfile.
 	*/
+/*
+** NB: The last argument for the struct-element-macro's below
+** is always a string, because the .dflt field is processed by the same function
+** that is used for processing the configuration textfile.
+*/
 #define ZOMBIE(_n,_p,_d) {'Z',(_n),(void*)((char**)(_p)),(_d)},
 #define CHPATH(_n,_p,_d) {'p',(_n),(void*)((char**)(_p)),(_d)},
 #define NAME(_n,_p,_d) {'P',(_n),(void*)((char**)(_p)),(_d)},
@@ -100,6 +121,7 @@ struct confmatch {
 #define OCTAL(_n,_o,_d) {'o',(_n),(void*)(_o),(_d)},
 #define MESSAGE(_m) {'m', (_m),NULL, NULL},
 
+ 
 static struct confmatch confmatchs[] = {
 ZOMBIE("version_string", &conffile.version_string, VERSION)
 ZOMBIE("compile_date", &conffile.compile_date, __DATE__ )
@@ -108,16 +130,20 @@ MESSAGE("")
 MESSAGE("Note: Don't put any spaces after the '='. Everything between the '='")
 MESSAGE("and the end-of-line is read into the variable.")
 MESSAGE("")
+MESSAGE(" ########################################################")
+MESSAGE("")
 MESSAGE("Leave chroot_dir empty if chroot() is not wanted.")
-MESSAGE("Note: chroot() itself needs root permissions.")
+MESSAGE("Note: the chroot() system call itself needs root permission.")
 MESSAGE("Note: chroot will cause all pathnames to be")
 MESSAGE("changed automatically (the prefix is stripped)")
 MESSAGE("Stripped filenames will appear in written.cnf for verification." )
 MESSAGE("Note: chroot also :")
 MESSAGE(" * needs chroot_user && chroot_group to be set.")
-MESSAGE(" * needs mail to be sent by SMTP.")
+MESSAGE(" * needs email to be sent by SMTP.")
 MESSAGE(" * will cause tempnam() to fail, even if a /tmp/ subdirectory")
 MESSAGE("   is present in the chroot() -jail.")
+MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("")
 NAME("chroot_dir", &conffile.chroot_dir, NULL)
 NAME("chroot_user", &conffile.chroot_user, NULL)
@@ -126,6 +152,8 @@ MESSAGE("")
 MESSAGE("Directory- and file-names are all absolute in the config file.")
 MESSAGE("They can be configured independently, but some combinations")
 MESSAGE("make no sense. (and will probably not work)")
+MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("")
 CHPATH("ahelp_dir", &conffile.ahelp_dir, AHELP_DIR)
 CHPATH("help_dir", &conffile.help_dir, HELP_DIR)
@@ -140,6 +168,8 @@ CHPATH("lists_dir", &conffile.lists_dir, LIST_DIR)
 CHPATH("news_dir", &conffile.news_dir, NEWS_DIR)
 CHPATH("spool_dir", &conffile.spool_dir, SPOOL_DIR)
 MESSAGE("")
+MESSAGE(" ########################################################")
+MESSAGE("")
 CHPATH("ratings_file", &conffile.ratings_file, RATINGS_FILE)
 CHPATH("nratings_file", &conffile.nratings_file, NRATINGS_FILE)
 CHPATH("intergo_file", &conffile.intergo_file, INTERGO_FILE)
@@ -151,21 +181,23 @@ CHPATH("ladder9_file", &conffile.ladder9_file, LADDER9_FILE)
 CHPATH("ladder19_file", &conffile.ladder19_file, LADDER19_FILE)
 CHPATH("log_file", &conffile.log_file, LOG_FILE)
 CHPATH("logons_file", &conffile.logons_file, LOGONS_FILE)
-
 MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("These entries define how the server will present itself.")
 MESSAGE("")
-
 NAME("server_name", &conffile.server_name, SERVER_NAME)
 NAME("server_http", &conffile.server_http, SERVER_HTTP)
 NAME("server_address", &conffile.server_address, SERVER_ADDRESS)
 NAME("server_ports", &conffile.server_ports, SERVER_PORTS)
 NAME("server_email", &conffile.server_email, SERVER_EMAIL)
 NAME("geek_email", &conffile.geek_email, GEEK_EMAIL)
+NAME("admin_name", &conffile.admin_name, ADMIN_NAME)
+MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("")
 MESSAGE("To send mail by SMTP: set mail_program to \"SMTP\", and fill in the smtp_* fields.")
 MESSAGE("This is needed in chroot() installations, because /usr/bin/mail et.al.")
-MESSAGE("are unavailabls in a chroot() jail.")
+MESSAGE("are unavailable in a chroot() jail.")
 MESSAGE("The smtp_xxx - fields are used to fill the SMTP-request:")
 MESSAGE("")
 MESSAGE(" smtp_mta := hostname where the MTA lives.")
@@ -180,12 +212,15 @@ NUMBER("smtp_portnum", &conffile.smtp_portnum, "25")
 NAME("smtp_helo", &conffile.smtp_helo, "localhost")
 NAME("smtp_from", &conffile.smtp_from, SERVER_EMAIL)
 NAME("smtp_reply_to", &conffile.smtp_reply_to, SERVER_EMAIL)
-
+MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("")
 MESSAGE("Set mode_for_dir to nonzero to create non-existant directories silently.")
 MESSAGE("Use with care...")
 MESSAGE("")
 OCTAL("mode_for_dir", &conffile.mode_for_dir, "0")
+MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("")
 MESSAGE("These are some default values for players and games.")
 MESSAGE("")
@@ -208,6 +243,8 @@ TIME("max_login_idle", &conffile.max_login_idle, "120")
 TIME("rating_read_interval", &conffile.rating_read_interval, "120")
 TIME("ladder_sift_interval", &conffile.ladder_sift_interval, "21600")
 MESSAGE("")
+MESSAGE(" ########################################################")
+MESSAGE("")
 MESSAGE("Debugging flags. Can cause a lot of output to the logfile.")
 MESSAGE("Higher levels will cause more output. Set them to zero to disable.")
 MESSAGE("")
@@ -215,14 +252,18 @@ NUMBER("debug_general", &conffile.debug_general, "0")
 NUMBER("debug_parray", &conffile.debug_parray, "0")
 NUMBER("debug_mailer", &conffile.debug_mailer, "0")
 MESSAGE("")
+MESSAGE(" ########################################################")
 MESSAGE("Boolean flags. Set to {1,Yes,True} or {-1,0,No,False}.")
 MESSAGE("")
 BOOL("allow_registration", &conffile.allow_registration, "Yes" )
 BOOL("allow_unregistered", &conffile.allow_unregistered, "Yes" )
+BOOL("allow_mail_to_localhost", &conffile.allow_mail_to_localhost, "No" )
 BOOL("unregs_can_shout", &conffile.unregs_can_shout, "Yes" )
 BOOL("want_udp_port", &conffile.want_udp_port, "No" )
 BOOL("want_fork", &conffile.want_fork, "Yes" )
 BOOL("want_mail_child", &conffile.want_mail_child, "Yes" )
+BOOL("want_new_log_style", &conffile.want_new_log_style, "Yes" )
+BOOL("log_missing_files_on_read", &conffile.log_missing_files_on_read, "Yes" )
 
 MESSAGE("")
 MESSAGE("############### end of file ##########################")
@@ -395,7 +436,7 @@ static int conf_file_fixup1(char * target, char *part, int len)
 {
   if (strncmp(target, part, len)) return 1; /* fail */
 
-  while (target[0] = target[len]) target++;
+  while ((target[0] = target[len])) target++;
   return 0;
 
 }
@@ -469,4 +510,3 @@ static struct confmatch *conf_find(const char *name)
   }
   return NULL;
 }
-

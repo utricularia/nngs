@@ -33,6 +33,8 @@ int com_nuke(int, struct parameter*);
 int com_shutdown(int, struct parameter*);
 void ShutHeartBeat(void);
 void ShutDown(void);
+void create_admin_account(char * name);
+
 int com_pose(int, struct parameter*);
 int com_announce(int, struct parameter*);
 int com_muzzle(int, struct parameter*);

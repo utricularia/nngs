@@ -51,6 +51,7 @@
 #define SERVER_EMAIL "nngs@localhost"
 #define SERVER_HTTP "http://localhost"
 #define GEEK_EMAIL NULL
+#define ADMIN_NAME "admin"
 
 
 /* define this to sift the ladder around */
